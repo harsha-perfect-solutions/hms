@@ -225,10 +225,41 @@ async function main() {
     },
   });
 
+  // 6. Authoritative Hostel Blocks
+  const initialBlocks = [
+    {
+      name: 'Girls-Block-B',
+      code: 'GB-B',
+      description: 'Main residential block B for female students (Rooms 101-220).',
+      status: 'ACTIVE',
+    },
+    {
+      name: 'Boys-Block-A',
+      code: 'BB-A',
+      description: 'North residential wing for male engineering undergraduates.',
+      status: 'ACTIVE',
+    },
+    {
+      name: 'West-Wing-C',
+      code: 'WW-C',
+      description: 'West Wing residential facility undergoing summer renovation.',
+      status: 'INACTIVE',
+    },
+  ];
+
+  for (const b of initialBlocks) {
+    await prisma.block.upsert({
+      where: { code: b.code },
+      update: {},
+      create: b,
+    });
+  }
+
   console.log('Database seeded successfully:');
   console.log(`- Student 1: ${student1.name} (${student1.jntuNo}) - Allocated (Girls-Block-B - 119) with 2 mess tokens today`);
   console.log(`- Student 2: ${student2.name} (${student2.jntuNo}) - Allocated (Girls-Block-B - 119) with 0 mess tokens`);
   console.log(`- Student 3: ${studentUnallocated.name} (${studentUnallocated.jntuNo}) - NOT_ALLOCATED (Empty State)`);
+  console.log(`- Blocks: Seeded ${initialBlocks.length} authoritative baseline blocks (GB-B, BB-A, WW-C)`);
 }
 
 main()

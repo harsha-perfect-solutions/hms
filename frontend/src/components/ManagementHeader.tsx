@@ -9,6 +9,8 @@ interface ManagementHeaderProps {
   onRefresh?: () => void;
   isRefreshing?: boolean;
   isRealtimeConnected?: boolean;
+  pageTitle?: string;
+  pageSubtitle?: string;
 }
 
 export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
@@ -18,6 +20,8 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
   onRefresh,
   isRefreshing = false,
   isRealtimeConnected = true,
+  pageTitle = 'Management Dashboard',
+  pageSubtitle = 'A concise operational overview of hostel activity.',
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -60,8 +64,8 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
         </button>
 
         <div className="header-title-wrapper">
-          <h1 className="header-page-title">Management Dashboard</h1>
-          <p className="header-page-subtitle">A concise operational overview of hostel activity.</p>
+          <h1 className="header-page-title">{pageTitle}</h1>
+          <p className="header-page-subtitle">{pageSubtitle}</p>
         </div>
       </div>
 

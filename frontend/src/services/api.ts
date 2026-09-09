@@ -1746,4 +1746,124 @@ export const managementApiService = {
       }
     };
   },
+
+  async getBlocks(params?: { search?: string; status?: string }): Promise<BlocksResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing. Please log in.');
+
+    const query = new URLSearchParams();
+    if (params?.search && params.search.trim()) query.append('search', params.search.trim());
+    if (params?.status && params.status !== 'ALL') query.append('status', params.status);
+
+    const url = `/api/management/blocks${query.toString() ? `?${query.toString()}` : ''}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch blocks.');
+    }
+    return data;
+  },
+
+  async getBlock(id: string): Promise<{ success: boolean; block: Block }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/blocks/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to fetch block.');
+    }
+    return data;
+  },
+
+  async createBlock(dto: CreateBlockDto): Promise<{ success: boolean; message: string; block: Block }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/blocks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to create block.');
+    }
+    return data;
+  },
+
+  async updateBlock(id: string, dto: UpdateBlockDto): Promise<{ success: boolean; message: string; block: Block }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/blocks/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update block.');
+    }
+    return data;
+  },
+
+  async deleteBlock(id: string): Promise<{ success: boolean; message: string; deletedId?: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/blocks/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to delete block.');
+    }
+    return data;
+  },
 };
+
+export interface Block {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  status: 'ACTIVE' | 'INACTIVE';
+  activeResidents?: number;
+  totalRooms?: number;
+  totalAllocations?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBlockDto {
+  name: string;
+  code: string;
+  description?: string | null;
+  status?: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface UpdateBlockDto {
+  name?: string;
+  code?: string;
+  description?: string | null;
+  status?: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface BlocksResponse {
+  success: boolean;
+  count: number;
+  blocks: Block[];
+  message?: string;
+}

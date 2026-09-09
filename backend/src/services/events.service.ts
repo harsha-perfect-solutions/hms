@@ -59,6 +59,19 @@ export interface BiometricDomainEvent {
   timestamp: string;
 }
 
+export type BlockEventType =
+  | 'BLOCK_CREATED'
+  | 'BLOCK_UPDATED'
+  | 'BLOCK_STATUS_CHANGED'
+  | 'BLOCK_DELETED';
+
+export interface BlockDomainEvent {
+  type: BlockEventType;
+  blockId: string;
+  code?: string;
+  timestamp: string;
+}
+
 
 class ComplaintEventsService extends EventEmitter {
   // Map of studentId -> Set of active SSE Response connections

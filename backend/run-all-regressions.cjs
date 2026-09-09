@@ -12,6 +12,7 @@ const suites = [
   { name: 'Notifications', script: 'test-notifications-api.cjs', expected: 20 },
   { name: 'Biometric Tracking', script: 'test-biometric-api.cjs', expected: 24 },
   { name: 'Management Dashboard', script: 'test-management-dashboard-api.cjs', expected: 18 },
+  { name: 'Block Management', script: 'test-block-management-api.cjs', expected: 15 },
 ];
 
 console.log('====================================================');

@@ -11,8 +11,12 @@ import {
 import { managementService } from '../services/management.service';
 import { complaintEventsService } from '../services/events.service';
 import { loginRateLimiter } from '../middleware/rate-limiter';
+import blockRoutes from './block.routes';
 
 const router = Router();
+
+// Sub-routers
+router.use('/blocks', blockRoutes);
 
 /**
  * POST /api/management/auth/login

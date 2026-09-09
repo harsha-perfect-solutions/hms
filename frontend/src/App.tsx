@@ -15,11 +15,12 @@ import { DashboardHeader } from './components/DashboardHeader';
 import { PlaceholderModule } from './components/PlaceholderModule';
 import { apiService } from './services/api';
 
-// Step 10 Management Components
+// Step 10 & 11 Management Components
 import { ManagementSidebar } from './components/ManagementSidebar';
 import { ManagementHeader } from './components/ManagementHeader';
 import { ManagementLoginPage } from './pages/ManagementLoginPage';
 import { ManagementDashboardPage } from './pages/ManagementDashboardPage';
+import { BlockManagementPage } from './pages/BlockManagementPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -171,6 +172,8 @@ const AuthenticatedManagementApp: React.FC<{
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(true);
   const [refreshHandler, setRefreshHandler] = useState<(() => void) | null>(null);
 
+  const isBlockPage = currentPath === '/management/blocks';
+
   return (
     <div className="portal-layout management-layout">
       {/* Management Sidebar with all 13 modules */}
@@ -192,18 +195,28 @@ const AuthenticatedManagementApp: React.FC<{
           onRefresh={refreshHandler || undefined}
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
+          pageTitle={isBlockPage ? 'Block Management' : 'Management Dashboard'}
+          pageSubtitle={
+            isBlockPage
+              ? 'Configure, organize, and monitor hostel residential blocks and zones.'
+              : 'A concise operational overview of hostel activity.'
+          }
         />
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          <ManagementDashboardPage
-            onModuleNotice={(name) => setModuleNotice(name)}
-            onRefreshStateChange={(refreshing, connected) => {
-              setIsRefreshing(refreshing);
-              setIsRealtimeConnected(connected);
-            }}
-            registerRefreshHandler={(fn) => setRefreshHandler(() => fn)}
-          />
+          {isBlockPage ? (
+            <BlockManagementPage onNavigate={onNavigate} />
+          ) : (
+            <ManagementDashboardPage
+              onModuleNotice={(name) => setModuleNotice(name)}
+              onRefreshStateChange={(refreshing, connected) => {
+                setIsRefreshing(refreshing);
+                setIsRealtimeConnected(connected);
+              }}
+              registerRefreshHandler={(fn) => setRefreshHandler(() => fn)}
+            />
+          )}
         </main>
       </div>
 

@@ -1,0 +1,167 @@
+import React, { useEffect } from 'react';
+import {
+  LayoutDashboard,
+  Building,
+  BedDouble,
+  UtensilsCrossed,
+  Footprints,
+  Wrench,
+  History,
+  ClipboardList,
+  Users,
+  Receipt,
+  FileText,
+  Cpu,
+  Bell,
+  LogOut,
+  X,
+  ShieldCheck,
+  Lock,
+} from 'lucide-react';
+import { APP_BRANDING } from '../config/branding';
+
+export interface ManagementNavItem {
+  id: string;
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  isAvailable: boolean;
+}
+
+export const MANAGEMENT_NAV_ITEMS: ManagementNavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', path: '/management/dashboard', icon: LayoutDashboard, isAvailable: true },
+  { id: 'blocks', label: 'Block Management', path: '/management/blocks', icon: Building, isAvailable: false },
+  { id: 'rooms', label: 'Room Allocation', path: '/management/rooms', icon: BedDouble, isAvailable: false },
+  { id: 'mess', label: 'Mess Management', path: '/management/mess', icon: UtensilsCrossed, isAvailable: false },
+  { id: 'outings', label: 'Outing Approvals', path: '/management/outings', icon: Footprints, isAvailable: false },
+  { id: 'maintenance', label: 'Maintenance', path: '/management/maintenance', icon: Wrench, isAvailable: false },
+  { id: 'logs', label: 'Log History', path: '/management/logs', icon: History, isAvailable: false },
+  { id: 'outing-logs', label: 'Outing Log History', path: '/management/outing-logs', icon: ClipboardList, isAvailable: false },
+  { id: 'users', label: 'User Management', path: '/management/users', icon: Users, isAvailable: false },
+  { id: 'billing', label: 'Guest Billing', path: '/management/billing', icon: Receipt, isAvailable: false },
+  { id: 'leaves', label: 'Leaves & Suspension', path: '/management/leaves', icon: FileText, isAvailable: false },
+  { id: 'devices', label: 'Device Management', path: '/management/devices', icon: Cpu, isAvailable: false },
+  { id: 'notifications', label: 'Notifications', path: '/management/notifications', icon: Bell, isAvailable: false },
+];
+
+interface ManagementSidebarProps {
+  currentPath: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onNavigate: (path: string) => void;
+  onLogout: () => void;
+  onDisabledNotice?: (label: string) => void;
+}
+
+export const ManagementSidebar: React.FC<ManagementSidebarProps> = ({
+  currentPath,
+  isOpen,
+  onClose,
+  onNavigate,
+  onLogout,
+  onDisabledNotice,
+}) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  const handleItemClick = (item: ManagementNavItem) => {
+    if (!item.isAvailable) {
+      if (onDisabledNotice) {
+        onDisabledNotice(item.label);
+      }
+      return;
+    }
+    onNavigate(item.path);
+    onClose();
+  };
+
+  return (
+    <>
+      {isOpen && (
+        <div
+          className="drawer-backdrop"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`dashboard-sidebar management-sidebar ${isOpen ? 'drawer-open' : ''}`}
+        aria-label="Management Navigation"
+      >
+        {/* Sidebar Header with Institutional Branding */}
+        <div className="sidebar-header management-sidebar-header">
+          <div className="sidebar-brand-group">
+            <div className="sidebar-brand-icon management-brand-icon" aria-hidden="true">
+              <ShieldCheck size={22} />
+            </div>
+            <div className="sidebar-brand-text">
+              <span className="sidebar-brand-name">{APP_BRANDING.appName}</span>
+              <span className="sidebar-brand-sub management-portal-badge">ADMIN PORTAL</span>
+            </div>
+          </div>
+
+          <button
+            className="mobile-close-btn"
+            onClick={onClose}
+            aria-label="Close navigation menu"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* 13 Management Navigation Items */}
+        <nav className="sidebar-nav management-sidebar-nav" aria-label="Management Modules">
+          {MANAGEMENT_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.isAvailable && (currentPath === item.path || (item.path === '/management/dashboard' && currentPath === '/management'));
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleItemClick(item)}
+                className={`sidebar-nav-item management-nav-item ${isActive ? 'active' : ''} ${!item.isAvailable ? 'disabled-nav-item' : ''}`}
+                aria-current={isActive ? 'page' : undefined}
+                aria-disabled={!item.isAvailable}
+                title={!item.isAvailable ? `${item.label} (Scheduled for future module)` : item.label}
+              >
+                <span className="nav-item-icon" aria-hidden="true">
+                  <Icon size={18} />
+                </span>
+                <span className="nav-item-label">{item.label}</span>
+                {!item.isAvailable && (
+                  <span className="nav-item-badge disabled-pill">
+                    <Lock size={10} style={{ marginRight: 2 }} />
+                    Soon
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Management Logout */}
+        <div className="sidebar-footer management-sidebar-footer">
+          <button
+            type="button"
+            onClick={onLogout}
+            className="sidebar-logout-btn management-logout-btn"
+            aria-label="Log out of management portal"
+          >
+            <LogOut size={18} aria-hidden="true" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
+    </>
+  );
+};

@@ -1,0 +1,147 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Menu, LogOut, ChevronDown, RotateCw, Radio, Shield } from 'lucide-react';
+import { ManagementUser } from '../services/api';
+
+interface ManagementHeaderProps {
+  user: ManagementUser | null;
+  onToggleMobileMenu: () => void;
+  onLogout: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  isRealtimeConnected?: boolean;
+}
+
+export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
+  user,
+  onToggleMobileMenu,
+  onLogout,
+  onRefresh,
+  isRefreshing = false,
+  isRealtimeConnected = true,
+}) => {
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'WM';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const formatRole = (role?: string) => {
+    if (!role) return 'Warden';
+    return role.replace(/_/g, ' ');
+  };
+
+  return (
+    <header className="main-header management-header" aria-label="Management Dashboard Top Bar">
+      <div className="header-left-section">
+        <button
+          type="button"
+          onClick={onToggleMobileMenu}
+          className="mobile-hamburger-btn"
+          aria-label="Open management menu"
+        >
+          <Menu size={22} />
+        </button>
+
+        <div className="header-title-wrapper">
+          <h1 className="header-page-title">Management Dashboard</h1>
+          <p className="header-page-subtitle">A concise operational overview of hostel activity.</p>
+        </div>
+      </div>
+
+      <div className="header-right-section">
+        {/* Real-time SSE Pulse Badge */}
+        <div
+          className={`realtime-badge ${isRealtimeConnected ? 'connected' : 'disconnected'}`}
+          title={isRealtimeConnected ? 'Authoritative real-time SSE stream connected' : 'Connecting to real-time events...'}
+        >
+          <Radio size={13} className={isRealtimeConnected ? 'pulse-icon' : ''} />
+          <span className="realtime-text">{isRealtimeConnected ? 'Live SSE' : 'Connecting'}</span>
+        </div>
+
+        {/* Sync / Refresh Button */}
+        {onRefresh && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="sync-btn"
+            title="Refresh dashboard metrics from PostgreSQL"
+            aria-label="Refresh metrics"
+          >
+            <RotateCw size={16} className={isRefreshing ? 'spin-anim' : ''} />
+            <span className="sync-btn-label">Sync</span>
+          </button>
+        )}
+
+        {/* Management User Profile Menu */}
+        <div className="profile-dropdown-wrapper" ref={profileMenuRef}>
+          <button
+            type="button"
+            onClick={() => setProfileOpen((prev) => !prev)}
+            className="profile-trigger-btn management-profile-trigger"
+            aria-expanded={profileOpen}
+            aria-haspopup="true"
+            aria-label="Open management profile menu"
+          >
+            <div className="avatar-circle management-avatar-circle">
+              {getInitials(user?.name)}
+            </div>
+            <div className="profile-text-desktop">
+              <span className="profile-name">{user?.name || 'Administrator'}</span>
+              <span className="profile-roll management-role-tag">{formatRole(user?.role)}</span>
+            </div>
+            <ChevronDown size={14} className="profile-chevron" />
+          </button>
+
+          {profileOpen && (
+            <div className="profile-dropdown-menu" role="menu">
+              <div className="dropdown-user-info">
+                <div className="dropdown-user-name">{user?.name}</div>
+                <div className="dropdown-user-email">{user?.jntuNo}</div>
+                <div className="dropdown-user-badge role-badge-admin">
+                  <Shield size={12} style={{ marginRight: 4 }} />
+                  {formatRole(user?.role)}
+                </div>
+                {user?.blockName && (
+                  <div className="dropdown-user-sub">Assigned: {user.blockName}</div>
+                )}
+              </div>
+
+              <div className="dropdown-menu-divider" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(false);
+                  onLogout();
+                }}
+                className="dropdown-menu-item dropdown-logout-item"
+                role="menuitem"
+              >
+                <LogOut size={16} />
+                <span>Log Out</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};

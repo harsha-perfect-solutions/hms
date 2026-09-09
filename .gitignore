@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+
+# Environment secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Vite / React cache
+.vite/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Prisma
+prisma/migrations/.env
+
+# Uploaded complaint attachments (runtime data, not source)
+backend/uploads/
+
+# Scratch / dev utility scripts (not part of the deployable app)
+backend/scratch_audit.cjs
+backend/check-*.cjs
+backend/verify-*.cjs
+backend/export-*.cjs
+backend/import-*.cjs
+
+# SQLite dev file (PostgreSQL is the production database)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/sqlite-backup-data.json

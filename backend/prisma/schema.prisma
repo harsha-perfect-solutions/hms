@@ -1,0 +1,197 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Student {
+  id               String          @id @default(uuid())
+  jntuNo           String          @unique
+  passwordHash     String
+  name             String
+  email            String          @unique
+  role             String          @default("STUDENT")
+  allocationStatus String          @default("NOT_ALLOCATED") // ALLOCATED, PENDING, NOT_ALLOCATED
+  blockName        String?
+  floorName        String?
+  roomNumber       String?
+  bedNumber        String?
+  roomType         String?         // e.g. "Non-AC Room (2 Sharing)"
+  roomCapacity     Int             @default(2)
+  allocatedAt      DateTime?       @default(now())
+  monthlyOutingMax Int             @default(5)
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  sessions         Session[]
+  outings          OutingRequest[]
+  messTokens       MessToken[]
+  leaves           LeaveRequest[]
+  suspensions      Suspension[]
+  complaints       Complaint[]
+  attachments      Attachment[]
+  notifications    Notification[]
+  activityLogs     ActivityLog[]
+  biometricEvents  BiometricEvent[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model OutingRequest {
+  id               String    @id @default(uuid())
+  requestNumber    String?   @unique
+  studentId        String
+  student          Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  passType         String    @default("LOCAL_OUTING") // LOCAL_OUTING, EMERGENCY, NIGHT_OUT
+  destination      String?
+  purpose          String
+  emergencyContact String?
+  remarks          String?
+  outDate          DateTime
+  returnDate       DateTime
+  actualExitTime   DateTime?
+  actualReturnTime DateTime?
+  rejectionReason  String?
+  status           String    @default("PENDING") // PENDING, APPROVED, OUT, RETURNED, REJECTED, CANCELLED
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model MessToken {
+  id          String   @id @default(uuid())
+  tokenNumber String?  @unique
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date        String   // YYYY-MM-DD
+  mealType    String   // BREAKFAST, LUNCH, SNACKS, DINNER
+  status      String   @default("BOOKED") // BOOKED, CONSUMED, CANCELLED
+  createdAt   DateTime @default(now())
+
+  @@unique([studentId, date, mealType])
+}
+
+model LeaveRequest {
+  id               String    @id @default(uuid())
+  requestNumber    String?   @unique
+  studentId        String
+  student          Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  leaveType        String    // HOME_LEAVE, MEDICAL, ACADEMIC, EMERGENCY, SPECIAL_LEAVE
+  destination      String?
+  startDate        DateTime
+  endDate          DateTime
+  reason           String
+  emergencyContact String?
+  remarks          String?
+  rejectionReason  String?
+  approvedAt       DateTime?
+  approvedBy       String?
+  status           String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Suspension {
+  id          String    @id @default(uuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  reason      String
+  startDate   DateTime
+  endDate     DateTime
+  status      String    @default("ACTIVE") // ACTIVE, LIFTED, EXPIRED
+  createdBy   String    @default("HOSTEL_ADMIN")
+  remarks     String?
+  liftedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+
+model Notification {
+  id          String    @id @default(uuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  type        String    @default("INFO") // INFO, WARNING, SUCCESS
+  category    String    @default("SYSTEM") // OUTING, LEAVE, COMPLAINT, MESS, SUSPENSION, ROOM, SYSTEM
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  entityId    String?
+  link        String?
+  metadata    String?
+  createdAt   DateTime  @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  actionType  String   // OUTING, MESS, LEAVE, ROOM, LOGIN, COMPLAINT
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model Complaint {
+  id              String       @id @default(uuid())
+  ticketNumber    String?      @unique
+  studentId       String
+  student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  category        String       // ROOM, ELECTRICAL, PLUMBING, CLEANING, FURNITURE, WIFI, MESS, SECURITY, OTHER
+  title           String
+  description     String
+  location        String?
+  priority        String       @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status          String       @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CANCELLED, REJECTED
+  resolutionNotes String?
+  resolvedAt      DateTime?
+  comments        String?      // JSON-serialized follow-up comments array
+  attachments     Attachment[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Attachment {
+  id          String    @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fileName    String
+  storedName  String
+  mimeType    String
+  fileSize    Int
+  createdAt   DateTime  @default(now())
+}
+
+model BiometricEvent {
+  id                 String   @id @default(uuid())
+  studentId          String
+  student            Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  eventType          String   // ENTRY, EXIT
+  direction          String   @default("IN") // IN, OUT
+  verificationStatus String   @default("VERIFIED") // VERIFIED, REJECTED
+  eventTimestamp     DateTime @default(now())
+  source             String   @default("BIOMETRIC_DEVICE") // BIOMETRIC_DEVICE, RFID, MANUAL_GATE, SYSTEM
+  gate               String?  // Main Gate, Hostel Gate A, Mess Turnstile, North Gate
+  deviceId           String?  // DEV-GATE-01, DEV-GATE-02
+  deviceLabel        String?  // Turnstile #1 - Main Gate
+  rejectionReason    String?  // Fingerprint mismatch, Device timeout, etc.
+  metadata           String?  // JSON stringified optional metadata
+  createdAt          DateTime @default(now())
+
+  @@index([studentId])
+  @@index([eventTimestamp])
+  @@index([studentId, eventTimestamp])
+  @@index([eventType])
+  @@index([verificationStatus])
+}

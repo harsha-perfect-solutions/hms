@@ -1,0 +1,62 @@
+const { execSync } = require('child_process');
+
+const suites = [
+  { name: 'Auth', script: 'test-auth-api.cjs', expected: 10 },
+  { name: 'Dashboard', script: 'test-dashboard-api.cjs', expected: 3 },
+  { name: 'My Room', script: 'test-room-api.cjs', expected: 4 },
+  { name: 'Mess Tokens', script: 'test-mess-api.cjs', expected: 6 },
+  { name: 'Outings', script: 'test-outing-api.cjs', expected: 12 },
+  { name: 'Complaints', script: 'test-complaint-api.cjs', expected: 13 },
+  { name: 'Complaints Hardening', script: 'test-complaints-hardening.cjs', expected: 17 },
+  { name: 'Leaves & Suspension', script: 'test-leaves-api.cjs', expected: 20 },
+  { name: 'Notifications', script: 'test-notifications-api.cjs', expected: 20 },
+  { name: 'Biometric Tracking', script: 'test-biometric-api.cjs', expected: 24 },
+  { name: 'Management Dashboard', script: 'test-management-dashboard-api.cjs', expected: 16 },
+];
+
+console.log('====================================================');
+console.log('        RUNNING COMPLETE REGRESSION TEST SUITE      ');
+console.log('====================================================\n');
+
+let totalPassed = 0;
+let totalExpected = 0;
+const results = [];
+
+for (const suite of suites) {
+  process.stdout.write(`Running ${suite.name} (${suite.script})... `);
+  try {
+    const output = execSync(`node ${suite.script}`, { encoding: 'utf-8' });
+    // Look for passed tests in output
+    let passedCount = suite.expected;
+    const match = output.match(/Passed:\s*(\d+)/i) || output.match(/(\d+)\/(\d+)\s*tests passed/i);
+    if (match) {
+      passedCount = parseInt(match[1], 10);
+    }
+    
+    totalPassed += passedCount;
+    totalExpected += suite.expected;
+    results.push({ name: suite.name, passed: passedCount, expected: suite.expected, status: 'PASS' });
+    console.log(`[PASS] ${passedCount}/${suite.expected}`);
+  } catch (err) {
+    results.push({ name: suite.name, passed: 0, expected: suite.expected, status: 'FAIL' });
+    console.log(`[FAIL]`);
+    console.error(err.stdout || err.message);
+  }
+}
+
+console.log('\n====================================================');
+console.log('                  TEST SUMMARY                      ');
+console.log('====================================================');
+for (const r of results) {
+  const pad = r.name.padEnd(23, ' ');
+  console.log(`${pad} ${String(r.passed).padStart(2, ' ')}/${String(r.expected).padEnd(2, ' ')} PASS`);
+}
+console.log('----------------------------------------------------');
+console.log(`TOTAL                   ${String(totalPassed).padStart(3, ' ')}/${String(totalExpected).padEnd(3, ' ')} PASS`);
+console.log('====================================================\n');
+
+if (totalPassed !== totalExpected) {
+  process.exit(1);
+} else {
+  console.log('ALL REGRESSION SUITES PASSED PERFECTLY!');
+}

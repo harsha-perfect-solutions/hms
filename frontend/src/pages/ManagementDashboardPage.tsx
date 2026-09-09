@@ -25,14 +25,19 @@ import {
 
 interface ManagementDashboardPageProps {
   onModuleNotice?: (moduleName: string) => void;
+  onRefreshStateChange?: (isRefreshing: boolean, isConnected: boolean) => void;
+  registerRefreshHandler?: (refreshFn: () => void) => void;
 }
 
 export const ManagementDashboardPage: React.FC<ManagementDashboardPageProps> = ({
   onModuleNotice,
+  onRefreshStateChange,
+  registerRefreshHandler,
 }) => {
   const [data, setData] = useState<ManagementDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState<'activity' | 'biometrics'>('activity');
@@ -42,6 +47,7 @@ export const ManagementDashboardPage: React.FC<ManagementDashboardPageProps> = (
       setIsLoading(true);
     } else {
       setIsRefreshing(true);
+      onRefreshStateChange?.(true, isRealtimeConnected);
     }
     setError(null);
 
@@ -55,20 +61,34 @@ export const ManagementDashboardPage: React.FC<ManagementDashboardPageProps> = (
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+      onRefreshStateChange?.(false, isRealtimeConnected);
     }
-  }, []);
+  }, [onRefreshStateChange, isRealtimeConnected]);
 
   useEffect(() => {
     fetchDashboardData(false);
   }, [fetchDashboardData]);
 
+  // Register manual refresh handler with parent layout
+  useEffect(() => {
+    if (registerRefreshHandler) {
+      registerRefreshHandler(() => fetchDashboardData(true));
+    }
+  }, [registerRefreshHandler, fetchDashboardData]);
+
   // Real-time SSE: Domain change → DB → SSE → Refetch → UI
   useEffect(() => {
-    const unsubscribe = managementApiService.subscribeToEvents((_event) => {
-      fetchDashboardData(true);
-    });
+    const unsubscribe = managementApiService.subscribeToEvents(
+      (_event) => {
+        fetchDashboardData(true);
+      },
+      (connected) => {
+        setIsRealtimeConnected(connected);
+        onRefreshStateChange?.(isRefreshing, connected);
+      }
+    );
     return () => unsubscribe();
-  }, [fetchDashboardData]);
+  }, [fetchDashboardData, onRefreshStateChange, isRefreshing]);
 
   const handleAttentionClick = (item: AttentionItem) => {
     if (!item.isAvailable && onModuleNotice) {

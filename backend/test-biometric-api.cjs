@@ -367,6 +367,7 @@ async function testBiometricApi() {
   assert.ok(ssePayload.includes('BIOMETRIC_EVENT_RECORDED'));
   console.log('[PASS] 24. Real-time SSE delivery verified for authenticated student stream');
 
+  await prisma.outingRequest.delete({ where: { id: outingId } }).catch(() => {});
   await prisma.$disconnect();
 
   console.log('\n====================================================');

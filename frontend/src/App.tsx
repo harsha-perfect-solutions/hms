@@ -167,6 +167,9 @@ const AuthenticatedManagementApp: React.FC<{
   const { user } = useManagementAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moduleNotice, setModuleNotice] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(true);
+  const [refreshHandler, setRefreshHandler] = useState<(() => void) | null>(null);
 
   return (
     <div className="portal-layout management-layout">
@@ -186,12 +189,20 @@ const AuthenticatedManagementApp: React.FC<{
           user={user}
           onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
           onLogout={onLogout}
+          onRefresh={refreshHandler || undefined}
+          isRefreshing={isRefreshing}
+          isRealtimeConnected={isRealtimeConnected}
         />
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
           <ManagementDashboardPage
             onModuleNotice={(name) => setModuleNotice(name)}
+            onRefreshStateChange={(refreshing, connected) => {
+              setIsRefreshing(refreshing);
+              setIsRealtimeConnected(connected);
+            }}
+            registerRefreshHandler={(fn) => setRefreshHandler(() => fn)}
           />
         </main>
       </div>

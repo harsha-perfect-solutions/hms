@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { authenticateStudent, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { prisma } from '../services/prisma.service';
 import { notificationService } from '../services/notification.service';
+import { complaintEventsService } from '../services/events.service';
 
 const router = Router();
 
@@ -288,6 +289,13 @@ router.post('/outing-requests', authenticateStudent, async (req: AuthenticatedRe
       link: '/outing-requests',
     }).catch((err) => console.error('Error creating outing notification:', err));
 
+    // Real-time notification to management dashboard
+    complaintEventsService.emitManagementDashboardUpdate({
+      type: 'OUTING_CREATED',
+      timestamp: new Date().toISOString(),
+      details: { outingId: newRequest.id, studentId },
+    });
+
     res.status(201).json({
       success: true,
       message: 'Outing request submitted successfully.',
@@ -375,6 +383,13 @@ router.post('/outing-requests/:id/cancel', authenticateStudent, async (req: Auth
       entityId: updated.id,
       link: '/outing-requests',
     }).catch((err) => console.error('Error creating outing cancel notification:', err));
+
+    // Real-time notification to management dashboard
+    complaintEventsService.emitManagementDashboardUpdate({
+      type: 'OUTING_CANCELLED',
+      timestamp: new Date().toISOString(),
+      details: { outingId: updated.id, studentId },
+    });
 
     res.status(200).json({
       success: true,

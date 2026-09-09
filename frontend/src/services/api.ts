@@ -1678,10 +1678,22 @@ export const managementApiService = {
     return { success: data.success, ...data.data } as ManagementDashboardData;
   },
 
-  subscribeToEvents(onEvent: (event: any) => void): () => void {
+  subscribeToEvents(
+    onEvent: (event: any) => void,
+    onConnectionChange?: (connected: boolean) => void
+  ): () => void {
     let eventSource: EventSource | null = null;
     let reconnectTimeout: any = null;
     let isClosed = false;
+
+    const handleEvent = (e: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(e.data);
+        onEvent(parsed);
+      } catch (err) {
+        console.error('Error parsing SSE management update:', err);
+      }
+    };
 
     const connect = () => {
       if (isClosed) return;
@@ -1691,16 +1703,20 @@ export const managementApiService = {
 
         eventSource = new EventSource(`/api/management/events-stream?token=${encodeURIComponent(token)}`);
 
-        eventSource.addEventListener('management_dashboard_update', (e) => {
-          try {
-            const parsed = JSON.parse(e.data);
-            onEvent(parsed);
-          } catch (err) {
-            console.error('Error parsing SSE management update:', err);
-          }
+        eventSource.onopen = () => {
+          onConnectionChange?.(true);
+        };
+
+        eventSource.addEventListener('connected', () => {
+          onConnectionChange?.(true);
         });
 
+        eventSource.addEventListener('management_dashboard_event', handleEvent);
+        eventSource.addEventListener('management_dashboard_update', handleEvent);
+        eventSource.onmessage = handleEvent;
+
         eventSource.onerror = () => {
+          onConnectionChange?.(false);
           if (eventSource) {
             eventSource.close();
             eventSource = null;
@@ -1711,6 +1727,7 @@ export const managementApiService = {
         };
       } catch (err) {
         console.error('Failed to connect to management SSE stream:', err);
+        onConnectionChange?.(false);
         if (!isClosed) {
           reconnectTimeout = setTimeout(connect, 5000);
         }
@@ -1721,6 +1738,7 @@ export const managementApiService = {
 
     return () => {
       isClosed = true;
+      onConnectionChange?.(false);
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (eventSource) {
         eventSource.close();

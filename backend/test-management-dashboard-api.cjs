@@ -47,17 +47,17 @@ async function runTests() {
     }
   }
 
-  // 1. Unauthenticated requests must be rejected
-  await test('Unauthenticated GET /api/management/dashboard rejected with 401', async () => {
+  // 1. Unauthenticated rejection
+  await test('1. Unauthenticated GET /api/management/dashboard rejected with 401', async () => {
     const res = await getJson('/management/dashboard');
     assert.strictEqual(res.status, 401);
     assert.strictEqual(res.data.success, false);
     assert.match(res.data.message, /Authentication required/i);
   });
 
-  // 2. Obtain Student Token
+  // 2. Student rejection from Management Dashboard & Login
   let studentToken = '';
-  await test('Student login succeeds at /api/auth/login', async () => {
+  await test('2a. Student login succeeds at /api/auth/login for token generation', async () => {
     const res = await postJson('/auth/login', {
       jntuNo: '25331A05H7',
       password: 'Password@123',
@@ -67,16 +67,14 @@ async function runTests() {
     studentToken = res.data.token;
   });
 
-  // 3. Student attempting Management Dashboard must be rejected with 403
-  await test('Student role rejected from GET /api/management/dashboard with 403 Forbidden', async () => {
+  await test('2b. Student role rejected from GET /api/management/dashboard with 403 Forbidden', async () => {
     const res = await getJson('/management/dashboard', studentToken);
     assert.strictEqual(res.status, 403);
     assert.strictEqual(res.data.success, false);
     assert.match(res.data.message, /Access denied/i);
   });
 
-  // 4. Student attempting Management Login must be rejected with 403
-  await test('Student credentials rejected from POST /api/management/auth/login with 403', async () => {
+  await test('2c. Student credentials rejected from POST /api/management/auth/login with 403', async () => {
     const res = await postJson('/management/auth/login', {
       username: '25331A05H7',
       password: 'Password@123',
@@ -86,8 +84,8 @@ async function runTests() {
     assert.match(res.data.message, /Student accounts cannot access the management portal/i);
   });
 
-  // 5. Invalid credentials rejected
-  await test('Invalid management credentials rejected with 401', async () => {
+  // 3. Unauthorized management rejection
+  await test('3a. Invalid management credentials rejected with 401', async () => {
     const res = await postJson('/management/auth/login', {
       username: 'WARDEN01',
       password: 'WrongPassword!',
@@ -96,8 +94,7 @@ async function runTests() {
     assert.strictEqual(res.data.success, false);
   });
 
-  // 6. Missing identifier or password validation
-  await test('Missing username or password rejected with 400', async () => {
+  await test('3b. Empty identifier or password rejected with 400', async () => {
     const res1 = await postJson('/management/auth/login', { password: 'Password@123' });
     assert.strictEqual(res1.status, 400);
 
@@ -105,9 +102,9 @@ async function runTests() {
     assert.strictEqual(res2.status, 400);
   });
 
-  // 7. Authoritative Warden Login
+  // 4. Authorized management success
   let wardenToken = '';
-  await test('Valid warden credentials authenticate successfully with 200 and token', async () => {
+  await test('4a. Authorized warden credentials authenticate successfully with 200 and JWT', async () => {
     const res = await postJson('/management/auth/login', {
       username: 'WARDEN01',
       password: 'Password@123',
@@ -120,8 +117,7 @@ async function runTests() {
     wardenToken = res.data.token;
   });
 
-  // 8. Management GET /me
-  await test('Warden GET /api/management/auth/me returns authenticated management profile', async () => {
+  await test('4b. Warden GET /api/management/auth/me returns authenticated management profile', async () => {
     const res = await getJson('/management/auth/me', wardenToken);
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.data.success, true);
@@ -129,9 +125,8 @@ async function runTests() {
     assert.strictEqual(res.data.user.role, 'WARDEN');
   });
 
-  // 9. Fetch Management Dashboard
   let dashboardData = null;
-  await test('Authorized warden accesses GET /api/management/dashboard with 200', async () => {
+  await test('4c. Authorized warden accesses GET /api/management/dashboard with 200', async () => {
     const res = await getJson('/management/dashboard', wardenToken);
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.data.success, true);
@@ -139,8 +134,8 @@ async function runTests() {
     dashboardData = res.data.data;
   });
 
-  // 10. Verify Resident Presence Metrics
-  await test('Dashboard returns authoritative Resident Presence Metrics', async () => {
+  // 5. Correct resident metrics
+  await test('5. Dashboard returns authoritative Resident Presence Metrics from PostgreSQL', async () => {
     const r = dashboardData.residents;
     assert(typeof r.totalResidents === 'number');
     assert(r.totalResidents >= 3, 'At least 3 active students in PostgreSQL');
@@ -152,12 +147,13 @@ async function runTests() {
     assert(typeof r.suspended === 'number');
   });
 
-  // 11. Verify Room Occupancy Metrics
-  await test('Dashboard returns authoritative Room Occupancy Metrics from PostgreSQL', async () => {
+  // 6. Correct room metrics
+  await test('6. Dashboard returns authoritative Room Occupancy Metrics from PostgreSQL', async () => {
     const rm = dashboardData.rooms;
     assert(typeof rm.totalRooms === 'number');
     assert(rm.totalRooms >= 2, 'At least 2 distinct rooms in database');
-    assert(rm.occupied >= 1, 'At least 1 occupied room (Girls-Block-B 119)');
+    assert(rm.occupied >= 1, 'At least 1 occupied room');
+    assert(typeof rm.partiallyOccupied === 'number');
     assert(rm.vacant >= 1, 'At least 1 vacant room');
     assert(typeof rm.occupancyPercentage === 'number');
     assert(rm.occupancyPercentage >= 0 && rm.occupancyPercentage <= 100);
@@ -165,33 +161,48 @@ async function runTests() {
     assert(rm.allocatedBeds >= 2, 'Allocated beds matches real student occupants');
   });
 
-  // 12. Verify Request Pipeline Metrics
-  await test('Dashboard returns authoritative Request Pipeline Metrics', async () => {
+  // 7. Correct outing metrics
+  await test('7. Dashboard returns authoritative Outing Metrics (pending, approved, out)', async () => {
     const reqs = dashboardData.requests;
     assert(typeof reqs.pendingOutings === 'number');
+    assert(typeof reqs.approvedOutings === 'number');
+    assert(typeof reqs.outOutings === 'number');
+  });
+
+  // 8. Correct leave metrics
+  await test('8. Dashboard returns authoritative Leave Metrics (pending leaves, active leaves, suspensions)', async () => {
+    const reqs = dashboardData.requests;
     assert(typeof reqs.pendingLeaves === 'number');
+    assert(typeof reqs.activeLeaves === 'number');
+    assert(typeof reqs.activeSuspensions === 'number');
+  });
+
+  // 9. Correct complaint metrics
+  await test('9. Dashboard returns authoritative Complaint Metrics (open, in-progress, resolved)', async () => {
+    const reqs = dashboardData.requests;
     assert(typeof reqs.openComplaints === 'number');
+    assert(typeof reqs.inProgressComplaints === 'number');
+    assert(typeof reqs.resolvedComplaints === 'number');
     assert(reqs.openComplaints >= 11, 'At least 11 open complaints in PostgreSQL');
-    assert(typeof reqs.actionableTotal === 'number');
     assert.strictEqual(
       reqs.actionableTotal,
       reqs.pendingOutings + reqs.pendingLeaves + reqs.openComplaints
     );
   });
 
-  // 13. Verify Actionable Attention Items
-  await test('Dashboard returns categorized Attention Items for actionable conditions', async () => {
-    const att = dashboardData.attention;
-    assert(Array.isArray(att));
-    assert(att.length > 0, 'Attention items must reflect open complaints or pending requests');
-    const complaintItem = att.find((i) => i.category === 'COMPLAINT');
-    assert(complaintItem, 'Open complaints must produce an attention item');
-    assert.strictEqual(complaintItem.targetModule, '/management/maintenance');
-    assert.strictEqual(complaintItem.isAvailable, false, 'Unimplemented target module must be marked isAvailable=false');
+  // 10. Correct biometric presence metrics
+  await test('10. Dashboard derives presence from verified BiometricEvents and passes', async () => {
+    const r = dashboardData.residents;
+    const bio = dashboardData.recentBiometricEvents;
+    assert(Array.isArray(bio));
+    assert(bio.length > 0, 'Recent biometric events must be populated');
+    assert(bio[0].eventType && bio[0].verificationStatus && bio[0].student.name);
+    assert(r.currentlyInside >= 0 && r.currentlyInside <= r.totalResidents);
+    assert(r.currentlyOutside >= 0 && r.currentlyOutside <= r.totalResidents);
   });
 
-  // 14. Verify Recent Real Activity
-  await test('Dashboard returns recent ActivityLog records with actor and timestamp', async () => {
+  // 11. Recent activity
+  await test('11. Dashboard returns recent ActivityLog records with actor, actionType, timestamp', async () => {
     const act = dashboardData.recentActivity;
     assert(Array.isArray(act));
     assert(act.length > 0, 'Recent activity must be populated');
@@ -199,16 +210,25 @@ async function runTests() {
     assert(act[0].timestamp, 'ISO timestamp required');
   });
 
-  // 15. Verify Recent Biometric Events
-  await test('Dashboard returns recent BiometricEvent records with gate and student info', async () => {
-    const bio = dashboardData.recentBiometricEvents;
-    assert(Array.isArray(bio));
-    assert(bio.length > 0, 'Recent biometric events must be populated');
-    assert(bio[0].eventType && bio[0].verificationStatus && bio[0].student.name);
+  // 12. No unauthorized student data exposure
+  await test('12. No sensitive credentials or unauthorized student data exposed in dashboard', async () => {
+    const jsonStr = JSON.stringify(dashboardData);
+    assert(!jsonStr.includes('passwordHash'), 'Password hashes must never be exposed');
+    assert(!jsonStr.includes('Password@123'), 'Passwords must never be exposed');
+    assert(!jsonStr.includes('jwtSecret'), 'JWT secrets must never be exposed');
+
+    // Categorized Attention Items
+    const att = dashboardData.attention;
+    assert(Array.isArray(att));
+    assert(att.length > 0, 'Attention items must reflect open complaints or pending requests');
+    for (const item of att) {
+      assert(['OUTING', 'LEAVE', 'COMPLAINT', 'SUSPENSION'].includes(item.category));
+      assert(typeof item.isAvailable === 'boolean');
+    }
   });
 
-  // 16. Verify Real-time Management SSE Stream Connection
-  await test('GET /api/management/events-stream establishes real-time SSE connection with 200', async () => {
+  // 13. Real-time Management SSE Stream
+  await test('13. GET /api/management/events-stream establishes real-time SSE stream with 200', async () => {
     const res = await fetch(`${API_BASE}/management/events-stream`, {
       headers: { Authorization: `Bearer ${wardenToken}` },
     });

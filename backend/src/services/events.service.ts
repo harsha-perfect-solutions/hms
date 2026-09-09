@@ -141,11 +141,13 @@ class ComplaintEventsService extends EventEmitter {
    * Broadcasts a real-time operational update to all connected management dashboards
    */
   public emitManagementDashboardUpdate(event: { type: string; timestamp: string; details?: any }): void {
-    const payload = `event: management_dashboard_event\ndata: ${JSON.stringify(event)}\n\n`;
+    const payload1 = `event: management_dashboard_event\ndata: ${JSON.stringify(event)}\n\n`;
+    const payload2 = `event: management_dashboard_update\ndata: ${JSON.stringify(event)}\n\n`;
     for (const [, connections] of this.managementConnections.entries()) {
       for (const res of connections) {
         try {
-          res.write(payload);
+          res.write(payload1);
+          res.write(payload2);
         } catch (err) {
           console.error('Failed to write SSE event to management connection:', err);
         }

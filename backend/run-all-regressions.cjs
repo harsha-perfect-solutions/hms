@@ -11,7 +11,7 @@ const suites = [
   { name: 'Leaves & Suspension', script: 'test-leaves-api.cjs', expected: 20 },
   { name: 'Notifications', script: 'test-notifications-api.cjs', expected: 20 },
   { name: 'Biometric Tracking', script: 'test-biometric-api.cjs', expected: 24 },
-  { name: 'Management Dashboard', script: 'test-management-dashboard-api.cjs', expected: 16 },
+  { name: 'Management Dashboard', script: 'test-management-dashboard-api.cjs', expected: 18 },
 ];
 
 console.log('====================================================');

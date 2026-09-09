@@ -323,7 +323,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
             aria-label="Add new hostel block"
           >
             <Plus size={16} />
-            <span>Add Block</span>
+            <span>+ Add New Block</span>
           </button>
         </div>
       </div>
@@ -399,28 +399,44 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
           )}
         </div>
 
-        <div className="block-filter-group" role="group" aria-label="Status filter">
-          <button
-            type="button"
-            onClick={() => setStatusFilter('ALL')}
-            className={`filter-pill ${statusFilter === 'ALL' ? 'active' : ''}`}
-          >
-            All ({blocks.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('ACTIVE')}
-            className={`filter-pill ${statusFilter === 'ACTIVE' ? 'active' : ''}`}
-          >
-            Active ({summaryMetrics.active})
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatusFilter('INACTIVE')}
-            className={`filter-pill ${statusFilter === 'INACTIVE' ? 'active' : ''}`}
-          >
-            Inactive ({summaryMetrics.inactive})
-          </button>
+        <div className="block-filter-controls">
+          <div className="block-filter-group" role="group" aria-label="Status filter">
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ALL')}
+              className={`filter-pill ${statusFilter === 'ALL' ? 'active' : ''}`}
+            >
+              All ({blocks.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ACTIVE')}
+              className={`filter-pill ${statusFilter === 'ACTIVE' ? 'active' : ''}`}
+            >
+              Active ({summaryMetrics.active})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('INACTIVE')}
+              className={`filter-pill ${statusFilter === 'INACTIVE' ? 'active' : ''}`}
+            >
+              Inactive ({summaryMetrics.inactive})
+            </button>
+          </div>
+
+          <div className="block-filter-select-wrap">
+            <select
+              id="block-status-select-filter"
+              className="block-status-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              aria-label="Filter blocks by status"
+            >
+              <option value="ALL">All Blocks ({blocks.length})</option>
+              <option value="ACTIVE">Active Only ({summaryMetrics.active})</option>
+              <option value="INACTIVE">Inactive Only ({summaryMetrics.inactive})</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -479,7 +495,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
           ) : (
             <button type="button" className="btn-primary" onClick={handleOpenCreate}>
               <Plus size={16} />
-              Add First Block
+              <span>+ Add New Block</span>
             </button>
           )}
         </div>
@@ -551,7 +567,8 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
                       title="Edit block information"
                       aria-label={`Edit ${block.name}`}
                     >
-                      <Edit2 size={15} />
+                      <Edit2 size={13} />
+                      <span className="btn-label-text">Edit</span>
                     </button>
 
                     <button
@@ -561,7 +578,8 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
                       title="Delete block (checks dependencies)"
                       aria-label={`Delete ${block.name}`}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={13} />
+                      <span className="btn-label-text">Delete</span>
                     </button>
                   </div>
                 </div>
@@ -669,6 +687,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
                         checked={formData.status === 'ACTIVE'}
                         onChange={() => setFormData({ ...formData, status: 'ACTIVE' })}
                       />
+                      <div className="radio-indicator" />
                       <div className="radio-text">
                         <span className="radio-title">Active</span>
                         <span className="radio-desc">Open for residential assignments</span>
@@ -683,6 +702,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
                         checked={formData.status === 'INACTIVE'}
                         onChange={() => setFormData({ ...formData, status: 'INACTIVE' })}
                       />
+                      <div className="radio-indicator" />
                       <div className="radio-text">
                         <span className="radio-title">Inactive</span>
                         <span className="radio-desc">Maintenance or temporarily closed</span>
@@ -705,7 +725,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
                   {isSubmitting ? (
                     <>
                       <RotateCw size={14} className="spin-anim" />
-                      <span>Saving...</span>
+                      <span>{editingBlock ? 'Updating...' : 'Creating...'}</span>
                     </>
                   ) : (
                     <span>{editingBlock ? 'Update Block' : 'Create Block'}</span>

@@ -72,6 +72,25 @@ export interface BlockDomainEvent {
   timestamp: string;
 }
 
+export type RoomEventType =
+  | 'ROOM_CREATED'
+  | 'ROOM_UPDATED'
+  | 'ROOM_DELETED'
+  | 'ROOM_ALLOCATION_CHANGED'
+  | 'STUDENT_ALLOCATED'
+  | 'STUDENT_VACATED'
+  | 'STUDENT_REALLOCATED';
+
+export interface RoomDomainEvent {
+  type: RoomEventType;
+  roomId?: string;
+  studentId?: string;
+  allocationId?: string;
+  details?: any;
+  timestamp: string;
+}
+
+
 
 class ComplaintEventsService extends EventEmitter {
   // Map of studentId -> Set of active SSE Response connections
@@ -262,6 +281,36 @@ class ComplaintEventsService extends EventEmitter {
       details: { eventId: event.eventId, gate: event.gate },
     });
   }
+
+  /**
+   * Dispatches a room allocation domain event to a specific student's SSE stream and broadcasts to management
+   */
+  public emitRoomEventToStudent(studentId: string, event: RoomDomainEvent): void {
+    const connections = this.studentConnections.get(studentId);
+    if (connections && connections.size > 0) {
+      const payload = `event: room_event\ndata: ${JSON.stringify(event)}\n\n`;
+      for (const res of connections) {
+        try {
+          res.write(payload);
+        } catch (err) {
+          console.error('Failed to write SSE room event to student connection:', err);
+        }
+      }
+    }
+
+    // Also broadcast to management dashboard
+    this.emitManagementDashboardUpdate({
+      type: event.type,
+      timestamp: event.timestamp || new Date().toISOString(),
+      details: {
+        roomId: event.roomId,
+        studentId: event.studentId,
+        allocationId: event.allocationId,
+        ...event.details,
+      },
+    });
+  }
+
 
   /**
    * Keep-alive ping to prevent proxy/browser timeout

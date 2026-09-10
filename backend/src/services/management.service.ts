@@ -181,71 +181,99 @@ export class ManagementService {
       }
     }
 
-    // 6. Dynamic Room Occupancy Calculation from Real Database Records
-    // Collect all distinct rooms from student records with assigned block & room
-    const allStudentRoomRecords = await prisma.student.findMany({
-      where: {
-        blockName: { not: null },
-        roomNumber: { not: null },
-      },
-      select: {
-        id: true,
-        blockName: true,
-        roomNumber: true,
-        roomCapacity: true,
-        allocationStatus: true,
-        isActive: true,
+    // 6. Authoritative Room Occupancy Calculation from PostgreSQL Room and RoomAllocation tables
+    const dbRooms = await prisma.room.findMany({
+      include: {
+        block: true,
+        allocations: {
+          where: { status: 'ACTIVE' },
+        },
       },
     });
 
-    const roomMap = new Map<
-      string,
-      {
-        blockName: string;
-        roomNumber: string;
-        capacity: number;
-        occupants: number;
-      }
-    >();
-
-    for (const rec of allStudentRoomRecords) {
-      if (!rec.blockName || !rec.roomNumber) continue;
-      const key = `${rec.blockName}__${rec.roomNumber}`;
-
-      if (!roomMap.has(key)) {
-        roomMap.set(key, {
-          blockName: rec.blockName,
-          roomNumber: rec.roomNumber,
-          capacity: rec.roomCapacity || 2,
-          occupants: 0,
-        });
-      }
-
-      const roomEntry = roomMap.get(key)!;
-      if (rec.allocationStatus === 'ALLOCATED' && rec.isActive) {
-        roomEntry.occupants++;
-      }
-    }
-
-    const totalRooms = roomMap.size;
+    let totalRooms = 0;
     let occupied = 0;
     let partiallyOccupied = 0;
     let vacant = 0;
     let totalCapacity = 0;
     let allocatedBeds = 0;
 
-    for (const room of roomMap.values()) {
-      totalCapacity += room.capacity;
-      allocatedBeds += room.occupants;
+    if (dbRooms.length > 0) {
+      totalRooms = dbRooms.length;
+      for (const room of dbRooms) {
+        totalCapacity += room.capacity;
+        const occ = room.allocations.length;
+        allocatedBeds += occ;
 
-      if (room.occupants >= room.capacity) {
-        occupied++;
-      } else if (room.occupants > 0) {
-        partiallyOccupied++;
-      } else {
-        vacant++;
+        if (occ >= room.capacity) {
+          occupied++;
+        } else if (occ > 0) {
+          partiallyOccupied++;
+        } else {
+          vacant++;
+        }
+      }
+    } else {
+      // Fallback for un-migrated databases
+      const allStudentRoomRecords = await prisma.student.findMany({
+        where: {
+          blockName: { not: null },
+          roomNumber: { not: null },
+        },
+        select: {
+          id: true,
+          blockName: true,
+          roomNumber: true,
+          roomCapacity: true,
+          allocationStatus: true,
+          isActive: true,
+        },
+      });
+
+      const roomMap = new Map<
+        string,
+        {
+          blockName: string;
+          roomNumber: string;
+          capacity: number;
+          occupants: number;
+        }
+      >();
+
+      for (const rec of allStudentRoomRecords) {
+        if (!rec.blockName || !rec.roomNumber) continue;
+        const key = `${rec.blockName}__${rec.roomNumber}`;
+
+        if (!roomMap.has(key)) {
+          roomMap.set(key, {
+            blockName: rec.blockName,
+            roomNumber: rec.roomNumber,
+            capacity: rec.roomCapacity || 2,
+            occupants: 0,
+          });
+        }
+
+        const roomEntry = roomMap.get(key)!;
+        if (rec.allocationStatus === 'ALLOCATED' && rec.isActive) {
+          roomEntry.occupants++;
+        }
+      }
+
+      totalRooms = roomMap.size;
+      for (const room of roomMap.values()) {
+        totalCapacity += room.capacity;
+        allocatedBeds += room.occupants;
+
+        if (room.occupants >= room.capacity) {
+          occupied++;
+        } else if (room.occupants > 0) {
+          partiallyOccupied++;
+        } else {
+          vacant++;
+        }
       }
     }
+
 
     const occupancyPercentage =
       totalCapacity > 0 ? Math.round((allocatedBeds / totalCapacity) * 100) : 0;

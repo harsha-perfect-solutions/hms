@@ -1396,7 +1396,58 @@ export const apiService = {
       }
     };
   },
+
+  subscribeToRoomEvents(onEvent: (event: any) => void): () => void {
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: any = null;
+    let isClosed = false;
+
+    const connect = () => {
+      if (isClosed) return;
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        eventSource = new EventSource(`/api/student/biometric/events-stream?token=${encodeURIComponent(token)}`);
+
+        eventSource.addEventListener('room_event', (e) => {
+          try {
+            const parsed = JSON.parse(e.data);
+            onEvent(parsed);
+          } catch (err) {
+            console.error('Error parsing SSE room event:', err);
+          }
+        });
+
+        eventSource.onerror = () => {
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          if (!isClosed) {
+            reconnectTimeout = setTimeout(connect, 3000);
+          }
+        };
+      } catch (err) {
+        if (!isClosed) {
+          reconnectTimeout = setTimeout(connect, 5000);
+        }
+      }
+    };
+
+    connect();
+
+    return () => {
+      isClosed = true;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+      }
+    };
+  },
 };
+
 
 export interface BiometricEventItem {
   id: string;
@@ -1832,6 +1883,198 @@ export const managementApiService = {
     }
     return data;
   },
+
+  // ==================== ROOM MANAGEMENT (STEP 12) ====================
+
+  async getRooms(params?: {
+    blockId?: string;
+    block?: string;
+    status?: string;
+    occupancy?: string;
+    search?: string;
+  }): Promise<RoomsResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing. Please log in.');
+
+    const query = new URLSearchParams();
+    if (params?.blockId) query.append('blockId', params.blockId);
+    if (params?.block && params.block !== 'ALL') query.append('block', params.block);
+    if (params?.status && params.status !== 'ALL') query.append('status', params.status);
+    if (params?.occupancy && params.occupancy !== 'ALL') query.append('occupancy', params.occupancy);
+    if (params?.search && params.search.trim()) query.append('search', params.search.trim());
+
+    const url = `/api/management/rooms${query.toString() ? `?${query.toString()}` : ''}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to retrieve rooms.');
+    }
+    return data;
+  },
+
+  async getRoom(id: string): Promise<{ success: boolean; room: RoomItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/rooms/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to retrieve room details.');
+    }
+    return data;
+  },
+
+  async createRoom(dto: CreateRoomDto): Promise<{ success: boolean; message: string; room: RoomItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/rooms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to create room.');
+    }
+    return data;
+  },
+
+  async updateRoom(id: string, dto: UpdateRoomDto): Promise<{ success: boolean; message: string; room: RoomItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/rooms/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to update room.');
+    }
+    return data;
+  },
+
+  async deleteRoom(id: string): Promise<{ success: boolean; message: string; deletedId?: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/rooms/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to delete room.');
+    }
+    return data;
+  },
+
+  // ==================== ROOM ALLOCATION (STEP 12) ====================
+
+  async getAllocations(params?: {
+    roomId?: string;
+    studentId?: string;
+    status?: string;
+    search?: string;
+  }): Promise<{ success: boolean; count: number; allocations: RoomAllocationItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const query = new URLSearchParams();
+    if (params?.roomId) query.append('roomId', params.roomId);
+    if (params?.studentId) query.append('studentId', params.studentId);
+    if (params?.status && params.status !== 'ALL') query.append('status', params.status);
+    if (params?.search && params.search.trim()) query.append('search', params.search.trim());
+
+    const url = `/api/management/room-allocations${query.toString() ? `?${query.toString()}` : ''}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to retrieve allocations.');
+    }
+    return data;
+  },
+
+  async getEligibleStudents(): Promise<{ success: boolean; count: number; students: EligibleStudent[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/room-allocations/eligible-students', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to retrieve eligible students.');
+    }
+    return data;
+  },
+
+  async allocateStudent(dto: AllocateStudentDto): Promise<{ success: boolean; message: string; allocation: RoomAllocationItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/room-allocations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to allocate room.');
+    }
+    return data;
+  },
+
+  async vacateStudent(allocationId: string): Promise<{ success: boolean; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/room-allocations/${allocationId}/vacate`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to vacate room allocation.');
+    }
+    return data;
+  },
+
+  async reallocateStudent(allocationId: string, dto: ReallocateStudentDto): Promise<{ success: boolean; message: string; allocation: RoomAllocationItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/room-allocations/${allocationId}/reallocate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to reallocate student.');
+    }
+    return data;
+  },
 };
 
 export interface Block {
@@ -1867,3 +2110,124 @@ export interface BlocksResponse {
   blocks: Block[];
   message?: string;
 }
+
+// Room Management Types
+export interface RoomOccupant {
+  allocationId: string;
+  studentId: string;
+  name: string;
+  jntuNo: string;
+  email: string;
+  bedNumber?: string | null;
+  allocatedAt: string;
+}
+
+export interface RoomItem {
+  id: string;
+  blockId: string;
+  block: {
+    id: string;
+    name: string;
+    code: string;
+    status: string;
+  };
+  roomNumber: string;
+  floor: number | null;
+  roomType: string | null;
+  capacity: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'UNDER_MAINTENANCE';
+  occupancy: number;
+  availableBeds: number;
+  occupancyStatus: 'Occupied' | 'Partially Occupied' | 'Vacant';
+  activeOccupants: RoomOccupant[];
+  history?: any[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RoomsSummary {
+  totalRooms: number;
+  occupiedRooms: number;
+  partiallyOccupiedRooms: number;
+  vacantRooms: number;
+  totalCapacity: number;
+  allocatedBeds: number;
+}
+
+export interface RoomsResponse {
+  success: boolean;
+  count: number;
+  summary: RoomsSummary;
+  rooms: RoomItem[];
+  message?: string;
+}
+
+export interface RoomAllocationItem {
+  id: string;
+  roomId: string;
+  studentId: string;
+  bedNumber?: string | null;
+  status: 'ACTIVE' | 'VACATED' | 'REALLOCATED';
+  allocatedAt: string;
+  vacatedAt?: string | null;
+  student: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    isActive?: boolean;
+  };
+  room: {
+    id: string;
+    roomNumber: string;
+    floor?: number | null;
+    capacity: number;
+    roomType?: string | null;
+    block: {
+      id: string;
+      name: string;
+      code: string;
+      status: string;
+    };
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EligibleStudent {
+  id: string;
+  name: string;
+  jntuNo: string;
+  email: string;
+  allocationStatus: string;
+}
+
+export interface CreateRoomDto {
+  blockId: string;
+  roomNumber: string;
+  floor?: number;
+  roomType?: string;
+  capacity: number;
+  status?: 'ACTIVE' | 'INACTIVE' | 'UNDER_MAINTENANCE';
+}
+
+export interface UpdateRoomDto {
+  blockId?: string;
+  roomNumber?: string;
+  floor?: number;
+  roomType?: string;
+  capacity?: number;
+  status?: 'ACTIVE' | 'INACTIVE' | 'UNDER_MAINTENANCE';
+}
+
+export interface AllocateStudentDto {
+  roomId: string;
+  studentId: string;
+  bedNumber?: string;
+}
+
+export interface ReallocateStudentDto {
+  targetRoomId: string;
+  newBedNumber?: string;
+}
+

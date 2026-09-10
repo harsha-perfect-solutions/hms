@@ -255,11 +255,90 @@ async function main() {
     });
   }
 
+  // 7. Authoritative Rooms & Allocations
+  const gbBlock = await prisma.block.findUnique({ where: { code: 'GB-B' } });
+  const bbBlock = await prisma.block.findUnique({ where: { code: 'BB-A' } });
+
+  if (gbBlock) {
+    const room119 = await prisma.room.upsert({
+      where: { blockId_roomNumber: { blockId: gbBlock.id, roomNumber: '119' } },
+      update: {},
+      create: {
+        blockId: gbBlock.id,
+        roomNumber: '119',
+        floor: 1,
+        roomType: 'Non-AC Room (2 Sharing)',
+        capacity: 2,
+        status: 'ACTIVE',
+      },
+    });
+
+    await prisma.room.upsert({
+      where: { blockId_roomNumber: { blockId: gbBlock.id, roomNumber: '120' } },
+      update: {},
+      create: {
+        blockId: gbBlock.id,
+        roomNumber: '120',
+        floor: 1,
+        roomType: 'Non-AC Room (2 Sharing)',
+        capacity: 2,
+        status: 'ACTIVE',
+      },
+    });
+
+    // Allocations for student1 and student2
+    const existingAlloc1 = await prisma.roomAllocation.findFirst({
+      where: { studentId: student1.id, status: 'ACTIVE' },
+    });
+    if (!existingAlloc1) {
+      await prisma.roomAllocation.create({
+        data: {
+          roomId: room119.id,
+          studentId: student1.id,
+          bedNumber: 'Bed-1',
+          status: 'ACTIVE',
+          allocatedAt: new Date('2026-08-01T09:00:00.000Z'),
+        },
+      });
+    }
+
+    const existingAlloc2 = await prisma.roomAllocation.findFirst({
+      where: { studentId: student2.id, status: 'ACTIVE' },
+    });
+    if (!existingAlloc2) {
+      await prisma.roomAllocation.create({
+        data: {
+          roomId: room119.id,
+          studentId: student2.id,
+          bedNumber: 'Bed-2',
+          status: 'ACTIVE',
+          allocatedAt: new Date('2026-08-01T09:00:00.000Z'),
+        },
+      });
+    }
+  }
+
+  if (bbBlock) {
+    await prisma.room.upsert({
+      where: { blockId_roomNumber: { blockId: bbBlock.id, roomNumber: '201' } },
+      update: {},
+      create: {
+        blockId: bbBlock.id,
+        roomNumber: '201',
+        floor: 2,
+        roomType: 'Non-AC Room (3 Sharing)',
+        capacity: 3,
+        status: 'ACTIVE',
+      },
+    });
+  }
+
   console.log('Database seeded successfully:');
   console.log(`- Student 1: ${student1.name} (${student1.jntuNo}) - Allocated (Girls-Block-B - 119) with 2 mess tokens today`);
   console.log(`- Student 2: ${student2.name} (${student2.jntuNo}) - Allocated (Girls-Block-B - 119) with 0 mess tokens`);
   console.log(`- Student 3: ${studentUnallocated.name} (${studentUnallocated.jntuNo}) - NOT_ALLOCATED (Empty State)`);
   console.log(`- Blocks: Seeded ${initialBlocks.length} authoritative baseline blocks (GB-B, BB-A, WW-C)`);
+  console.log(`- Rooms: Seeded authoritative rooms (119, 120 in GB-B; 201 in BB-A)`);
 }
 
 main()

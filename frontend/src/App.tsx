@@ -21,6 +21,7 @@ import { ManagementHeader } from './components/ManagementHeader';
 import { ManagementLoginPage } from './pages/ManagementLoginPage';
 import { ManagementDashboardPage } from './pages/ManagementDashboardPage';
 import { BlockManagementPage } from './pages/BlockManagementPage';
+import { RoomManagementPage } from './pages/RoomManagementPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -173,6 +174,7 @@ const AuthenticatedManagementApp: React.FC<{
   const [refreshHandler, setRefreshHandler] = useState<(() => void) | null>(null);
 
   const isBlockPage = currentPath === '/management/blocks';
+  const isRoomPage = currentPath === '/management/rooms';
 
   return (
     <div className="portal-layout management-layout">
@@ -195,9 +197,17 @@ const AuthenticatedManagementApp: React.FC<{
           onRefresh={refreshHandler || undefined}
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
-          pageTitle={isBlockPage ? 'Block Management' : 'Management Dashboard'}
+          pageTitle={
+            isRoomPage
+              ? 'Room Management & Allocation'
+              : isBlockPage
+              ? 'Block Management'
+              : 'Management Dashboard'
+          }
           pageSubtitle={
-            isBlockPage
+            isRoomPage
+              ? 'Configure rooms, track bed occupancy, and assign residential accommodations.'
+              : isBlockPage
               ? 'Configure, organize, and monitor hostel residential blocks and zones.'
               : 'A concise operational overview of hostel activity.'
           }
@@ -205,7 +215,9 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isBlockPage ? (
+          {isRoomPage ? (
+            <RoomManagementPage onNavigate={onNavigate} />
+          ) : isBlockPage ? (
             <BlockManagementPage onNavigate={onNavigate} />
           ) : (
             <ManagementDashboardPage
@@ -219,6 +231,7 @@ const AuthenticatedManagementApp: React.FC<{
           )}
         </main>
       </div>
+
 
       {/* Notice Dialog for Modules Scheduled for Subsequent Steps */}
       {moduleNotice && (

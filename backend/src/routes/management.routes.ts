@@ -12,11 +12,15 @@ import { managementService } from '../services/management.service';
 import { complaintEventsService } from '../services/events.service';
 import { loginRateLimiter } from '../middleware/rate-limiter';
 import blockRoutes from './block.routes';
+import { roomManagementRouter, roomAllocationRouter } from './room-management.routes';
 
 const router = Router();
 
 // Sub-routers
 router.use('/blocks', blockRoutes);
+router.use('/rooms', roomManagementRouter);
+router.use('/room-allocations', roomAllocationRouter);
+
 
 /**
  * POST /api/management/auth/login

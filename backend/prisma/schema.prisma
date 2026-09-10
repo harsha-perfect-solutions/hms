@@ -36,6 +36,7 @@ model Student {
   notifications    Notification[]
   activityLogs     ActivityLog[]
   biometricEvents  BiometricEvent[]
+  roomAllocations  RoomAllocation[]
 }
 
 model Session {
@@ -204,7 +205,45 @@ model Block {
   status      String   @default("ACTIVE") // ACTIVE, INACTIVE
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  rooms       Room[]
 
   @@index([status])
   @@index([code])
 }
+
+model Room {
+  id          String           @id @default(uuid())
+  blockId     String
+  block       Block            @relation(fields: [blockId], references: [id], onDelete: Restrict)
+  roomNumber  String
+  floor       Int?             @default(1)
+  roomType    String?          @default("Non-AC Room (2 Sharing)")
+  capacity    Int              @default(2)
+  status      String           @default("ACTIVE") // ACTIVE, INACTIVE, UNDER_MAINTENANCE
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  allocations RoomAllocation[]
+
+  @@unique([blockId, roomNumber])
+  @@index([blockId])
+  @@index([status])
+}
+
+model RoomAllocation {
+  id          String    @id @default(uuid())
+  roomId      String
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  bedNumber   String?   // e.g. "Bed-1", "Bed-2"
+  status      String    @default("ACTIVE") // ACTIVE, VACATED, REALLOCATED
+  allocatedAt DateTime  @default(now())
+  vacatedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([roomId])
+  @@index([studentId])
+  @@index([status])
+}
+

@@ -41,7 +41,15 @@ export const MyRoomPage: React.FC = () => {
 
   useEffect(() => {
     fetchRoomData();
+
+    // Real-time SSE synchronization: refetch authoritative data upon room allocation change
+    const unsubscribe = apiService.subscribeToRoomEvents(() => {
+      fetchRoomData(true);
+    });
+
+    return () => unsubscribe();
   }, [fetchRoomData]);
+
 
   const formatDate = (dateStr?: string | null) => {
     if (!dateStr) return 'Not recorded';

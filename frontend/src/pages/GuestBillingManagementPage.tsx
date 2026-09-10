@@ -657,172 +657,186 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
         </div>
       )}
 
-      {/* Top Banner with Realtime Sync Status & Manual Refresh */}
-      <div className="mgmt-top-bar">
-        <div className="sync-status-indicator">
-          <span className={`status-dot ${isLiveConnected ? 'dot-online' : 'dot-offline'}`} />
-          <span className="sync-text">
-            {isLiveConnected ? 'Live Real-time Synchronized' : 'Connecting to Realtime Stream...'}
-          </span>
+      {/* Top Banner with Realtime Sync Status & Quick Actions */}
+      <div className="guest-billing-top-bar">
+        <div className="guest-billing-header-title">
+          <div className="guest-billing-badge-icon">
+            <Receipt size={24} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 m-0 leading-tight">
+              Guest Visits & Billing Operations
+            </h2>
+            <p className="text-xs text-slate-500 m-0 mt-0.5">
+              Authoritative visitor management, resident check-ins, line-item invoicing, and payment processing
+            </p>
+          </div>
         </div>
 
-        <div className="top-bar-actions">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Real-time SSE Connection Indicator */}
+          <div className="guest-live-indicator" title={isLiveConnected ? 'SSE Stream Online' : 'Connecting...'}>
+            <span className={`guest-live-dot ${isLiveConnected ? 'connected' : ''}`} />
+            <span>{isLiveConnected ? 'Live Synchronized' : 'Connecting Realtime...'}</span>
+          </div>
+
           <button
             type="button"
-            className="btn-refresh"
+            className="guest-header-btn-sync"
             onClick={refreshAll}
             disabled={isManualRefreshing}
-            aria-label="Refresh data"
+            title="Refresh latest data"
           >
-            <RefreshCw size={16} className={isManualRefreshing ? 'animate-spin' : ''} />
-            <span>Refresh</span>
+            <RefreshCw size={15} className={isManualRefreshing ? 'animate-spin' : ''} />
+            <span>{isManualRefreshing ? 'Syncing...' : 'Sync'}</span>
           </button>
 
           <button
             type="button"
-            className="btn-primary btn-add-guest"
+            className="guest-btn-primary"
             onClick={handleOpenAddGuest}
           >
-            <UserPlus size={16} />
+            <UserPlus size={15} />
             <span>Add Guest</span>
           </button>
 
           <button
             type="button"
-            className="btn-primary btn-new-visit"
+            className="guest-btn-primary"
+            style={{ background: 'linear-gradient(135deg, #047857 0%, #10B981 100%)' }}
             onClick={() => {
               setVisitFormData({ guestId: '', hostStudentId: '', purpose: '', remarks: '' });
               setSelectedHostName('');
               setIsVisitModalOpen(true);
             }}
           >
-            <UserCheck size={16} />
-            <span>Check-in Visit</span>
+            <UserCheck size={15} />
+            <span>Check-In Visit</span>
           </button>
         </div>
       </div>
 
-      {/* 6 KPI Cards */}
-      <div className="mgmt-stats-grid">
-        <div className="stat-card stat-blue">
-          <div className="stat-icon-wrapper">
-            <Users size={24} />
+      {/* 6 KPI Cards Grid */}
+      <div className="guest-kpi-grid">
+        <div className="guest-kpi-card" onClick={() => setActiveTab('guests')} style={{ cursor: 'pointer' }}>
+          <div className="guest-kpi-header">
+            <span className="guest-kpi-label">Total Guests</span>
+            <div className="guest-kpi-icon-wrap" style={{ background: '#EFF6FF', color: '#2563EB' }}>
+              <Users size={18} />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">Total Guests</span>
-            <h3 className="stat-value">
-              {isStatsLoading ? '...' : (stats?.totalGuests ?? 0).toLocaleString()}
-            </h3>
-            <span className="stat-sub">Registered Visitors</span>
+          <div className="guest-kpi-val">
+            {isStatsLoading ? '—' : (stats?.totalGuests ?? 0).toLocaleString()}
           </div>
+          <div className="guest-kpi-sub">Registered in directory</div>
         </div>
 
-        <div className="stat-card stat-emerald">
-          <div className="stat-icon-wrapper">
-            <Calendar size={24} />
+        <div className="guest-kpi-card" onClick={() => { setActiveTab('visits'); setVisitStatusFilter('ALL'); }} style={{ cursor: 'pointer' }}>
+          <div className="guest-kpi-header">
+            <span className="guest-kpi-label">Today's Visits</span>
+            <div className="guest-kpi-icon-wrap" style={{ background: '#ECFDF5', color: '#059669' }}>
+              <Calendar size={18} />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">Today's Visits</span>
-            <h3 className="stat-value">
-              {isStatsLoading ? '...' : (stats?.todayVisits ?? 0).toLocaleString()}
-            </h3>
-            <span className="stat-sub">Arrived Today</span>
+          <div className="guest-kpi-val" style={{ color: '#059669' }}>
+            {isStatsLoading ? '—' : (stats?.todayVisits ?? 0).toLocaleString()}
           </div>
+          <div className="guest-kpi-sub">Arrived today</div>
         </div>
 
-        <div className="stat-card stat-amber">
-          <div className="stat-icon-wrapper">
-            <UserCheck size={24} />
+        <div className="guest-kpi-card" onClick={() => { setActiveTab('visits'); setVisitStatusFilter('CHECKED_IN'); }} style={{ cursor: 'pointer' }}>
+          <div className="guest-kpi-header">
+            <span className="guest-kpi-label">Active Visits</span>
+            <div className="guest-kpi-icon-wrap" style={{ background: '#FFFBEB', color: '#D97706' }}>
+              <UserCheck size={18} />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">Active Visits</span>
-            <h3 className="stat-value">
-              {isStatsLoading ? '...' : (stats?.activeVisits ?? 0).toLocaleString()}
-            </h3>
-            <span className="stat-sub">Currently On Campus</span>
+          <div className="guest-kpi-val" style={{ color: '#D97706' }}>
+            {isStatsLoading ? '—' : (stats?.activeVisits ?? 0).toLocaleString()}
           </div>
+          <div className="guest-kpi-sub">Currently on campus</div>
         </div>
 
-        <div className="stat-card stat-purple">
-          <div className="stat-icon-wrapper">
-            <Receipt size={24} />
+        <div className="guest-kpi-card" onClick={() => { setActiveTab('bills'); setBillStatusFilter('ALL'); }} style={{ cursor: 'pointer' }}>
+          <div className="guest-kpi-header">
+            <span className="guest-kpi-label">Total Bills</span>
+            <div className="guest-kpi-icon-wrap" style={{ background: '#FAF5FF', color: '#7C3AED' }}>
+              <Receipt size={18} />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">Total Bills</span>
-            <h3 className="stat-value">
-              {isStatsLoading ? '...' : (stats?.totalBills ?? 0).toLocaleString()}
-            </h3>
-            <span className="stat-sub">Active Financial Bills</span>
+          <div className="guest-kpi-val" style={{ color: '#7C3AED' }}>
+            {isStatsLoading ? '—' : (stats?.totalBills ?? 0).toLocaleString()}
           </div>
+          <div className="guest-kpi-sub">Invoices generated</div>
         </div>
 
-        <div className="stat-card stat-rose">
-          <div className="stat-icon-wrapper">
-            <AlertCircle size={24} />
+        <div className="guest-kpi-card" onClick={() => { setActiveTab('bills'); setBillStatusFilter('UNPAID'); }} style={{ cursor: 'pointer' }}>
+          <div className="guest-kpi-header">
+            <span className="guest-kpi-label">Unpaid Amount</span>
+            <div className="guest-kpi-icon-wrap" style={{ background: '#FFF1F2', color: '#E11D48' }}>
+              <AlertCircle size={18} />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">Unpaid Amount</span>
-            <h3 className="stat-value">
-              {isStatsLoading ? '...' : `₹ ${(stats?.unpaidAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
-            </h3>
-            <span className="stat-sub">Pending Balances</span>
+          <div className="guest-kpi-val" style={{ color: '#E11D48' }}>
+            {isStatsLoading ? '—' : `₹ ${(stats?.unpaidAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
           </div>
+          <div className="guest-kpi-sub">Pending receivables</div>
         </div>
 
-        <div className="stat-card stat-teal">
-          <div className="stat-icon-wrapper">
-            <CheckCircle2 size={24} />
+        <div className="guest-kpi-card" onClick={() => { setActiveTab('bills'); setBillStatusFilter('PAID'); }} style={{ cursor: 'pointer' }}>
+          <div className="guest-kpi-header">
+            <span className="guest-kpi-label">Paid Amount</span>
+            <div className="guest-kpi-icon-wrap" style={{ background: '#F0FDFA', color: '#0D9488' }}>
+              <CheckCircle2 size={18} />
+            </div>
           </div>
-          <div className="stat-info">
-            <span className="stat-label">Paid Amount</span>
-            <h3 className="stat-value">
-              {isStatsLoading ? '...' : `₹ ${(stats?.paidAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
-            </h3>
-            <span className="stat-sub">Authoritative Collections</span>
+          <div className="guest-kpi-val" style={{ color: '#0D9488' }}>
+            {isStatsLoading ? '—' : `₹ ${(stats?.paidAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
           </div>
+          <div className="guest-kpi-sub">Authoritative collections</div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="guest-billing-tabs">
+      <div className="guest-tabs-bar">
         <button
           type="button"
-          className={`tab-item ${activeTab === 'bills' ? 'tab-active' : ''}`}
+          className={`guest-tab-button ${activeTab === 'bills' ? 'active' : ''}`}
           onClick={() => setActiveTab('bills')}
         >
           <Receipt size={18} />
           <span>Bills & Payments</span>
-          {stats?.totalBills !== undefined && <span className="tab-counter">{stats.totalBills}</span>}
+          {stats?.totalBills !== undefined && <span className="guest-tab-counter">{stats.totalBills}</span>}
         </button>
 
         <button
           type="button"
-          className={`tab-item ${activeTab === 'visits' ? 'tab-active' : ''}`}
+          className={`guest-tab-button ${activeTab === 'visits' ? 'active' : ''}`}
           onClick={() => setActiveTab('visits')}
         >
           <Clock size={18} />
           <span>Visits Lifecycle</span>
-          {stats?.activeVisits !== undefined && <span className="tab-counter">{stats.activeVisits} active</span>}
+          {stats?.activeVisits !== undefined && <span className="guest-tab-counter">{stats.activeVisits} active</span>}
         </button>
 
         <button
           type="button"
-          className={`tab-item ${activeTab === 'guests' ? 'tab-active' : ''}`}
+          className={`guest-tab-button ${activeTab === 'guests' ? 'active' : ''}`}
           onClick={() => setActiveTab('guests')}
         >
           <Users size={18} />
           <span>Guest Directory</span>
-          {stats?.totalGuests !== undefined && <span className="tab-counter">{stats.totalGuests}</span>}
+          {stats?.totalGuests !== undefined && <span className="guest-tab-counter">{stats.totalGuests}</span>}
         </button>
       </div>
 
       {/* TAB 1: BILLS & PAYMENTS */}
       {activeTab === 'bills' && (
-        <section className="tab-content-panel">
+        <section className="guest-content-container">
           {/* Filters Bar */}
-          <div className="table-controls-bar">
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+          <div className="guest-filter-controls-bar">
+            <div className="guest-search-input-wrapper">
+              <Search size={16} className="guest-search-icon-inside" />
               <input
                 type="text"
                 placeholder="Search by Bill #, Guest, or Resident..."
@@ -834,7 +848,7 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
               />
             </div>
 
-            <div className="filter-group">
+            <div className="guest-select-filter-group">
               <label htmlFor="billStatusSelect">Payment Status:</label>
               <select
                 id="billStatusSelect"
@@ -854,20 +868,20 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
           </div>
 
           {/* Bills Data Table */}
-          <div className="table-container">
+          <div className="guest-table-wrapper">
             {isBillsLoading ? (
-              <div className="loading-state">
-                <RefreshCw size={24} className="animate-spin text-primary" />
-                <p>Loading authoritative bills...</p>
+              <div className="loading-state p-8 text-center">
+                <RefreshCw size={24} className="animate-spin text-primary inline-block" />
+                <p className="mt-2 text-sm text-slate-500">Loading authoritative bills...</p>
               </div>
             ) : bills.length === 0 ? (
-              <div className="empty-state">
-                <Receipt size={40} className="empty-icon" />
-                <h4>No Guest Bills Found</h4>
-                <p>There are no guest bills matching your selected filter.</p>
+              <div className="empty-state p-8 text-center">
+                <Receipt size={40} className="empty-icon inline-block text-slate-400" />
+                <h4 className="mt-2 text-base font-semibold text-slate-700">No Guest Bills Found</h4>
+                <p className="text-sm text-slate-500">There are no guest bills matching your selected filter.</p>
               </div>
             ) : (
-              <table className="mgmt-table">
+              <table className="guest-data-table">
                 <thead>
                   <tr>
                     <th>Bill Number</th>
@@ -883,15 +897,15 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                   {bills.map((b) => (
                     <tr key={b.id} className={b.paymentStatus === 'VOID' ? 'row-voided' : ''}>
                       <td>
-                        <span className="font-mono font-semibold text-primary">{b.billNumber}</span>
+                        <span className="font-mono font-bold text-primary">{b.billNumber}</span>
                         {b.paymentMethod && (
-                          <div className="text-xs text-muted">
+                          <div className="text-xs text-muted mt-0.5">
                             Method: {b.paymentMethod} {b.paymentReference ? `(${b.paymentReference})` : ''}
                           </div>
                         )}
                       </td>
                       <td>
-                        <div className="font-medium text-slate-800">
+                        <div className="font-semibold text-slate-900">
                           {b.guestVisit?.guest?.name || 'Guest'}
                         </div>
                         <div className="text-xs text-muted">
@@ -899,7 +913,7 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                         </div>
                       </td>
                       <td>
-                        <span className="font-semibold">
+                        <span className="font-bold text-slate-900">
                           ₹ {b.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </span>
                         <div className="text-xs text-muted">
@@ -907,10 +921,10 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                         </div>
                       </td>
                       <td>
-                        <div className="text-sm font-medium text-emerald-600">
+                        <div className="text-sm font-semibold text-emerald-600">
                           Paid: ₹ {b.paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
-                        <div className="text-xs font-medium text-rose-600">
+                        <div className="text-xs font-semibold text-rose-600">
                           Bal: ₹ {b.balanceAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </div>
                       </td>
@@ -920,7 +934,7 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                         </span>
                       </td>
                       <td>
-                        <div className="text-sm">
+                        <div className="text-sm font-medium">
                           {new Date(b.createdAt).toLocaleDateString()}
                         </div>
                         <div className="text-xs text-muted">
@@ -928,25 +942,25 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                         </div>
                       </td>
                       <td className="text-right">
-                        <div className="action-buttons-group">
+                        <div className="guest-actions-cluster">
                           <button
                             type="button"
-                            className="btn-action btn-view"
+                            className="guest-btn-table-action btn-details"
                             onClick={() => handleViewBillDetail(b.id)}
                             title="View bill & payment details"
                           >
-                            <Eye size={15} />
+                            <Eye size={14} />
                             <span>Details</span>
                           </button>
 
                           {b.paymentStatus !== 'PAID' && b.paymentStatus !== 'VOID' && (
                             <button
                               type="button"
-                              className="btn-action btn-pay"
+                              className="guest-btn-table-action btn-pay"
                               onClick={() => handleOpenRecordPayment(b)}
                               title="Record payment"
                             >
-                              <CreditCard size={15} />
+                              <CreditCard size={14} />
                               <span>Pay</span>
                             </button>
                           )}
@@ -954,11 +968,11 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                           {b.paymentStatus !== 'VOID' && (
                             <button
                               type="button"
-                              className="btn-action btn-void"
+                              className="guest-btn-table-action btn-void"
                               onClick={() => handleOpenVoidBill(b)}
                               title="Void this bill"
                             >
-                              <Ban size={15} />
+                              <Ban size={14} />
                               <span>Void</span>
                             </button>
                           )}
@@ -973,11 +987,11 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
 
           {/* Bills Pagination */}
           {billPagination.totalPages > 1 && (
-            <div className="pagination-bar">
-              <span className="pagination-info">
+            <div className="pagination-bar p-3 border-t border-slate-200 flex justify-between items-center">
+              <span className="pagination-info text-xs text-slate-500">
                 Showing page {billPagination.page} of {billPagination.totalPages} ({billPagination.total} bills)
               </span>
-              <div className="pagination-controls">
+              <div className="pagination-controls flex items-center gap-1">
                 <button
                   type="button"
                   className="btn-page"
@@ -1004,11 +1018,11 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
 
       {/* TAB 2: VISITS LIFECYCLE */}
       {activeTab === 'visits' && (
-        <section className="tab-content-panel">
+        <section className="guest-content-container">
           {/* Visits Filter Bar */}
-          <div className="table-controls-bar">
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+          <div className="guest-filter-controls-bar">
+            <div className="guest-search-input-wrapper">
+              <Search size={16} className="guest-search-icon-inside" />
               <input
                 type="text"
                 placeholder="Search visits by guest, host, or purpose..."
@@ -1020,7 +1034,7 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
               />
             </div>
 
-            <div className="filter-group">
+            <div className="guest-select-filter-group">
               <label htmlFor="visitStatusSelect">Visit Status:</label>
               <select
                 id="visitStatusSelect"
@@ -1038,20 +1052,20 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
           </div>
 
           {/* Visits Table */}
-          <div className="table-container">
+          <div className="guest-table-wrapper">
             {isVisitsLoading ? (
-              <div className="loading-state">
-                <RefreshCw size={24} className="animate-spin text-primary" />
-                <p>Loading guest visits...</p>
+              <div className="loading-state p-8 text-center">
+                <RefreshCw size={24} className="animate-spin text-primary inline-block" />
+                <p className="mt-2 text-sm text-slate-500">Loading guest visits...</p>
               </div>
             ) : visits.length === 0 ? (
-              <div className="empty-state">
-                <Clock size={40} className="empty-icon" />
-                <h4>No Visits Recorded</h4>
-                <p>No guest visits matching your criteria were found.</p>
+              <div className="empty-state p-8 text-center">
+                <Clock size={40} className="empty-icon inline-block text-slate-400" />
+                <h4 className="mt-2 text-base font-semibold text-slate-700">No Visits Recorded</h4>
+                <p className="text-sm text-slate-500">No guest visits matching your criteria were found.</p>
               </div>
             ) : (
-              <table className="mgmt-table">
+              <table className="guest-data-table">
                 <thead>
                   <tr>
                     <th>Guest Information</th>
@@ -1067,23 +1081,23 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                   {visits.map((v) => (
                     <tr key={v.id}>
                       <td>
-                        <div className="font-semibold text-slate-800">{v.guest?.name}</div>
-                        <div className="text-xs text-muted flex items-center gap-1">
+                        <div className="font-semibold text-slate-900">{v.guest?.name}</div>
+                        <div className="text-xs text-muted flex items-center gap-1 mt-0.5">
                           <Phone size={12} /> {v.guest?.phone}
                         </div>
                       </td>
                       <td>
-                        <div className="font-medium text-slate-800">{v.hostStudent?.name}</div>
+                        <div className="font-semibold text-slate-900">{v.hostStudent?.name}</div>
                         <div className="text-xs text-muted">
                           {v.hostStudent?.jntuNo} • {v.hostStudent?.blockName || 'Main'} / {v.hostStudent?.roomNumber || 'Room'}
                         </div>
                       </td>
                       <td>
-                        <div className="text-sm font-medium text-slate-700">{v.purpose}</div>
+                        <div className="text-sm font-medium text-slate-800">{v.purpose}</div>
                         {v.remarks && <div className="text-xs text-muted italic">"{v.remarks}"</div>}
                       </td>
                       <td>
-                        <div className="text-sm">
+                        <div className="text-sm font-medium">
                           {new Date(v.checkInTime).toLocaleDateString()}
                         </div>
                         <div className="text-xs text-muted">
@@ -1093,7 +1107,7 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                       <td>
                         {v.checkOutTime ? (
                           <>
-                            <div className="text-sm text-slate-700">
+                            <div className="text-sm font-medium text-slate-700">
                               {new Date(v.checkOutTime).toLocaleDateString()}
                             </div>
                             <div className="text-xs text-muted">
@@ -1101,7 +1115,7 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                             </div>
                           </>
                         ) : (
-                          <span className="text-xs text-amber-600 font-medium">Currently inside</span>
+                          <span className="text-xs text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded">Currently On Campus</span>
                         )}
                       </td>
                       <td>
@@ -1110,26 +1124,26 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                         </span>
                       </td>
                       <td className="text-right">
-                        <div className="action-buttons-group">
+                        <div className="guest-actions-cluster">
                           {v.status === 'CHECKED_IN' && (
                             <button
                               type="button"
-                              className="btn-action btn-checkout"
+                              className="guest-btn-table-action btn-checkout"
                               onClick={() => handleOpenCheckout(v)}
                               title="Checkout guest"
                             >
-                              <UserCheck size={15} />
+                              <UserCheck size={14} />
                               <span>Check-out</span>
                             </button>
                           )}
 
                           <button
                             type="button"
-                            className="btn-action btn-add-bill"
+                            className="guest-btn-table-action btn-bill"
                             onClick={() => handleOpenCreateBillForVisit(v)}
                             title="Generate bill for this visit"
                           >
-                            <Receipt size={15} />
+                            <Receipt size={14} />
                             <span>Bill</span>
                           </button>
                         </div>
@@ -1143,11 +1157,11 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
 
           {/* Visits Pagination */}
           {visitPagination.totalPages > 1 && (
-            <div className="pagination-bar">
-              <span className="pagination-info">
+            <div className="pagination-bar p-3 border-t border-slate-200 flex justify-between items-center">
+              <span className="pagination-info text-xs text-slate-500">
                 Showing page {visitPagination.page} of {visitPagination.totalPages} ({visitPagination.total} visits)
               </span>
-              <div className="pagination-controls">
+              <div className="pagination-controls flex items-center gap-1">
                 <button
                   type="button"
                   className="btn-page"
@@ -1174,11 +1188,11 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
 
       {/* TAB 3: GUEST DIRECTORY */}
       {activeTab === 'guests' && (
-        <section className="tab-content-panel">
+        <section className="guest-content-container">
           {/* Guest Search Bar */}
-          <div className="table-controls-bar">
-            <div className="search-box">
-              <Search size={16} className="search-icon" />
+          <div className="guest-filter-controls-bar">
+            <div className="guest-search-input-wrapper">
+              <Search size={16} className="guest-search-icon-inside" />
               <input
                 type="text"
                 placeholder="Search guests by name, phone, ID proof..."
@@ -1192,20 +1206,20 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
           </div>
 
           {/* Guests Table */}
-          <div className="table-container">
+          <div className="guest-table-wrapper">
             {isGuestsLoading ? (
-              <div className="loading-state">
-                <RefreshCw size={24} className="animate-spin text-primary" />
-                <p>Loading guest directory...</p>
+              <div className="loading-state p-8 text-center">
+                <RefreshCw size={24} className="animate-spin text-primary inline-block" />
+                <p className="mt-2 text-sm text-slate-500">Loading guest directory...</p>
               </div>
             ) : guests.length === 0 ? (
-              <div className="empty-state">
-                <Users size={40} className="empty-icon" />
-                <h4>No Guests Registered</h4>
-                <p>No guest records found. Use "+ Add Guest" above to register new visitors.</p>
+              <div className="empty-state p-8 text-center">
+                <Users size={40} className="empty-icon inline-block text-slate-400" />
+                <h4 className="mt-2 text-base font-semibold text-slate-700">No Guests Registered</h4>
+                <p className="text-sm text-slate-500">No guest records found. Use "+ Add Guest" above to register new visitors.</p>
               </div>
             ) : (
-              <table className="mgmt-table">
+              <table className="guest-data-table">
                 <thead>
                   <tr>
                     <th>Guest Name</th>
@@ -1220,9 +1234,9 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                 <tbody>
                   {guests.map((g) => (
                     <tr key={g.id}>
-                      <td className="font-semibold text-slate-800">{g.name}</td>
+                      <td className="font-semibold text-slate-900">{g.name}</td>
                       <td>
-                        <div className="text-sm flex items-center gap-1">
+                        <div className="text-sm font-medium flex items-center gap-1">
                           <Phone size={13} className="text-muted" /> {g.phone}
                         </div>
                         {g.email && (
@@ -1235,7 +1249,7 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                         {g.idProofType ? (
                           <div className="text-sm">
                             <span className="font-medium text-slate-700">{g.idProofType}:</span>{' '}
-                            <span className="font-mono text-xs">{g.idProofNumber || 'N/A'}</span>
+                            <span className="font-mono text-xs text-slate-600">{g.idProofNumber || 'N/A'}</span>
                           </div>
                         ) : (
                           <span className="text-xs text-muted">Not recorded</span>
@@ -1248,16 +1262,16 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
                         {g.address || '—'}
                       </td>
                       <td>
-                        <span className="font-semibold text-primary">
+                        <span className="font-bold text-primary">
                           {g._count?.visits ?? (g.visits?.length || 0)}
                         </span>{' '}
                         visit(s)
                       </td>
                       <td className="text-right">
-                        <div className="action-buttons-group">
+                        <div className="guest-actions-cluster">
                           <button
                             type="button"
-                            className="btn-action btn-new-visit-row"
+                            className="guest-btn-table-action btn-checkout"
                             onClick={() => handleOpenCheckinForGuest(g)}
                             title="Check-in this guest"
                           >
@@ -1267,7 +1281,7 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
 
                           <button
                             type="button"
-                            className="btn-action btn-edit"
+                            className="guest-btn-table-action btn-details"
                             onClick={() => handleOpenEditGuest(g)}
                             title="Edit guest profile"
                           >
@@ -1284,11 +1298,11 @@ export const GuestBillingManagementPage: React.FC<GuestBillingManagementPageProp
 
           {/* Guests Pagination */}
           {guestPagination.totalPages > 1 && (
-            <div className="pagination-bar">
-              <span className="pagination-info">
+            <div className="pagination-bar p-3 border-t border-slate-200 flex justify-between items-center">
+              <span className="pagination-info text-xs text-slate-500">
                 Showing page {guestPagination.page} of {guestPagination.totalPages} ({guestPagination.total} guests)
               </span>
-              <div className="pagination-controls">
+              <div className="pagination-controls flex items-center gap-1">
                 <button
                   type="button"
                   className="btn-page"

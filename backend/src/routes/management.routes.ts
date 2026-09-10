@@ -19,6 +19,8 @@ import outingManagementRouter from './outing-management.routes';
 import { leaveManagementRouter, suspensionManagementRouter } from './leave-management.routes';
 import complaintManagementRouter from './complaint-management.routes';
 import guestBillingRouter from './guest-billing.routes';
+import logHistoryRouter from './log-history.routes';
+import { auditService } from '../services/audit.service';
 
 
 const router = Router();
@@ -33,6 +35,7 @@ router.use('/leaves', leaveManagementRouter);
 router.use('/suspensions', suspensionManagementRouter);
 router.use('/complaints', complaintManagementRouter);
 router.use('/guest-billing', guestBillingRouter);
+router.use('/log-history', logHistoryRouter);
 
 
 /**
@@ -134,6 +137,20 @@ router.post('/auth/login', loginRateLimiter, async (req, res): Promise<void> => 
       },
     });
 
+    // Record login audit log asynchronously
+    auditService
+      .recordLog({
+        actorId: user.id,
+        actorRole: user.role,
+        action: 'LOGIN',
+        actionType: 'LOGIN',
+        entity: 'Session',
+        entityId: user.id,
+        description: `Management user '${user.name}' (${user.role}) logged in successfully.`,
+        ipAddress: (req.headers['x-forwarded-for'] as string) || req.ip || null,
+      })
+      .catch((err) => console.error('Error recording login audit:', err));
+
     res.status(200).json({
       success: true,
       message: 'Management authentication successful.',
@@ -164,7 +181,26 @@ router.post('/auth/logout', async (req, res): Promise<void> => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      await prisma.session.delete({ where: { token } }).catch(() => {});
+      const session = await prisma.session.findUnique({
+        where: { token },
+        include: { student: true },
+      });
+
+      if (session) {
+        await prisma.session.delete({ where: { token } }).catch(() => {});
+        auditService
+          .recordLog({
+            actorId: session.student.id,
+            actorRole: session.student.role,
+            action: 'LOGOUT',
+            actionType: 'LOGOUT',
+            entity: 'Session',
+            entityId: session.student.id,
+            description: `Management user '${session.student.name}' logged out.`,
+            ipAddress: (req.headers['x-forwarded-for'] as string) || req.ip || null,
+          })
+          .catch((err) => console.error('Error recording logout audit:', err));
+      }
     }
 
     res.status(200).json({

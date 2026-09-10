@@ -152,12 +152,27 @@ model Notification {
 }
 
 model ActivityLog {
-  id          String   @id @default(uuid())
-  studentId   String
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  actionType  String   // OUTING, MESS, LEAVE, ROOM, LOGIN, COMPLAINT
-  description String
-  createdAt   DateTime @default(now())
+  id            String   @id @default(uuid())
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  actionType    String   // OUTING, MESS, LEAVE, ROOM, LOGIN, COMPLAINT (preserved for backward compatibility)
+  action        String?  // CREATE, UPDATE, DELETE, ALLOCATE, VACATE, REALLOCATE, APPROVE, REJECT, CANCEL, ASSIGN, START, RESOLVE, CLOSE, CHECKOUT, CONSUME, PAYMENT_RECORDED, VOID, SUSPEND, LIFT_SUSPENSION, LOGIN, LOGOUT, CONFIG_UPDATE
+  actorRole     String?  // STUDENT, WARDEN, CHIEF_WARDEN, ADMIN, etc.
+  entity        String?  // Block, Room, RoomAllocation, Complaint, OutingRequest, LeaveRequest, Suspension, Guest, GuestVisit, GuestBill, BiometricEvent, Session, MessToken, etc.
+  entityId      String?  // ID of the target entity
+  previousState String?  // e.g. "PENDING" or JSON snapshot
+  newState      String?  // e.g. "APPROVED" or JSON snapshot
+  description   String
+  metadata      String?  // JSON stringified safe metadata (no sensitive credentials/tokens)
+  ipAddress     String?  // Client IP address
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([studentId])
+  @@index([actorRole])
+  @@index([action])
+  @@index([entity])
+  @@index([entityId])
 }
 
 model Complaint {

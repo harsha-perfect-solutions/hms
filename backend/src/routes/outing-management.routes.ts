@@ -423,6 +423,12 @@ router.post('/:id/approve', async (req: AuthenticatedManagementRequest, res: Res
         data: {
           studentId: existing.studentId,
           actionType: 'OUTING',
+          action: 'APPROVE',
+          actorRole: req.managementUser!.role,
+          entity: 'OutingRequest',
+          entityId: existing.id,
+          previousState: existing.status,
+          newState: 'APPROVED',
           description: `Outing request #${existing.requestNumber || existing.id} approved by ${approverName}.`,
         },
       });
@@ -554,6 +560,12 @@ router.post('/:id/reject', async (req: AuthenticatedManagementRequest, res: Resp
         data: {
           studentId: existing.studentId,
           actionType: 'OUTING',
+          action: 'REJECT',
+          actorRole: req.managementUser!.role,
+          entity: 'OutingRequest',
+          entityId: existing.id,
+          previousState: existing.status,
+          newState: 'REJECTED',
           description: `Outing request #${existing.requestNumber || existing.id} rejected by ${rejectorName}. Reason: ${trimmedReason}`,
         },
       });

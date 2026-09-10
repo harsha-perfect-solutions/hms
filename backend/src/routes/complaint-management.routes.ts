@@ -362,6 +362,12 @@ router.post(
           data: {
             studentId: complaint.studentId,
             actionType: 'COMPLAINT',
+            action: 'ASSIGN',
+            actorRole: actor.role,
+            entity: 'Complaint',
+            entityId: complaint.id,
+            previousState: complaint.status,
+            newState: 'ASSIGNED',
             description: `Complaint ${complaint.ticketNumber || complaint.id} assigned to ${staff.name} by ${actor.name}.`,
           },
         });
@@ -474,6 +480,12 @@ router.post(
           data: {
             studentId: complaint.studentId,
             actionType: 'COMPLAINT',
+            action: 'START',
+            actorRole: actor.role,
+            entity: 'Complaint',
+            entityId: complaint.id,
+            previousState: complaint.status,
+            newState: 'IN_PROGRESS',
             description: `Work started on complaint ${complaint.ticketNumber || complaint.id} by ${actor.name}.`,
           },
         });
@@ -582,6 +594,12 @@ router.post(
           data: {
             studentId: complaint.studentId,
             actionType: 'COMPLAINT',
+            action: 'RESOLVE',
+            actorRole: actor.role,
+            entity: 'Complaint',
+            entityId: complaint.id,
+            previousState: complaint.status,
+            newState: 'RESOLVED',
             description: `Complaint ${complaint.ticketNumber || complaint.id} resolved by ${actor.name}.`,
           },
         });
@@ -681,6 +699,12 @@ router.post(
           data: {
             studentId: complaint.studentId,
             actionType: 'COMPLAINT',
+            action: 'CLOSE',
+            actorRole: actor.role,
+            entity: 'Complaint',
+            entityId: complaint.id,
+            previousState: complaint.status,
+            newState: 'CLOSED',
             description: `Complaint ${complaint.ticketNumber || complaint.id} closed by ${actor.name}.`,
           },
         });

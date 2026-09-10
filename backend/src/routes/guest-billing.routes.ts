@@ -285,6 +285,11 @@ router.post('/guests', async (req: AuthenticatedManagementRequest, res: Response
         data: {
           studentId: req.managementUser!.id,
           actionType: 'GUEST_MANAGEMENT',
+          action: 'CREATE',
+          actorRole: req.managementUser!.role,
+          entity: 'Guest',
+          entityId: guest.id,
+          newState: guest.name,
           description: `Guest '${trimmedName}' (Phone: ${trimmedPhone}) registered by ${req.managementUser!.name}.`,
         },
       });
@@ -379,6 +384,12 @@ router.put('/guests/:id', async (req: AuthenticatedManagementRequest, res: Respo
         data: {
           studentId: req.managementUser!.id,
           actionType: 'GUEST_MANAGEMENT',
+          action: 'UPDATE',
+          actorRole: req.managementUser!.role,
+          entity: 'Guest',
+          entityId: guest.id,
+          previousState: existing.name,
+          newState: guest.name,
           description: `Guest '${guest.name}' profile updated by ${req.managementUser!.name}.`,
         },
       });
@@ -619,6 +630,11 @@ router.post('/visits', async (req: AuthenticatedManagementRequest, res: Response
         data: {
           studentId: hostStudentId,
           actionType: 'GUEST_VISIT',
+          action: 'CHECKIN',
+          actorRole: req.managementUser!.role,
+          entity: 'GuestVisit',
+          entityId: visit.id,
+          newState: 'CHECKED_IN',
           description: `Guest '${guest.name}' checked in to visit resident ${hostStudent.name} (${hostStudent.jntuNo}). Purpose: ${trimmedPurpose}.`,
         },
       });
@@ -773,6 +789,12 @@ router.post('/visits/:id/checkout', async (req: AuthenticatedManagementRequest, 
         data: {
           studentId: existing.hostStudentId,
           actionType: 'GUEST_VISIT',
+          action: 'CHECKOUT',
+          actorRole: req.managementUser!.role,
+          entity: 'GuestVisit',
+          entityId: visit.id,
+          previousState: 'CHECKED_IN',
+          newState: 'CHECKED_OUT',
           description: `Guest '${existing.guest.name}' checked out at ${checkoutDate.toLocaleTimeString()} by ${req.managementUser!.name}.`,
         },
       });
@@ -1039,6 +1061,11 @@ router.post('/bills', async (req: AuthenticatedManagementRequest, res: Response)
         data: {
           studentId: visit.hostStudentId,
           actionType: 'GUEST_BILLING',
+          action: 'CREATE',
+          actorRole: req.managementUser!.role,
+          entity: 'GuestBill',
+          entityId: bill.id,
+          newState: 'UNPAID',
           description: `Guest Bill ${resolvedBillNumber} created for amount Rs. ${calculatedBillTotal.toFixed(2)} (${validatedItems.length} item(s)) by ${req.managementUser!.name}.`,
         },
       });
@@ -1180,6 +1207,12 @@ router.post('/bills/:id/payment', async (req: AuthenticatedManagementRequest, re
         data: {
           studentId: bill.guestVisit.hostStudentId,
           actionType: 'GUEST_BILLING',
+          action: 'PAYMENT_RECORDED',
+          actorRole: req.managementUser!.role,
+          entity: 'GuestBill',
+          entityId: bill.id,
+          previousState: bill.paymentStatus,
+          newState: newStatus,
           description: `Payment of Rs. ${roundedPay.toFixed(2)} received for Bill ${bill.billNumber} via ${method}. Status: ${newStatus}. Balance: Rs. ${newBalance.toFixed(2)}.`,
         },
       });
@@ -1288,6 +1321,12 @@ router.post('/bills/:id/void', async (req: AuthenticatedManagementRequest, res: 
         data: {
           studentId: bill.guestVisit.hostStudentId,
           actionType: 'GUEST_BILLING',
+          action: 'VOID',
+          actorRole: req.managementUser!.role,
+          entity: 'GuestBill',
+          entityId: bill.id,
+          previousState: priorStatus,
+          newState: 'VOID',
           description: `Bill ${bill.billNumber} (Rs. ${bill.totalAmount.toFixed(2)}) VOIDED by ${req.managementUser!.name}. Reason: ${trimmedReason}. (Prior status: ${priorStatus}).`,
         },
       });

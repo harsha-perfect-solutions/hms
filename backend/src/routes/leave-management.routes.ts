@@ -522,6 +522,12 @@ leaveManagementRouter.post('/:id/approve', async (req: AuthenticatedManagementRe
         data: {
           studentId: existing.studentId,
           actionType: 'LEAVE',
+          action: 'APPROVE',
+          actorRole: req.managementUser!.role,
+          entity: 'LeaveRequest',
+          entityId: existing.id,
+          previousState: existing.status,
+          newState: 'APPROVED',
           description: `Leave application ${existing.requestNumber || existing.id} (${existing.leaveType}) approved by ${approverName}.`,
         },
       });
@@ -660,6 +666,12 @@ leaveManagementRouter.post('/:id/reject', async (req: AuthenticatedManagementReq
         data: {
           studentId: existing.studentId,
           actionType: 'LEAVE',
+          action: 'REJECT',
+          actorRole: req.managementUser!.role,
+          entity: 'LeaveRequest',
+          entityId: existing.id,
+          previousState: existing.status,
+          newState: 'REJECTED',
           description: `Leave application ${existing.requestNumber || existing.id} rejected by ${rejectorName}. Reason: ${trimmedReason}`,
         },
       });
@@ -1018,6 +1030,12 @@ suspensionManagementRouter.post('/', async (req: AuthenticatedManagementRequest,
         data: {
           studentId,
           actionType: 'LEAVE',
+          action: 'SUSPEND',
+          actorRole: req.managementUser!.role,
+          entity: 'Suspension',
+          entityId: suspension.id,
+          previousState: 'ACTIVE_STUDENT',
+          newState: 'SUSPENDED',
           description: `Hostel disciplinary suspension created by ${creatorName} until ${end.toLocaleDateString()}. Reason: ${reason.trim()}`,
         },
       });
@@ -1116,6 +1134,12 @@ suspensionManagementRouter.post('/:id/end', async (req: AuthenticatedManagementR
         data: {
           studentId: existing.studentId,
           actionType: 'LEAVE',
+          action: 'LIFT_SUSPENSION',
+          actorRole: req.managementUser!.role,
+          entity: 'Suspension',
+          entityId: existing.id,
+          previousState: 'ACTIVE',
+          newState: 'ENDED',
           description: `Disciplinary suspension ended/lifted by ${resolverName}. Account privileges restored.`,
         },
       });

@@ -2859,6 +2859,60 @@ export const managementApiService = {
     if (!res.ok) throw new Error(data.message || 'Failed to void bill.');
     return data;
   },
+
+  async getLogHistory(filters?: {
+    page?: number;
+    pageSize?: number;
+    action?: string;
+    entity?: string;
+    actorRole?: string;
+    actorId?: string;
+    from?: string;
+    to?: string;
+    search?: string;
+  }): Promise<LogHistoryResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const query = new URLSearchParams();
+    if (filters?.page) query.set('page', String(filters.page));
+    if (filters?.pageSize) query.set('pageSize', String(filters.pageSize));
+    if (filters?.action && filters.action !== 'ALL') query.set('action', filters.action);
+    if (filters?.entity && filters.entity !== 'ALL') query.set('entity', filters.entity);
+    if (filters?.actorRole && filters.actorRole !== 'ALL') query.set('actorRole', filters.actorRole);
+    if (filters?.actorId) query.set('actorId', filters.actorId);
+    if (filters?.from) query.set('from', filters.from);
+    if (filters?.to) query.set('to', filters.to);
+    if (filters?.search) query.set('search', filters.search);
+
+    const res = await fetch(`/api/management/log-history?${query.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch log history.');
+    return data;
+  },
+
+  async getLogHistorySummary(): Promise<LogHistorySummaryResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/log-history/summary', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch log history summary.');
+    return data;
+  },
+
+  async getLogHistoryById(id: string): Promise<{ success: boolean; log: ActivityLogItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/log-history/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch audit log detail.');
+    return data;
+  },
 };
 
 
@@ -3491,4 +3545,51 @@ export interface GuestBillItem {
   items: BillingItemRecord[];
   payments: GuestPaymentRecord[];
 }
+
+export interface ActivityLogItem {
+  id: string;
+  studentId: string;
+  actor: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    role: string;
+    email: string;
+  };
+  actorRole: string;
+  action: string;
+  actionType: string;
+  entity: string;
+  entityId?: string | null;
+  previousState?: string | null;
+  newState?: string | null;
+  description: string;
+  metadata?: any;
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
+export interface LogHistoryResponse {
+  success: boolean;
+  logs: ActivityLogItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface LogHistorySummaryResponse {
+  success: boolean;
+  summary: {
+    totalLogs: number;
+    todayLogs: number;
+    approvalLogs: number;
+    financialLogs: number;
+    securityLogs: number;
+    adminLogs: number;
+  };
+}
+
 

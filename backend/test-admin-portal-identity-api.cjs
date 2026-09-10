@@ -1,3 +1,4 @@
+// Authoritative Admin Portal Identity & RBAC Test Suite (Step 20 Baseline)
 const assert = require('assert');
 const { PrismaClient } = require('@prisma/client');
 

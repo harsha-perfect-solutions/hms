@@ -1,3 +1,4 @@
+// Master Regression Test Suite (399 tests across 21 suites)
 const { execSync } = require('child_process');
 
 const suites = [

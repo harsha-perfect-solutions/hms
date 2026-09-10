@@ -38,6 +38,9 @@ model Student {
   biometricEvents  BiometricEvent[]
   roomAllocations  RoomAllocation[]
   guestVisits      GuestVisit[]
+
+  @@index([role])
+  @@index([isActive])
 }
 
 model Session {

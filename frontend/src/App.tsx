@@ -28,6 +28,7 @@ import { ManagementLeavesPage } from './pages/ManagementLeavesPage';
 import { ManagementComplaintsPage } from './pages/ManagementComplaintsPage';
 import { GuestBillingManagementPage } from './pages/GuestBillingManagementPage';
 import { ManagementLogHistoryPage } from './pages/ManagementLogHistoryPage';
+import { ManagementUserManagementPage } from './pages/ManagementUserManagementPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -187,6 +188,7 @@ const AuthenticatedManagementApp: React.FC<{
   const isComplaintsPage = currentPath === '/management/complaints' || currentPath === '/management/maintenance';
   const isGuestBillingPage = currentPath === '/management/guest-billing' || currentPath === '/management/billing';
   const isLogHistoryPage = currentPath === '/management/log-history' || currentPath === '/management/logs';
+  const isUserManagementPage = currentPath === '/management/users';
 
   return (
     <div className="portal-layout management-layout">
@@ -210,7 +212,9 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isLogHistoryPage
+            isUserManagementPage
+              ? 'User Management & Role Administration'
+              : isLogHistoryPage
               ? 'System Log History & Audit'
               : isGuestBillingPage
               ? 'Guest Visits & Billing Management'
@@ -229,7 +233,9 @@ const AuthenticatedManagementApp: React.FC<{
               : 'Management Dashboard'
           }
           pageSubtitle={
-            isLogHistoryPage
+            isUserManagementPage
+              ? 'Authoritative account administration, role assignment hierarchy, credential resets, and security status control.'
+              : isLogHistoryPage
               ? 'Comprehensive administrative activity logging, operational state change inspection, and multi-factor traceability.'
               : isGuestBillingPage
               ? 'Manage guest visit records, track student host check-ins, record itemized bills, and process authoritative payments.'
@@ -251,7 +257,9 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isLogHistoryPage ? (
+          {isUserManagementPage ? (
+            <ManagementUserManagementPage onNavigate={onNavigate} />
+          ) : isLogHistoryPage ? (
             <ManagementLogHistoryPage onNavigate={onNavigate} />
           ) : isGuestBillingPage ? (
             <GuestBillingManagementPage onNavigate={onNavigate} />

@@ -20,6 +20,7 @@ import { leaveManagementRouter, suspensionManagementRouter } from './leave-manag
 import complaintManagementRouter from './complaint-management.routes';
 import guestBillingRouter from './guest-billing.routes';
 import logHistoryRouter from './log-history.routes';
+import userManagementRouter from './user-management.routes';
 import { auditService } from '../services/audit.service';
 
 
@@ -36,6 +37,7 @@ router.use('/suspensions', suspensionManagementRouter);
 router.use('/complaints', complaintManagementRouter);
 router.use('/guest-billing', guestBillingRouter);
 router.use('/log-history', logHistoryRouter);
+router.use('/users', userManagementRouter);
 
 
 /**

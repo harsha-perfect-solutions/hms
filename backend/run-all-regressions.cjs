@@ -20,6 +20,7 @@ const suites = [
   { name: 'Management Complaints', script: 'test-management-complaints-api.cjs', expected: 28 },
   { name: 'Guest Billing', script: 'test-management-guest-billing-api.cjs', expected: 36 },
   { name: 'Management Log History', script: 'test-management-log-history-api.cjs', expected: 34 },
+  { name: 'Management User Management', script: 'test-management-user-management-api.cjs', expected: 47 },
 ];
 
 console.log('====================================================');

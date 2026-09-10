@@ -2913,6 +2913,161 @@ export const managementApiService = {
     if (!res.ok) throw new Error(data.message || 'Failed to fetch audit log detail.');
     return data;
   },
+
+  async getUsers(params?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    role?: string;
+    status?: string;
+  }): Promise<UserListResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.pageSize) query.set('pageSize', String(params.pageSize));
+    if (params?.search) query.set('search', params.search);
+    if (params?.role && params.role !== 'ALL') query.set('role', params.role);
+    if (params?.status && params.status !== 'ALL') query.set('status', params.status);
+
+    const res = await fetch(`/api/management/users?${query.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch users.');
+    return data;
+  },
+
+  async getUserSummary(): Promise<UserSummaryResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/users/summary', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch user summary metrics.');
+    return data;
+  },
+
+  async getUserRoles(): Promise<UserRolesResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/users/roles', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch roles.');
+    return data;
+  },
+
+  async getUserById(id: string): Promise<{ success: boolean; user: UserAccountItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/users/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch user details.');
+    return data;
+  },
+
+  async createUser(payload: {
+    jntuNo: string;
+    name: string;
+    email: string;
+    role: string;
+    password: string;
+    blockName?: string;
+    roomNumber?: string;
+    bedNumber?: string;
+    roomType?: string;
+    monthlyOutingMax?: number;
+  }): Promise<{ success: boolean; message: string; user: UserAccountItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to create user account.');
+    return data;
+  },
+
+  async updateUser(id: string, payload: {
+    name?: string;
+    email?: string;
+    role?: string;
+    blockName?: string;
+    roomNumber?: string;
+    bedNumber?: string;
+    roomType?: string;
+    monthlyOutingMax?: number;
+  }): Promise<{ success: boolean; message: string; user: UserAccountItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/users/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to update user account.');
+    return data;
+  },
+
+  async disableUser(id: string, reason?: string): Promise<{ success: boolean; message: string; user: UserAccountItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/users/${id}/disable`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to disable user account.');
+    return data;
+  },
+
+  async enableUser(id: string): Promise<{ success: boolean; message: string; user: UserAccountItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/users/${id}/enable`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to enable user account.');
+    return data;
+  },
+
+  async resetUserPassword(id: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/users/${id}/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ newPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to reset user password.');
+    return data;
+  },
 };
 
 
@@ -3591,5 +3746,73 @@ export interface LogHistorySummaryResponse {
     adminLogs: number;
   };
 }
+
+export interface UserRoleOption {
+  role: string;
+  label: string;
+  category: 'STUDENT' | 'SUPPORT' | 'MANAGEMENT' | string;
+}
+
+export interface UserRolesResponse {
+  success: boolean;
+  roles: UserRoleOption[];
+}
+
+export interface UserSummaryData {
+  totalUsers: number;
+  activeUsers: number;
+  disabledUsers: number;
+  students: number;
+  wardens: number;
+  administrators: number;
+  hostelAdmins: number;
+  chiefWardens: number;
+  messStaff: number;
+  maintenanceStaff: number;
+  managementStaff: number;
+  supportStaff: number;
+}
+
+export interface UserSummaryResponse {
+  success: boolean;
+  summary: UserSummaryData;
+}
+
+export interface UserAccountItem {
+  id: string;
+  jntuNo: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  allocationStatus?: string;
+  blockName?: string | null;
+  floorName?: string | null;
+  roomNumber?: string | null;
+  bedNumber?: string | null;
+  roomType?: string | null;
+  roomCapacity?: number;
+  monthlyOutingMax?: number;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    sessions?: number;
+    complaints?: number;
+    outings?: number;
+    leaves?: number;
+  };
+}
+
+export interface UserListResponse {
+  success: boolean;
+  users: UserAccountItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 
 

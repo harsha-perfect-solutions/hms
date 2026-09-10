@@ -252,7 +252,25 @@ async function main() {
     },
   });
 
-  // 5. Warden account
+  // 5. Administrator account (Step 19)
+  await prisma.student.upsert({
+    where: { jntuNo: 'ADMIN01' },
+    update: {
+      passwordHash: studentPasswordHash,
+      isActive: true,
+      role: 'ADMIN',
+    },
+    create: {
+      jntuNo: 'ADMIN01',
+      passwordHash: studentPasswordHash,
+      name: 'System Administrator',
+      email: 'admin@college.edu',
+      role: 'ADMIN',
+      isActive: true,
+    },
+  });
+
+  // 5b. Warden account
   await prisma.student.upsert({
     where: { jntuNo: 'WARDEN01' },
     update: {

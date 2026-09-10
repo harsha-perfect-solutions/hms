@@ -2301,6 +2301,289 @@ export const managementApiService = {
     if (!res.ok) throw new Error(data.message || 'Failed to reject outing request.');
     return data;
   },
+
+  // --- Leaves Management ---
+  async getLeaveStats(): Promise<{ success: boolean; data: LeaveStats }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/leaves/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load leave stats.');
+    return data;
+  },
+
+  async getLeaves(params?: LeavesQueryParams): Promise<LeavesListResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.category) query.append('category', params.category);
+    if (params?.search) query.append('search', params.search);
+    if (params?.blockId) query.append('blockId', params.blockId);
+    if (params?.date) query.append('date', params.date);
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+
+    const qs = query.toString();
+    const res = await fetch(`/api/management/leaves${qs ? `?${qs}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load leave requests.');
+    return data;
+  },
+
+  async getLeaveDetail(id: string): Promise<{ success: boolean; data: ManagementLeaveDetail }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/leaves/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load leave details.');
+    return data;
+  },
+
+  async approveLeave(id: string, remarks?: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/leaves/${id}/approve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ remarks }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to approve leave request.');
+    return data;
+  },
+
+  async rejectLeave(id: string, reason: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/leaves/${id}/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to reject leave request.');
+    return data;
+  },
+
+  // --- Disciplinary Suspensions ---
+  async getSuspensions(params?: SuspensionsQueryParams): Promise<SuspensionsListResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+
+    const qs = query.toString();
+    const res = await fetch(`/api/management/suspensions${qs ? `?${qs}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load suspensions.');
+    return data;
+  },
+
+  async getSuspensionDetail(id: string): Promise<{ success: boolean; data: ManagementSuspensionDetail }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/suspensions/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load suspension details.');
+    return data;
+  },
+
+  async createSuspension(payload: CreateSuspensionPayload): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/suspensions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to create suspension.');
+    return data;
+  },
+
+  async endSuspension(id: string, remarks?: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/suspensions/${id}/end`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ remarks }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to lift suspension.');
+    return data;
+  },
+
+  // Complaint & Maintenance Management
+  async getComplaintStats(): Promise<{ success: boolean; data: ComplaintStats }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/complaints/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load complaint stats.');
+    return data;
+  },
+
+  async getComplaints(params?: ComplaintQueryParams): Promise<ComplaintsListResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.priority) searchParams.set('priority', params.priority);
+    if (params?.category) searchParams.set('category', params.category);
+    if (params?.assigned) searchParams.set('assigned', params.assigned);
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    const query = searchParams.toString();
+    const res = await fetch(`/api/management/complaints${query ? `?${query}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load complaints.');
+    return data;
+  },
+
+  async getComplaint(id: string): Promise<{ success: boolean; data: ManagementComplaintItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/complaints/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load complaint details.');
+    return data;
+  },
+
+  async getMaintenanceStaff(): Promise<{ success: boolean; data: MaintenanceStaffMember[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/complaints/maintenance-staff', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load maintenance staff.');
+    return data;
+  },
+
+  async assignComplaint(id: string, staffId: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/complaints/${id}/assign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ staffId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to assign complaint.');
+    return data;
+  },
+
+  async startComplaint(id: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/complaints/${id}/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to start complaint.');
+    return data;
+  },
+
+  async resolveComplaint(id: string, resolutionNotes: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/complaints/${id}/resolve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ resolutionNotes }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to resolve complaint.');
+    return data;
+  },
+
+  async closeComplaint(id: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/complaints/${id}/close`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to close complaint.');
+    return data;
+  },
+
+  async downloadComplaintAttachment(complaintId: string, attachmentId: string, fileName: string): Promise<void> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/complaints/${complaintId}/attachments/${attachmentId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Failed to download attachment');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
 };
 
 export interface Block {
@@ -2632,5 +2915,208 @@ export interface OutingsListResponse {
   };
 }
 
+// Leaves & Suspension Management Types
+export interface LeaveStats {
+  total: number;
+  pending: number;
+  approved: number;
+  active: number;
+  completed: number;
+  rejected: number;
+  cancelled: number;
+  suspendedStudents: number;
+}
 
+export interface ManagementLeaveStudent {
+  id: string;
+  name: string;
+  jntuNo: string;
+  email: string;
+  blockName?: string | null;
+  roomNumber?: string | null;
+  bedNumber?: string | null;
+}
+
+export interface ManagementLeaveItem {
+  id: string;
+  requestNumber: string | null;
+  leaveType: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  durationDays: number;
+  reason: string;
+  emergencyContact: string;
+  remarks?: string | null;
+  rejectionReason?: string | null;
+  approvedAt?: string | null;
+  approvedBy?: string | null;
+  rejectedAt?: string | null;
+  rejectedBy?: string | null;
+  status: string;
+  effectiveStatus: 'PENDING' | 'APPROVED' | 'ACTIVE' | 'COMPLETED' | 'REJECTED' | 'CANCELLED' | string;
+  createdAt: string;
+  updatedAt: string;
+  student: ManagementLeaveStudent | null;
+}
+
+export interface ManagementLeaveDetail extends ManagementLeaveItem {
+  isSuspended: boolean;
+  activeSuspension?: {
+    id: string;
+    reason: string;
+    startDate: string;
+    endDate: string;
+  } | null;
+}
+
+export interface LeavesQueryParams {
+  status?: string;
+  category?: string;
+  search?: string;
+  blockId?: string;
+  date?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface LeavesListResponse {
+  success: boolean;
+  data: ManagementLeaveItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ManagementSuspensionItem {
+  id: string;
+  studentId: string;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  status: 'ACTIVE' | 'LIFTED' | 'EXPIRED' | string;
+  effectiveStatus: 'ACTIVE' | 'LIFTED' | 'EXPIRED' | string;
+  createdBy?: string | null;
+  remarks?: string | null;
+  liftedAt?: string | null;
+  liftedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  student: ManagementLeaveStudent | null;
+}
+
+export interface ManagementSuspensionDetail extends ManagementSuspensionItem {}
+
+export interface SuspensionsQueryParams {
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface SuspensionsListResponse {
+  success: boolean;
+  data: ManagementSuspensionItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface CreateSuspensionPayload {
+  studentId: string;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  remarks?: string;
+}
+
+// Complaints & Maintenance Management Types
+export interface ComplaintStats {
+  total: number;
+  open: number;
+  assigned: number;
+  inProgress: number;
+  resolved: number;
+  closed: number;
+  highPriority: number;
+  unassigned: number;
+}
+
+export interface ComplaintStudent {
+  id: string;
+  name: string;
+  jntuNo: string;
+  email?: string;
+  blockName?: string | null;
+  roomNumber?: string | null;
+  bedNumber?: string | null;
+}
+
+export interface ComplaintAttachmentItem {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+  downloadUrl: string;
+}
+
+export interface ManagementComplaintItem {
+  id: string;
+  ticketNumber?: string | null;
+  category: string;
+  title: string;
+  description: string;
+  location?: string | null;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | string;
+  status: 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'CANCELLED' | 'REJECTED' | string;
+  assignedTo?: string | null;
+  assignedToId?: string | null;
+  assignedAt?: string | null;
+  assignedBy?: string | null;
+  resolutionNotes?: string | null;
+  resolvedBy?: string | null;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
+  closedBy?: string | null;
+  student: ComplaintStudent | null;
+  attachments: ComplaintAttachmentItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MaintenanceStaffMember {
+  id: string;
+  name: string;
+  jntuNo: string;
+  email: string;
+  role: string;
+}
+
+export interface ComplaintQueryParams {
+  status?: string;
+  priority?: string;
+  category?: string;
+  assigned?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ComplaintsListResponse {
+  success: boolean;
+  data: ManagementComplaintItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 

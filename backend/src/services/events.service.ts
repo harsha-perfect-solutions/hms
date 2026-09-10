@@ -5,11 +5,15 @@ export type ComplaintEventType =
   | 'COMPLAINT_CREATED'
   | 'COMPLAINT_UPDATED'
   | 'COMPLAINT_STATUS_CHANGED'
+  | 'COMPLAINT_ASSIGNED'
+  | 'COMPLAINT_STARTED'
   | 'COMPLAINT_RESOLVED'
   | 'COMPLAINT_CLOSED'
   | 'COMPLAINT_CANCELLED'
   | 'COMPLAINT_COMMENT_ADDED'
-  | 'COMPLAINT_ATTACHMENT_ADDED';
+  | 'COMPLAINT_ATTACHMENT_ADDED'
+  | 'COMPLAINT_STATS_UPDATED';
+
 
 export interface ComplaintDomainEvent {
   type: ComplaintEventType;
@@ -23,14 +27,19 @@ export type LeaveEventType =
   | 'LEAVE_REJECTED'
   | 'LEAVE_CANCELLED'
   | 'LEAVE_STATUS_CHANGED'
+  | 'LEAVE_STATUS_UPDATED'
+  | 'LEAVE_STATS_UPDATED'
   | 'SUSPENSION_CREATED'
   | 'SUSPENSION_UPDATED'
-  | 'SUSPENSION_LIFTED';
+  | 'SUSPENSION_LIFTED'
+  | 'SUSPENSION_ENDED';
 
 export interface LeaveDomainEvent {
   type: LeaveEventType;
   leaveId?: string;
   suspensionId?: string;
+  studentId?: string;
+  details?: any;
   timestamp: string;
 }
 
@@ -268,7 +277,28 @@ class ComplaintEventsService extends EventEmitter {
     this.emitManagementDashboardUpdate({
       type: event.type,
       timestamp: event.timestamp || new Date().toISOString(),
-      details: { leaveId: event.leaveId, suspensionId: event.suspensionId },
+      details: {
+        leaveId: event.leaveId,
+        suspensionId: event.suspensionId,
+        studentId: event.studentId,
+        ...event.details,
+      },
+    });
+  }
+
+  /**
+   * Broadcasts a leave/suspension domain event to all connected management listeners
+   */
+  public emitLeaveManagementUpdate(event: LeaveDomainEvent): void {
+    this.emitManagementDashboardUpdate({
+      type: event.type,
+      timestamp: event.timestamp || new Date().toISOString(),
+      details: {
+        leaveId: event.leaveId,
+        suspensionId: event.suspensionId,
+        studentId: event.studentId,
+        ...event.details,
+      },
     });
   }
 

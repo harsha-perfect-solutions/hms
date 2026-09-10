@@ -24,6 +24,8 @@ import { BlockManagementPage } from './pages/BlockManagementPage';
 import { RoomManagementPage } from './pages/RoomManagementPage';
 import { MessManagementPage } from './pages/MessManagementPage';
 import { OutingApprovalsPage } from './pages/OutingApprovalsPage';
+import { ManagementLeavesPage } from './pages/ManagementLeavesPage';
+import { ManagementComplaintsPage } from './pages/ManagementComplaintsPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -179,6 +181,8 @@ const AuthenticatedManagementApp: React.FC<{
   const isRoomPage = currentPath === '/management/rooms';
   const isMessPage = currentPath === '/management/mess';
   const isOutingsPage = currentPath === '/management/outings';
+  const isLeavesPage = currentPath === '/management/leaves';
+  const isComplaintsPage = currentPath === '/management/complaints' || currentPath === '/management/maintenance';
 
   return (
     <div className="portal-layout management-layout">
@@ -202,7 +206,11 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isOutingsPage
+            isComplaintsPage
+              ? 'Complaints & Maintenance Operations'
+              : isLeavesPage
+              ? 'Leaves & Suspension Management'
+              : isOutingsPage
               ? 'Outing Approvals & Gate Transit'
               : isMessPage
               ? 'Mess Management'
@@ -213,7 +221,11 @@ const AuthenticatedManagementApp: React.FC<{
               : 'Management Dashboard'
           }
           pageSubtitle={
-            isOutingsPage
+            isComplaintsPage
+              ? 'Review maintenance tickets, assign technicians, track repair lifecycles, and confirm ticket resolutions.'
+              : isLeavesPage
+              ? 'Review student leave applications, authorize leaves, track campus absence, and manage disciplinary suspensions.'
+              : isOutingsPage
               ? 'Review and authorize resident movement passes with automated biometric gate correlation.'
               : isMessPage
               ? 'Monitor hostel meal services, verify resident tokens, and review meal statistics.'
@@ -227,7 +239,11 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isOutingsPage ? (
+          {isComplaintsPage ? (
+            <ManagementComplaintsPage onNavigate={onNavigate} />
+          ) : isLeavesPage ? (
+            <ManagementLeavesPage onNavigate={onNavigate} />
+          ) : isOutingsPage ? (
             <OutingApprovalsPage onNavigate={onNavigate} />
           ) : isMessPage ? (
             <MessManagementPage onNavigate={onNavigate} />

@@ -7,6 +7,7 @@ import {
   authenticateManagement,
   AuthenticatedManagementRequest,
   MANAGEMENT_ROLES,
+  ALL_MANAGEMENT_ROLES,
 } from '../middleware/management.middleware';
 import { managementService } from '../services/management.service';
 import { complaintEventsService } from '../services/events.service';
@@ -15,6 +16,9 @@ import blockRoutes from './block.routes';
 import { roomManagementRouter, roomAllocationRouter } from './room-management.routes';
 import messManagementRouter from './mess-management.routes';
 import outingManagementRouter from './outing-management.routes';
+import { leaveManagementRouter, suspensionManagementRouter } from './leave-management.routes';
+import complaintManagementRouter from './complaint-management.routes';
+
 
 const router = Router();
 
@@ -24,6 +28,9 @@ router.use('/rooms', roomManagementRouter);
 router.use('/room-allocations', roomAllocationRouter);
 router.use('/mess', messManagementRouter);
 router.use('/outings', outingManagementRouter);
+router.use('/leaves', leaveManagementRouter);
+router.use('/suspensions', suspensionManagementRouter);
+router.use('/complaints', complaintManagementRouter);
 
 
 /**
@@ -81,7 +88,8 @@ router.post('/auth/login', loginRateLimiter, async (req, res): Promise<void> => 
     }
 
     // Server-Side RBAC Enforcement: Students are denied access to management login
-    if (!MANAGEMENT_ROLES.includes(user.role)) {
+    // ALL_MANAGEMENT_ROLES includes WARDEN, CHIEF_WARDEN, ADMIN, HOSTEL_ADMIN, MAINTENANCE_STAFF
+    if (!ALL_MANAGEMENT_ROLES.includes(user.role)) {
       res.status(403).json({
         success: false,
         message: 'Access denied. Student accounts cannot access the management portal.',

@@ -55,7 +55,7 @@ async function main() {
   await prisma.notification.deleteMany({ where: { studentId: student1.id } });
   await prisma.activityLog.deleteMany({ where: { studentId: student1.id } });
 
-  // 2 Mess tokens booked for today (Breakfast and Lunch)
+  // 4 Mess tokens booked for today (Breakfast, Lunch, Snacks, Dinner)
   const dateTag = todayStr.replace(/-/g, '');
   await prisma.messToken.createMany({
     data: [
@@ -71,6 +71,20 @@ async function main() {
         tokenNumber: `MT-${dateTag}-LUN-102`,
         date: todayStr,
         mealType: 'LUNCH',
+        status: 'BOOKED',
+      },
+      {
+        studentId: student1.id,
+        tokenNumber: `MT-${dateTag}-SNK-103`,
+        date: todayStr,
+        mealType: 'SNACKS',
+        status: 'BOOKED',
+      },
+      {
+        studentId: student1.id,
+        tokenNumber: `MT-${dateTag}-DIN-104`,
+        date: todayStr,
+        mealType: 'DINNER',
         status: 'BOOKED',
       },
     ],
@@ -161,6 +175,37 @@ async function main() {
   await prisma.outingRequest.deleteMany({ where: { studentId: student2.id } });
   await prisma.leaveRequest.deleteMany({ where: { studentId: student2.id } });
 
+  // 11 Baseline OPEN complaints for management dashboard and complaints tracking
+  const initialComplaints = [
+    { category: 'ELECTRICAL', title: 'Ceiling fan regulator sparking', description: 'The ceiling fan regulator sparks when turned up.', location: 'Girls-Block-B, Room 119', priority: 'HIGH' },
+    { category: 'PLUMBING', title: 'Water tap leaking heavily', description: 'Bathroom sink tap continues dripping heavily.', location: 'Girls-Block-B, Room 119', priority: 'MEDIUM' },
+    { category: 'CARPENTRY', title: 'Wardrobe hinge loose', description: 'The main door hinge of wardrobe 2 is detached.', location: 'Girls-Block-B, Room 119', priority: 'LOW' },
+    { category: 'CLEANLINESS', title: 'Floor cleaning requested', description: 'Balcony area requires floor scrub and wash.', location: 'Girls-Block-B, Floor 1', priority: 'LOW' },
+    { category: 'INTERNET', title: 'Wi-Fi repeater unstable signal', description: 'Wi-Fi disconnects frequently during evening study hours.', location: 'Girls-Block-B, Wing 1', priority: 'HIGH' },
+    { category: 'ELECTRICAL', title: 'Tube light flickering in study room', description: 'Overhead tube light flickers continuously.', location: 'Girls-Block-B, Room 120', priority: 'MEDIUM' },
+    { category: 'PLUMBING', title: 'Shower mixer valve stuck', description: 'Water temperature control valve cannot be adjusted.', location: 'Girls-Block-B, Room 120', priority: 'HIGH' },
+    { category: 'CARPENTRY', title: 'Study chair armrest cracked', description: 'Wooden study chair has a cracked left armrest.', location: 'Girls-Block-B, Room 119', priority: 'LOW' },
+    { category: 'INTERNET', title: 'LAN port not responding', description: 'Ethernet RJ45 socket in desk 1 has no link light.', location: 'Girls-Block-B, Room 119', priority: 'MEDIUM' },
+    { category: 'OTHER', title: 'Window mesh screen torn', description: 'Mosquito screen on north window is torn at bottom.', location: 'Girls-Block-B, Room 119', priority: 'LOW' },
+    { category: 'ELECTRICAL', title: 'Geyser heating element trip', description: 'Water heater trips circuit breaker when powered on.', location: 'Girls-Block-B, Room 119', priority: 'URGENT' },
+  ];
+
+  for (let i = 0; i < initialComplaints.length; i++) {
+    const c = initialComplaints[i];
+    await prisma.complaint.create({
+      data: {
+        studentId: i % 2 === 0 ? student1.id : student2.id,
+        ticketNumber: `CMP-${dateTag}-${String(i + 101).padStart(3, '0')}`,
+        category: c.category,
+        title: c.title,
+        description: c.description,
+        location: c.location,
+        priority: c.priority,
+        status: 'OPEN',
+      },
+    });
+  }
+
   // 3. Unallocated Student (to verify empty state for room allocation)
   const studentUnallocated = await prisma.student.upsert({
     where: { jntuNo: '21A91A0501' },
@@ -224,6 +269,25 @@ async function main() {
       isActive: true,
     },
   });
+
+  // 5b. Maintenance Staff account (Step 16)
+  await prisma.student.upsert({
+    where: { jntuNo: 'MAINT01' },
+    update: {
+      passwordHash: studentPasswordHash,
+      isActive: true,
+      role: 'MAINTENANCE_STAFF',
+    },
+    create: {
+      jntuNo: 'MAINT01',
+      passwordHash: studentPasswordHash,
+      name: 'Maintenance Technician',
+      email: 'maintenance@college.edu',
+      role: 'MAINTENANCE_STAFF',
+      isActive: true,
+    },
+  });
+
 
   // 6. Authoritative Hostel Blocks
   const initialBlocks = [

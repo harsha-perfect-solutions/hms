@@ -63,6 +63,10 @@ model OutingRequest {
   actualExitTime   DateTime?
   actualReturnTime DateTime?
   rejectionReason  String?
+  approvedAt       DateTime?
+  approvedBy       String?
+  rejectedAt       DateTime?
+  rejectedBy       String?
   status           String    @default("PENDING") // PENDING, APPROVED, OUT, RETURNED, REJECTED, CANCELLED
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

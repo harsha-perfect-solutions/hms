@@ -107,6 +107,24 @@ export interface MessDomainEvent {
   timestamp: string;
 }
 
+export type OutingEventType =
+  | 'OUTING_CREATED'
+  | 'OUTING_APPROVED'
+  | 'OUTING_REJECTED'
+  | 'OUTING_EXIT_CONFIRMED'
+  | 'OUTING_RETURN_CONFIRMED'
+  | 'OUTING_STATS_UPDATED';
+
+export interface OutingDomainEvent {
+  type: OutingEventType;
+  outingId?: string;
+  studentId?: string;
+  status?: string;
+  passType?: string;
+  details?: any;
+  timestamp: string;
+}
+
 
 
 class ComplaintEventsService extends EventEmitter {
@@ -356,6 +374,45 @@ class ComplaintEventsService extends EventEmitter {
         date: event.date,
         mealType: event.mealType,
         status: event.status,
+        ...event.details,
+      },
+    });
+  }
+
+  /**
+   * Dispatches an outing domain event to a student's SSE stream and broadcasts to management
+   */
+  public emitOutingEventToStudent(studentId: string | undefined, event: OutingDomainEvent): void {
+    if (studentId) {
+      const connections = this.studentConnections.get(studentId);
+      if (connections && connections.size > 0) {
+        const payload = `event: outing_event\ndata: ${JSON.stringify(event)}\n\n`;
+        for (const res of connections) {
+          try {
+            res.write(payload);
+          } catch (err) {
+            console.error('Failed to write SSE outing event to student connection:', err);
+          }
+        }
+      }
+    }
+
+    // Broadcast to management
+    this.emitOutingManagementUpdate(event);
+  }
+
+  /**
+   * Broadcasts an outing domain event to all connected management dashboards/listeners
+   */
+  public emitOutingManagementUpdate(event: OutingDomainEvent): void {
+    this.emitManagementDashboardUpdate({
+      type: event.type,
+      timestamp: event.timestamp || new Date().toISOString(),
+      details: {
+        outingId: event.outingId,
+        studentId: event.studentId,
+        status: event.status,
+        passType: event.passType,
         ...event.details,
       },
     });

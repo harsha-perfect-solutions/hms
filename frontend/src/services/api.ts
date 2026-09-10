@@ -2222,6 +2222,85 @@ export const managementApiService = {
     }
     return data;
   },
+
+  async getOutingStats(): Promise<{ success: boolean; data: OutingStats }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/outings/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load outing stats.');
+    return data;
+  },
+
+  async getOutings(params?: OutingsQueryParams): Promise<OutingsListResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+    if (params?.passType) query.append('passType', params.passType);
+    if (params?.blockId) query.append('blockId', params.blockId);
+    if (params?.date) query.append('date', params.date);
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+
+    const qs = query.toString();
+    const res = await fetch(`/api/management/outings${qs ? `?${qs}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load outing requests.');
+    return data;
+  },
+
+  async getOutingDetail(id: string): Promise<{ success: boolean; data: ManagementOutingDetail }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/outings/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load outing details.');
+    return data;
+  },
+
+  async approveOuting(id: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/outings/${id}/approve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to approve outing request.');
+    return data;
+  },
+
+  async rejectOuting(id: string, reason: string): Promise<{ success: boolean; message: string; data: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/outings/${id}/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to reject outing request.');
+    return data;
+  },
 };
 
 export interface Block {
@@ -2474,5 +2553,84 @@ export interface ManagementMessTokenDetail {
     isActive: boolean;
   } | null;
 }
+
+export interface OutingStats {
+  total: number;
+  pending: number;
+  approved: number;
+  active: number;
+  returned: number;
+  rejected: number;
+  todayOutgoing: number;
+  todayIncoming: number;
+}
+
+export interface ManagementOutingStudent {
+  id: string;
+  name: string;
+  jntuNo: string;
+  email: string;
+  blockName?: string | null;
+  roomNumber?: string | null;
+  bedNumber?: string | null;
+  roomType?: string | null;
+}
+
+export interface ManagementOutingItem {
+  id: string;
+  requestNumber: string | null;
+  passType: string;
+  destination: string | null;
+  purpose: string;
+  emergencyContact: string | null;
+  remarks: string | null;
+  outDate: string;
+  returnDate: string;
+  actualExitTime: string | null;
+  actualReturnTime: string | null;
+  rejectionReason: string | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
+  status: 'PENDING' | 'APPROVED' | 'ACTIVE' | 'RETURNED' | 'REJECTED' | string;
+  rawStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  student: ManagementOutingStudent | null;
+}
+
+export interface ManagementOutingDetail extends ManagementOutingItem {
+  monthlyUsageCount: number;
+  biometricEvents: Array<{
+    id: string;
+    eventType: string;
+    verificationStatus: string;
+    gate: string | null;
+    eventTimestamp: string;
+  }>;
+}
+
+export interface OutingsQueryParams {
+  status?: string;
+  search?: string;
+  passType?: string;
+  blockId?: string;
+  date?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface OutingsListResponse {
+  success: boolean;
+  data: ManagementOutingItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 
 

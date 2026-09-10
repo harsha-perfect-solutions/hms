@@ -14,6 +14,7 @@ import { loginRateLimiter } from '../middleware/rate-limiter';
 import blockRoutes from './block.routes';
 import { roomManagementRouter, roomAllocationRouter } from './room-management.routes';
 import messManagementRouter from './mess-management.routes';
+import outingManagementRouter from './outing-management.routes';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use('/blocks', blockRoutes);
 router.use('/rooms', roomManagementRouter);
 router.use('/room-allocations', roomAllocationRouter);
 router.use('/mess', messManagementRouter);
+router.use('/outings', outingManagementRouter);
 
 
 /**

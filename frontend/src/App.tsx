@@ -23,6 +23,7 @@ import { ManagementDashboardPage } from './pages/ManagementDashboardPage';
 import { BlockManagementPage } from './pages/BlockManagementPage';
 import { RoomManagementPage } from './pages/RoomManagementPage';
 import { MessManagementPage } from './pages/MessManagementPage';
+import { OutingApprovalsPage } from './pages/OutingApprovalsPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -177,6 +178,7 @@ const AuthenticatedManagementApp: React.FC<{
   const isBlockPage = currentPath === '/management/blocks';
   const isRoomPage = currentPath === '/management/rooms';
   const isMessPage = currentPath === '/management/mess';
+  const isOutingsPage = currentPath === '/management/outings';
 
   return (
     <div className="portal-layout management-layout">
@@ -200,7 +202,9 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isMessPage
+            isOutingsPage
+              ? 'Outing Approvals & Gate Transit'
+              : isMessPage
               ? 'Mess Management'
               : isRoomPage
               ? 'Room Management & Allocation'
@@ -209,7 +213,9 @@ const AuthenticatedManagementApp: React.FC<{
               : 'Management Dashboard'
           }
           pageSubtitle={
-            isMessPage
+            isOutingsPage
+              ? 'Review and authorize resident movement passes with automated biometric gate correlation.'
+              : isMessPage
               ? 'Monitor hostel meal services, verify resident tokens, and review meal statistics.'
               : isRoomPage
               ? 'Configure rooms, track bed occupancy, and assign residential accommodations.'
@@ -221,7 +227,9 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isMessPage ? (
+          {isOutingsPage ? (
+            <OutingApprovalsPage onNavigate={onNavigate} />
+          ) : isMessPage ? (
             <MessManagementPage onNavigate={onNavigate} />
           ) : isRoomPage ? (
             <RoomManagementPage onNavigate={onNavigate} />

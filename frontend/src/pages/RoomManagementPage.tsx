@@ -479,7 +479,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
   };
 
   return (
-    <div className="room-mgmt-page" style={{ padding: '1.5rem', maxWidth: '1440px', margin: '0 auto' }}>
+    <div className="room-mgmt-page">
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -507,37 +507,18 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
       )}
 
       {/* Header Section */}
-      <div
-        className="mgmt-page-header"
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1rem',
-          marginBottom: '1.5rem',
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontSize: '1.6rem',
-              fontWeight: 700,
-              color: '#0F172A',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
-          >
+      <div className="room-page-header">
+        <div className="room-header-title-group">
+          <h1>
             <BedDouble size={26} style={{ color: '#151B54' }} />
-            Room Management & Allocation
+            Room Management &amp; Allocation
           </h1>
-          <p style={{ color: '#64748B', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+          <p>
             Configure rooms, track bed occupancy, and assign residential accommodations.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div className="room-header-actions">
           <button
             type="button"
             onClick={() => fetchRooms(true)}
@@ -585,114 +566,74 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
       </div>
 
       {/* Summary KPI Cards Grid */}
-      <section
-        className="mgmt-kpi-grid"
-        aria-label="Summary Statistics"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-          gap: '1rem',
-          marginBottom: '1.5rem',
-        }}
-      >
-        <div className="mgmt-card kpi-card" style={{ padding: '1.1rem' }}>
-          <span className="mgmt-kpi-label" style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 600 }}>
-            TOTAL ROOMS
-          </span>
-          <div className="mgmt-kpi-value" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0F172A', marginTop: '0.25rem' }}>
+      <section className="room-kpi-grid" aria-label="Summary Statistics">
+        <div className="room-kpi-card">
+          <span className="room-kpi-label">TOTAL ROOMS</span>
+          <div className="room-kpi-value" style={{ color: '#0F172A' }}>
             {summaryMetrics.totalRooms}
           </div>
-          <div className="mgmt-kpi-sub" style={{ fontSize: '0.78rem', color: '#64748B' }}>
+          <div className="room-kpi-sub" style={{ color: '#64748B' }}>
             Across all blocks
           </div>
         </div>
 
-        <div className="mgmt-card kpi-card" style={{ padding: '1.1rem' }}>
-          <span className="mgmt-kpi-label" style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 600 }}>
-            OCCUPIED ROOMS
-          </span>
-          <div className="mgmt-kpi-value" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1E293B', marginTop: '0.25rem' }}>
+        <div className="room-kpi-card">
+          <span className="room-kpi-label">OCCUPIED ROOMS</span>
+          <div className="room-kpi-value" style={{ color: '#1E293B' }}>
             {summaryMetrics.occupiedRooms}
           </div>
-          <div className="mgmt-kpi-sub" style={{ fontSize: '0.78rem', color: '#059669' }}>
+          <div className="room-kpi-sub" style={{ color: '#059669' }}>
             At 100% capacity
           </div>
         </div>
 
-        <div className="mgmt-card kpi-card" style={{ padding: '1.1rem' }}>
-          <span className="mgmt-kpi-label" style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 600 }}>
-            PARTIALLY OCCUPIED
-          </span>
-          <div className="mgmt-kpi-value" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#D97706', marginTop: '0.25rem' }}>
+        <div className="room-kpi-card">
+          <span className="room-kpi-label">PARTIALLY OCCUPIED</span>
+          <div className="room-kpi-value" style={{ color: '#D97706' }}>
             {summaryMetrics.partiallyOccupied}
           </div>
-          <div className="mgmt-kpi-sub" style={{ fontSize: '0.78rem', color: '#B45309' }}>
+          <div className="room-kpi-sub" style={{ color: '#B45309' }}>
             Has vacancies
           </div>
         </div>
 
-        <div className="mgmt-card kpi-card" style={{ padding: '1.1rem' }}>
-          <span className="mgmt-kpi-label" style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 600 }}>
-            VACANT ROOMS
-          </span>
-          <div className="mgmt-kpi-value" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#64748B', marginTop: '0.25rem' }}>
+        <div className="room-kpi-card">
+          <span className="room-kpi-label">VACANT ROOMS</span>
+          <div className="room-kpi-value" style={{ color: '#64748B' }}>
             {summaryMetrics.vacantRooms}
           </div>
-          <div className="mgmt-kpi-sub" style={{ fontSize: '0.78rem', color: '#475569' }}>
+          <div className="room-kpi-sub" style={{ color: '#475569' }}>
             0 allocations
           </div>
         </div>
 
-        <div className="mgmt-card kpi-card" style={{ padding: '1.1rem' }}>
-          <span className="mgmt-kpi-label" style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 600 }}>
-            TOTAL CAPACITY
-          </span>
-          <div className="mgmt-kpi-value" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0F172A', marginTop: '0.25rem' }}>
+        <div className="room-kpi-card">
+          <span className="room-kpi-label">TOTAL CAPACITY</span>
+          <div className="room-kpi-value" style={{ color: '#0F172A' }}>
             {summaryMetrics.totalCapacity}
           </div>
-          <div className="mgmt-kpi-sub" style={{ fontSize: '0.78rem', color: '#64748B' }}>
+          <div className="room-kpi-sub" style={{ color: '#64748B' }}>
             Total beds available
           </div>
         </div>
 
-        <div className="mgmt-card kpi-card" style={{ padding: '1.1rem' }}>
-          <span className="mgmt-kpi-label" style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 600 }}>
-            ALLOCATED BEDS
-          </span>
-          <div className="mgmt-kpi-value" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#2563EB', marginTop: '0.25rem' }}>
+        <div className="room-kpi-card">
+          <span className="room-kpi-label">ALLOCATED BEDS</span>
+          <div className="room-kpi-value" style={{ color: '#2563EB' }}>
             {summaryMetrics.allocatedBeds}
           </div>
-          <div className="mgmt-kpi-sub" style={{ fontSize: '0.78rem', color: '#2563EB' }}>
+          <div className="room-kpi-sub" style={{ color: '#2563EB' }}>
             {summaryMetrics.occupancyRate}% filled
           </div>
         </div>
       </section>
 
       {/* View Switcher Tabs */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '0.5rem',
-          borderBottom: '1px solid #E2E8F0',
-          marginBottom: '1.25rem',
-        }}
-      >
+      <div className="room-tabs-bar">
         <button
           type="button"
           onClick={() => setActiveTab('rooms')}
-          style={{
-            padding: '0.65rem 1.25rem',
-            fontWeight: 600,
-            fontSize: '0.92rem',
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
-            borderBottom: activeTab === 'rooms' ? '3px solid #151B54' : '3px solid transparent',
-            color: activeTab === 'rooms' ? '#151B54' : '#64748B',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-          }}
+          className={`room-tab-btn ${activeTab === 'rooms' ? 'active' : ''}`}
         >
           <LayoutGrid size={16} />
           <span>Rooms Overview ({rooms.length})</span>
@@ -701,19 +642,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
         <button
           type="button"
           onClick={() => setActiveTab('allocations')}
-          style={{
-            padding: '0.65rem 1.25rem',
-            fontWeight: 600,
-            fontSize: '0.92rem',
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
-            borderBottom: activeTab === 'allocations' ? '3px solid #151B54' : '3px solid transparent',
-            color: activeTab === 'allocations' ? '#151B54' : '#64748B',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-          }}
+          className={`room-tab-btn ${activeTab === 'allocations' ? 'active' : ''}`}
         >
           <History size={16} />
           <span>Allocations History</span>
@@ -721,28 +650,9 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div
-        className="mgmt-card filter-card"
-        style={{
-          padding: '1rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: '1rem',
-        }}
-      >
-        <div style={{ flex: '1 1 240px', position: 'relative' }}>
-          <Search
-            size={16}
-            style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#94A3B8',
-            }}
-          />
+      <div className="room-filter-toolbar">
+        <div className="room-search-box">
+          <Search size={16} className="search-icon" />
           <input
             type="text"
             placeholder={
@@ -752,63 +662,69 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
             }
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="mgmt-input"
-            style={{ width: '100%', paddingLeft: '36px', height: '40px' }}
+            aria-label="Search"
           />
         </div>
 
         {activeTab === 'rooms' && (
-          <>
+          <div className="room-filter-controls">
             {/* Block Filter */}
-            <div style={{ minWidth: '160px' }}>
-              <select
-                value={blockFilter}
-                onChange={(e) => setBlockFilter(e.target.value)}
-                className="mgmt-select"
-                style={{ width: '100%', height: '40px' }}
-                aria-label="Filter by block"
-              >
-                <option value="ALL">All Blocks</option>
-                {blocks.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name} ({b.code})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={blockFilter}
+              onChange={(e) => setBlockFilter(e.target.value)}
+              className="room-filter-select"
+              aria-label="Filter by block"
+            >
+              <option value="ALL">All Blocks</option>
+              {blocks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name} ({b.code})
+                </option>
+              ))}
+            </select>
 
             {/* Status Filter */}
-            <div style={{ minWidth: '140px' }}>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="mgmt-select"
-                style={{ width: '100%', height: '40px' }}
-                aria-label="Filter by room status"
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
-                <option value="UNDER_MAINTENANCE">Maintenance</option>
-              </select>
-            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="room-filter-select"
+              aria-label="Filter by room status"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="UNDER_MAINTENANCE">Maintenance</option>
+            </select>
 
             {/* Occupancy Filter */}
-            <div style={{ minWidth: '150px' }}>
-              <select
-                value={occupancyFilter}
-                onChange={(e) => setOccupancyFilter(e.target.value)}
-                className="mgmt-select"
-                style={{ width: '100%', height: '40px' }}
-                aria-label="Filter by occupancy"
+            <select
+              value={occupancyFilter}
+              onChange={(e) => setOccupancyFilter(e.target.value)}
+              className="room-filter-select"
+              aria-label="Filter by occupancy"
+            >
+              <option value="ALL">All Occupancy</option>
+              <option value="OCCUPIED">Fully Occupied</option>
+              <option value="PARTIALLY_OCCUPIED">Partially Occupied</option>
+              <option value="VACANT">Fully Vacant</option>
+            </select>
+
+            {(blockFilter !== 'ALL' || statusFilter !== 'ALL' || occupancyFilter !== 'ALL' || searchTerm.trim() !== '') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setBlockFilter('ALL');
+                  setStatusFilter('ALL');
+                  setOccupancyFilter('ALL');
+                  setSearchTerm('');
+                }}
+                className="room-reset-filter-btn"
+                title="Reset all filters"
               >
-                <option value="ALL">All Occupancy</option>
-                <option value="OCCUPIED">Fully Occupied</option>
-                <option value="PARTIALLY_OCCUPIED">Partially Occupied</option>
-                <option value="VACANT">Fully Vacant</option>
-              </select>
-            </div>
-          </>
+                Reset
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -861,14 +777,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
             </button>
           </div>
         ) : (
-          <div
-            className="rooms-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: '1.25rem',
-            }}
-          >
+          <div className="rooms-grid">
             {rooms.map((room) => {
               const occPct = room.capacity > 0 ? Math.round((room.occupancy / room.capacity) * 100) : 0;
               const isFull = room.occupancy >= room.capacity;
@@ -877,12 +786,8 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
               return (
                 <div
                   key={room.id}
-                  className="room-card mgmt-card"
+                  className="room-card"
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    padding: '1.25rem',
                     borderLeft: `4px solid ${
                       room.status !== 'ACTIVE'
                         ? '#CBD5E1'
@@ -894,133 +799,77 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
                     }`,
                   }}
                 >
-                  {/* Card Header */}
+                  {/* Card Header & Content */}
                   <div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        marginBottom: '0.75rem',
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span
-                            style={{
-                              fontSize: '1.25rem',
-                              fontWeight: 700,
-                              color: '#0F172A',
-                            }}
+                    <div className="room-card-header">
+                      {/* Top Row: Room Number & Action Buttons */}
+                      <div className="room-header-top-row">
+                        <span className="room-title-number">
+                          Room {room.roomNumber}
+                        </span>
+
+                        <div className="room-header-actions">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(room)}
+                            className="room-action-icon-btn"
+                            title="Edit Room"
                           >
-                            Room {room.roomNumber}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 600,
-                              padding: '2px 8px',
-                              borderRadius: '12px',
-                              backgroundColor:
-                                room.status === 'ACTIVE'
-                                  ? '#DEF7EC'
-                                  : room.status === 'UNDER_MAINTENANCE'
-                                  ? '#FEF3C7'
-                                  : '#F1F5F9',
-                              color:
-                                room.status === 'ACTIVE'
-                                  ? '#03543F'
-                                  : room.status === 'UNDER_MAINTENANCE'
-                                  ? '#92400E'
-                                  : '#475569',
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteRoomTarget(room);
+                              setDeleteRoomError(null);
                             }}
+                            className="room-action-icon-btn delete"
+                            title="Delete Room"
+                            disabled={room.occupancy > 0}
                           >
-                            {room.status}
-                          </span>
+                            <Trash2 size={14} />
+                          </button>
                         </div>
-                        <div
-                          style={{
-                            fontSize: '0.85rem',
-                            color: '#475569',
-                            marginTop: '0.2rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                          }}
+                      </div>
+
+                      {/* Sub Row: Status Badge & Block Info */}
+                      <div className="room-sub-row">
+                        <span
+                          className={`room-badge-status ${
+                            room.status === 'ACTIVE'
+                              ? 'active'
+                              : room.status === 'UNDER_MAINTENANCE'
+                              ? 'maintenance'
+                              : 'inactive'
+                          }`}
                         >
-                          <Building size={14} />
+                          {room.status}
+                        </span>
+                        <div className="room-block-info">
+                          <Building size={13} />
                           <span>
                             {room.block.name} ({room.block.code})
                           </span>
                         </div>
                       </div>
-
-                      {/* Top Action buttons */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditModal(room)}
-                          className="icon-btn"
-                          title="Edit Room"
-                          style={{ padding: '6px', borderRadius: '4px', border: 'none', background: '#F1F5F9', cursor: 'pointer' }}
-                        >
-                          <Edit2 size={14} style={{ color: '#475569' }} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDeleteRoomTarget(room);
-                            setDeleteRoomError(null);
-                          }}
-                          className="icon-btn"
-                          title="Delete Room"
-                          disabled={room.occupancy > 0}
-                          style={{
-                            padding: '6px',
-                            borderRadius: '4px',
-                            border: 'none',
-                            background: room.occupancy > 0 ? '#F8FAFC' : '#FEE2E2',
-                            cursor: room.occupancy > 0 ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          <Trash2 size={14} style={{ color: room.occupancy > 0 ? '#94A3B8' : '#DC2626' }} />
-                        </button>
-                      </div>
                     </div>
 
-                    {/* Room Meta (Floor, Type) */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '0.75rem',
-                        fontSize: '0.8rem',
-                        color: '#64748B',
-                        marginBottom: '1rem',
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    {/* Room Meta (Floor, Type, Capacity) */}
+                    <div className="room-specs-row">
+                      <span className="room-spec-item">
                         <Layers size={13} /> Floor {room.floor || 1}
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <span className="room-spec-item">
                         <Home size={13} /> {room.roomType || 'Non-AC'}
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <span className="room-spec-item">
                         <Users size={13} /> Cap: {room.capacity}
                       </span>
                     </div>
 
                     {/* Occupancy Progress Visual Indicator */}
-                    <div style={{ marginBottom: '1rem' }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          marginBottom: '4px',
-                        }}
-                      >
+                    <div className="room-occupancy-indicator">
+                      <div className="room-occupancy-labels">
                         <span style={{ color: isFull ? '#1E293B' : '#059669' }}>
                           {room.occupancy} / {room.capacity} occupied
                         </span>
@@ -1028,74 +877,38 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
                           {room.availableBeds} {room.availableBeds === 1 ? 'bed' : 'beds'} free
                         </span>
                       </div>
-                      <div
-                        style={{
-                          height: '8px',
-                          backgroundColor: '#E2E8F0',
-                          borderRadius: '4px',
-                          overflow: 'hidden',
-                        }}
-                      >
+                      <div className="room-occupancy-track">
                         <div
+                          className="room-occupancy-fill"
                           style={{
                             width: `${occPct}%`,
-                            height: '100%',
                             backgroundColor: isFull ? '#151B54' : room.occupancy > 0 ? '#F59E0B' : '#10B981',
-                            transition: 'width 0.3s ease',
                           }}
                         />
                       </div>
                     </div>
 
                     {/* Active Occupants List */}
-                    <div style={{ marginBottom: '1rem' }}>
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          color: '#64748B',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                        }}
-                      >
+                    <div className="room-occupants-box">
+                      <span className="room-occupants-heading">
                         Assigned Students ({room.activeOccupants.length})
                       </span>
 
-                      <div style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <div>
                         {room.activeOccupants.length > 0 ? (
                           room.activeOccupants.map((occ) => (
-                            <div
-                              key={occ.allocationId}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '6px 10px',
-                                backgroundColor: '#F8FAFC',
-                                borderRadius: '6px',
-                                fontSize: '0.82rem',
-                              }}
-                            >
-                              <div>
-                                <span style={{ fontWeight: 600, color: '#0F172A' }}>{occ.name}</span>{' '}
-                                <span style={{ color: '#64748B', fontSize: '0.75rem' }}>({occ.jntuNo})</span>
+                            <div key={occ.allocationId} className="room-occupant-chip">
+                              <div className="room-occupant-meta">
+                                <span className="room-occupant-name">{occ.name}</span>{' '}
+                                <span className="room-occupant-jntu">({occ.jntuNo})</span>
                                 {occ.bedNumber && (
-                                  <span
-                                    style={{
-                                      marginLeft: '6px',
-                                      padding: '1px 6px',
-                                      backgroundColor: '#E2E8F0',
-                                      borderRadius: '4px',
-                                      fontSize: '0.7rem',
-                                      fontWeight: 600,
-                                    }}
-                                  >
+                                  <span className="room-occupant-bed">
                                     {occ.bedNumber}
                                   </span>
                                 )}
                               </div>
 
-                              <div style={{ display: 'flex', gap: '4px' }}>
+                              <div className="room-occupant-actions">
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -1154,36 +967,20 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
                   </div>
 
                   {/* Card Bottom Quick Action */}
-                  <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '0.75rem' }}>
+                  <div className="room-card-footer">
                     {hasVacancy ? (
                       <button
                         type="button"
                         onClick={() => handleOpenAllocateModal(room.id, room.blockId)}
-                        className="btn-secondary"
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.4rem',
-                          padding: '0.45rem',
-                          fontSize: '0.82rem',
-                          color: '#0F766E',
-                          borderColor: '#99F6E4',
-                          backgroundColor: '#F0FDFA',
-                        }}
+                        className="room-allocate-btn"
                       >
                         <UserPlus size={14} />
                         <span>Allocate Available Bed</span>
                       </button>
                     ) : (
                       <div
-                        style={{
-                          textAlign: 'center',
-                          fontSize: '0.78rem',
-                          color: isFull ? '#64748B' : '#94A3B8',
-                          padding: '0.4rem 0',
-                        }}
+                        className="room-empty-footer"
+                        style={{ color: isFull ? '#64748B' : '#94A3B8' }}
                       >
                         {isFull ? 'Room Fully Occupied' : `Unavailable (${room.status})`}
                       </div>
@@ -1196,7 +993,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
         )
       ) : (
         /* ALLOCATIONS HISTORY TAB VIEW */
-        <div className="mgmt-card" style={{ overflowX: 'auto', padding: '0.5rem' }}>
+        <div className="room-table-card">
           {allocationsLoading ? (
             <div style={{ padding: '2.5rem', textAlign: 'center', color: '#64748B' }}>
               <RotateCw size={24} className="spin-anim" style={{ margin: '0 auto 0.5rem' }} />
@@ -1208,109 +1005,100 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
               <p>No room allocations found.</p>
             </div>
           ) : (
-            <table className="mgmt-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
-                  <th style={{ padding: '10px 14px' }}>Student</th>
-                  <th style={{ padding: '10px 14px' }}>JNTU No</th>
-                  <th style={{ padding: '10px 14px' }}>Block & Room</th>
-                  <th style={{ padding: '10px 14px' }}>Bed</th>
-                  <th style={{ padding: '10px 14px' }}>Allocated Date</th>
-                  <th style={{ padding: '10px 14px' }}>Vacated Date</th>
-                  <th style={{ padding: '10px 14px' }}>Status</th>
-                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allocations.map((alloc) => {
-                  const isActive = alloc.status === 'ACTIVE';
+            <div className="room-table-wrap">
+              <table className="room-alloc-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>JNTU No</th>
+                    <th>Block &amp; Room</th>
+                    <th>Bed</th>
+                    <th>Allocated Date</th>
+                    <th>Vacated Date</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allocations.map((alloc) => {
+                    const isActive = alloc.status === 'ACTIVE';
 
-                  return (
-                    <tr key={alloc.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '10px 14px', fontWeight: 600, color: '#0F172A' }}>
-                        {alloc.student.name}
-                      </td>
-                      <td style={{ padding: '10px 14px', color: '#475569' }}>{alloc.student.jntuNo}</td>
-                      <td style={{ padding: '10px 14px', color: '#334155' }}>
-                        {alloc.room.block.name} - Room {alloc.room.roomNumber}
-                      </td>
-                      <td style={{ padding: '10px 14px', color: '#475569' }}>{alloc.bedNumber || 'Auto'}</td>
-                      <td style={{ padding: '10px 14px', color: '#64748B', fontSize: '0.82rem' }}>
-                        {new Date(alloc.allocatedAt).toLocaleDateString()}
-                      </td>
-                      <td style={{ padding: '10px 14px', color: '#64748B', fontSize: '0.82rem' }}>
-                        {alloc.vacatedAt ? new Date(alloc.vacatedAt).toLocaleDateString() : '—'}
-                      </td>
-                      <td style={{ padding: '10px 14px' }}>
-                        <span
-                          style={{
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            backgroundColor:
+                    return (
+                      <tr key={alloc.id}>
+                        <td style={{ fontWeight: 600, color: '#0F172A' }}>
+                          {alloc.student.name}
+                        </td>
+                        <td style={{ color: '#475569' }}>{alloc.student.jntuNo}</td>
+                        <td style={{ color: '#334155' }}>
+                          {alloc.room.block.name} - Room {alloc.room.roomNumber}
+                        </td>
+                        <td style={{ color: '#475569' }}>{alloc.bedNumber || 'Auto'}</td>
+                        <td style={{ color: '#64748B', fontSize: '0.82rem' }}>
+                          {new Date(alloc.allocatedAt).toLocaleDateString()}
+                        </td>
+                        <td style={{ color: '#64748B', fontSize: '0.82rem' }}>
+                          {alloc.vacatedAt ? new Date(alloc.vacatedAt).toLocaleDateString() : '—'}
+                        </td>
+                        <td>
+                          <span
+                            className={`room-badge-status ${
                               alloc.status === 'ACTIVE'
-                                ? '#DEF7EC'
+                                ? 'active'
                                 : alloc.status === 'VACATED'
-                                ? '#FEE2E2'
-                                : '#FEF3C7',
-                            color:
-                              alloc.status === 'ACTIVE'
-                                ? '#03543F'
-                                : alloc.status === 'VACATED'
-                                ? '#991B1B'
-                                : '#92400E',
-                          }}
-                        >
-                          {alloc.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right' }}>
-                        {isActive ? (
-                          <div style={{ display: 'inline-flex', gap: '6px' }}>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleOpenReallocateModal({
-                                  allocationId: alloc.id,
-                                  studentId: alloc.studentId,
-                                  studentName: alloc.student.name,
-                                  currentRoomNumber: alloc.room.roomNumber,
-                                  currentBlockName: alloc.room.block.name,
-                                  currentBedNumber: alloc.bedNumber,
-                                })
-                              }
-                              className="btn-secondary"
-                              style={{ padding: '3px 8px', fontSize: '0.75rem' }}
-                            >
-                              Reallocate
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setVacateModalData({
-                                  allocationId: alloc.id,
-                                  studentName: alloc.student.name,
-                                  roomNumber: alloc.room.roomNumber,
-                                  blockName: alloc.room.block.name,
-                                  bedNumber: alloc.bedNumber,
-                                })
-                              }
-                              className="btn-secondary"
-                              style={{ padding: '3px 8px', fontSize: '0.75rem', color: '#DC2626' }}
-                            >
-                              Vacate
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Archived</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                                ? 'inactive'
+                                : 'maintenance'
+                            }`}
+                          >
+                            {alloc.status}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {isActive ? (
+                            <div style={{ display: 'inline-flex', gap: '6px' }}>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleOpenReallocateModal({
+                                    allocationId: alloc.id,
+                                    studentId: alloc.studentId,
+                                    studentName: alloc.student.name,
+                                    currentRoomNumber: alloc.room.roomNumber,
+                                    currentBlockName: alloc.room.block.name,
+                                    currentBedNumber: alloc.bedNumber,
+                                  })
+                                }
+                                className="btn-secondary"
+                                style={{ padding: '3px 8px', fontSize: '0.75rem' }}
+                              >
+                                Reallocate
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setVacateModalData({
+                                    allocationId: alloc.id,
+                                    studentName: alloc.student.name,
+                                    roomNumber: alloc.room.roomNumber,
+                                    blockName: alloc.room.block.name,
+                                    bedNumber: alloc.bedNumber,
+                                  })
+                                }
+                                className="btn-secondary"
+                                style={{ padding: '3px 8px', fontSize: '0.75rem', color: '#DC2626' }}
+                              >
+                                Vacate
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Archived</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

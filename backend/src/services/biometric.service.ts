@@ -443,6 +443,7 @@ export class BiometricService {
       });
 
       // Outing Lifecycle Correlation (Only for verified physical transits)
+      let correlatedOutingInfo: { outingId: string; type: 'OUTING_EXIT_CONFIRMED' | 'OUTING_RETURN_CONFIRMED'; status: string } | null = null;
       if (verificationStatus === 'VERIFIED') {
         if (eventType === 'EXIT') {
           // If student has an APPROVED outing, activate it to OUT with actualExitTime
@@ -470,6 +471,12 @@ export class BiometricService {
                 description: `Outing pass #${approvedOuting.requestNumber || approvedOuting.id} marked OUT via biometric exit gate.`,
               },
             });
+
+            correlatedOutingInfo = {
+              outingId: approvedOuting.id,
+              type: 'OUTING_EXIT_CONFIRMED',
+              status: 'OUT',
+            };
           }
         } else if (eventType === 'ENTRY') {
           // If student has an OUT outing, complete it to RETURNED with actualReturnTime
@@ -497,25 +504,46 @@ export class BiometricService {
                 description: `Outing pass #${activeOuting.requestNumber || activeOuting.id} marked RETURNED via biometric entry gate.`,
               },
             });
+
+            correlatedOutingInfo = {
+              outingId: activeOuting.id,
+              type: 'OUTING_RETURN_CONFIRMED',
+              status: 'RETURNED',
+            };
           }
         }
       }
 
-      return createdEvent;
+      return { createdEvent, correlatedOutingInfo };
     });
 
     // 5. Emit Real-time SSE Domain Event to student
     complaintEventsService.emitBiometricEventToStudent(dto.studentId, {
       type: 'BIOMETRIC_EVENT_RECORDED',
-      eventId: result.id,
-      eventType: result.eventType,
-      status: result.verificationStatus,
-      gate: result.gate,
-      timestamp: result.eventTimestamp.toISOString(),
+      eventId: result.createdEvent.id,
+      eventType: result.createdEvent.eventType,
+      status: result.createdEvent.verificationStatus,
+      gate: result.createdEvent.gate,
+      timestamp: result.createdEvent.eventTimestamp.toISOString(),
     });
 
+    // 6. If an outing was correlated, emit outing domain event after commit
+    if (result.correlatedOutingInfo) {
+      complaintEventsService.emitOutingEventToStudent(dto.studentId, {
+        type: result.correlatedOutingInfo.type,
+        outingId: result.correlatedOutingInfo.outingId,
+        studentId: dto.studentId,
+        status: result.correlatedOutingInfo.status,
+        timestamp: result.createdEvent.eventTimestamp.toISOString(),
+        details: {
+          gate: result.createdEvent.gate,
+          source: result.createdEvent.source,
+        },
+      });
+    }
+
     return {
-      event: result,
+      event: result.createdEvent,
       isDuplicate: false,
     };
   }

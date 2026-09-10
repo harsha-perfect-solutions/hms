@@ -18,6 +18,7 @@ import messManagementRouter from './mess-management.routes';
 import outingManagementRouter from './outing-management.routes';
 import { leaveManagementRouter, suspensionManagementRouter } from './leave-management.routes';
 import complaintManagementRouter from './complaint-management.routes';
+import guestBillingRouter from './guest-billing.routes';
 
 
 const router = Router();
@@ -31,6 +32,7 @@ router.use('/outings', outingManagementRouter);
 router.use('/leaves', leaveManagementRouter);
 router.use('/suspensions', suspensionManagementRouter);
 router.use('/complaints', complaintManagementRouter);
+router.use('/guest-billing', guestBillingRouter);
 
 
 /**

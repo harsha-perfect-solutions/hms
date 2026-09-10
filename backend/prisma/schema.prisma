@@ -37,6 +37,7 @@ model Student {
   activityLogs     ActivityLog[]
   biometricEvents  BiometricEvent[]
   roomAllocations  RoomAllocation[]
+  guestVisits      GuestVisit[]
 }
 
 model Session {
@@ -276,5 +277,97 @@ model RoomAllocation {
   @@index([roomId])
   @@index([studentId])
   @@index([status])
+}
+
+model Guest {
+  id             String       @id @default(uuid())
+  name           String
+  phone          String
+  email          String?
+  idProofType    String?      // AADHAAR, PAN, DRIVING_LICENSE, PASSPORT, VOTER_ID, OTHER
+  idProofNumber  String?
+  address        String?
+  relation       String?      // PARENT, GUARDIAN, SIBLING, RELATIVE, FRIEND, OTHER
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  visits         GuestVisit[]
+
+  @@index([phone])
+  @@index([name])
+}
+
+model GuestVisit {
+  id            String      @id @default(uuid())
+  guestId       String
+  guest         Guest       @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  hostStudentId String
+  hostStudent   Student     @relation(fields: [hostStudentId], references: [id], onDelete: Restrict)
+  purpose       String
+  visitDate     DateTime    @default(now())
+  checkInTime   DateTime    @default(now())
+  checkOutTime  DateTime?
+  status        String      @default("CHECKED_IN") // CHECKED_IN, CHECKED_OUT, CANCELLED
+  remarks       String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  bills         GuestBill[]
+
+  @@index([guestId])
+  @@index([hostStudentId])
+  @@index([status])
+  @@index([visitDate])
+}
+
+model GuestBill {
+  id               String         @id @default(uuid())
+  guestVisitId     String
+  guestVisit       GuestVisit     @relation(fields: [guestVisitId], references: [id], onDelete: Restrict)
+  billNumber       String         @unique
+  totalAmount      Float
+  paidAmount       Float          @default(0)
+  balanceAmount    Float          @default(0)
+  paymentStatus    String         @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, VOID
+  paymentMethod    String?        // CASH, UPI, CARD, BANK_TRANSFER, OTHER
+  paymentReference String?
+  paidAt           DateTime?
+  voidReason       String?
+  voidedAt         DateTime?
+  voidedBy         String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  items            BillingItem[]
+  payments         GuestPayment[]
+
+  @@index([guestVisitId])
+  @@index([paymentStatus])
+  @@index([billNumber])
+}
+
+model BillingItem {
+  id          String    @id @default(uuid())
+  guestBillId String
+  guestBill   GuestBill @relation(fields: [guestBillId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int       @default(1)
+  unitAmount  Float
+  totalAmount Float
+  createdAt   DateTime  @default(now())
+
+  @@index([guestBillId])
+}
+
+model GuestPayment {
+  id               String    @id @default(uuid())
+  guestBillId      String
+  guestBill        GuestBill @relation(fields: [guestBillId], references: [id], onDelete: Restrict)
+  amount           Float
+  paymentMethod    String    // CASH, UPI, CARD, BANK_TRANSFER, OTHER
+  paymentReference String?
+  notes            String?
+  recordedBy       String?   // Manager/Staff display name
+  recordedById     String?   // Staff ID
+  createdAt        DateTime  @default(now())
+
+  @@index([guestBillId])
 }
 

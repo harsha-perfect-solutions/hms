@@ -2584,7 +2584,283 @@ export const managementApiService = {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   },
+
+  // Guest Billing Management
+  async getGuestBillingOverview(): Promise<{ success: boolean; stats: GuestBillingStats }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/guest-billing/overview', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load guest billing overview.');
+    return data;
+  },
+
+  async getHostStudents(search?: string): Promise<{ success: boolean; hosts: HostStudentItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const query = search ? `?search=${encodeURIComponent(search)}` : '';
+    const res = await fetch(`/api/management/guest-billing/hosts${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load host students.');
+    return data;
+  },
+
+  async getGuests(params?: { page?: number; limit?: number; search?: string }): Promise<{
+    success: boolean;
+    guests: GuestItem[];
+    pagination: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const sp = new URLSearchParams();
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+    if (params?.search) sp.set('search', params.search);
+
+    const res = await fetch(`/api/management/guest-billing/guests?${sp.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load guests.');
+    return data;
+  },
+
+  async getGuest(id: string): Promise<{ success: boolean; guest: GuestItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/guest-billing/guests/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load guest detail.');
+    return data;
+  },
+
+  async createGuest(payload: {
+    name: string;
+    phone: string;
+    email?: string;
+    idProofType?: string;
+    idProofNumber?: string;
+    address?: string;
+    relation?: string;
+  }): Promise<{ success: boolean; message: string; guest: GuestItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/guest-billing/guests', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to register guest.');
+    return data;
+  },
+
+  async updateGuest(id: string, payload: Partial<GuestItem>): Promise<{ success: boolean; message: string; guest: GuestItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/guest-billing/guests/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to update guest.');
+    return data;
+  },
+
+  async getGuestVisits(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+    guestId?: string;
+    studentId?: string;
+    date?: string;
+  }): Promise<{
+    success: boolean;
+    visits: GuestVisitItem[];
+    pagination: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const sp = new URLSearchParams();
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+    if (params?.status && params.status !== 'ALL') sp.set('status', params.status);
+    if (params?.search) sp.set('search', params.search);
+    if (params?.guestId) sp.set('guestId', params.guestId);
+    if (params?.studentId) sp.set('studentId', params.studentId);
+    if (params?.date) sp.set('date', params.date);
+
+    const res = await fetch(`/api/management/guest-billing/visits?${sp.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load guest visits.');
+    return data;
+  },
+
+  async getGuestVisit(id: string): Promise<{ success: boolean; visit: GuestVisitItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/guest-billing/visits/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load visit details.');
+    return data;
+  },
+
+  async createGuestVisit(payload: {
+    guestId: string;
+    hostStudentId: string;
+    purpose: string;
+    checkInTime?: string;
+    remarks?: string;
+  }): Promise<{ success: boolean; message: string; visit: GuestVisitItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/guest-billing/visits', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to register visit.');
+    return data;
+  },
+
+  async checkoutGuestVisit(id: string, checkOutTime?: string): Promise<{ success: boolean; message: string; visit: GuestVisitItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/guest-billing/visits/${id}/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ checkOutTime }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to check out visit.');
+    return data;
+  },
+
+  async getGuestBills(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+    guestVisitId?: string;
+  }): Promise<{
+    success: boolean;
+    bills: GuestBillItem[];
+    pagination: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const sp = new URLSearchParams();
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+    if (params?.status && params.status !== 'ALL') sp.set('status', params.status);
+    if (params?.search) sp.set('search', params.search);
+    if (params?.guestVisitId) sp.set('guestVisitId', params.guestVisitId);
+
+    const res = await fetch(`/api/management/guest-billing/bills?${sp.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load guest bills.');
+    return data;
+  },
+
+  async getGuestBill(id: string): Promise<{ success: boolean; bill: GuestBillItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/guest-billing/bills/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to load bill detail.');
+    return data;
+  },
+
+  async createGuestBill(payload: {
+    guestVisitId: string;
+    billNumber?: string;
+    items: { description: string; quantity: number; unitAmount: number }[];
+  }): Promise<{ success: boolean; message: string; bill: GuestBillItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/guest-billing/bills', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to create guest bill.');
+    return data;
+  },
+
+  async recordGuestBillPayment(
+    id: string,
+    payload: {
+      amount: number;
+      paymentMethod: string;
+      paymentReference?: string;
+      notes?: string;
+    }
+  ): Promise<{ success: boolean; message: string; bill: GuestBillItem; payment: GuestPaymentRecord }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/guest-billing/bills/${id}/payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to record payment.');
+    return data;
+  },
+
+  async voidGuestBill(id: string, reason: string): Promise<{ success: boolean; message: string; bill: GuestBillItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/guest-billing/bills/${id}/void`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to void bill.');
+    return data;
+  },
 };
+
 
 export interface Block {
   id: string;
@@ -3118,5 +3394,101 @@ export interface ComplaintsListResponse {
     total: number;
     totalPages: number;
   };
+}
+
+// Guest Billing Management Interfaces
+export interface GuestBillingStats {
+  totalGuests: number;
+  todayVisits: number;
+  activeVisits: number;
+  totalBills: number;
+  unpaidAmount: number;
+  paidAmount: number;
+}
+
+export interface GuestItem {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  idProofType?: string | null;
+  idProofNumber?: string | null;
+  address?: string | null;
+  relation?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    visits: number;
+  };
+  visits?: GuestVisitItem[];
+}
+
+export interface HostStudentItem {
+  id: string;
+  name: string;
+  jntuNo: string;
+  email?: string;
+  blockName?: string | null;
+  roomNumber?: string | null;
+  bedNumber?: string | null;
+}
+
+export interface GuestVisitItem {
+  id: string;
+  guestId: string;
+  guest?: GuestItem;
+  hostStudentId: string;
+  hostStudent?: HostStudentItem;
+  purpose: string;
+  visitDate: string;
+  checkInTime: string;
+  checkOutTime?: string | null;
+  status: 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED' | string;
+  remarks?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  bills?: GuestBillItem[];
+}
+
+export interface BillingItemRecord {
+  id?: string;
+  guestBillId?: string;
+  description: string;
+  quantity: number;
+  unitAmount: number;
+  totalAmount?: number;
+  createdAt?: string;
+}
+
+export interface GuestPaymentRecord {
+  id: string;
+  guestBillId: string;
+  amount: number;
+  paymentMethod: string;
+  paymentReference?: string | null;
+  notes?: string | null;
+  recordedBy?: string | null;
+  createdAt: string;
+}
+
+export interface GuestBillItem {
+  id: string;
+  guestVisitId: string;
+  guestVisit?: GuestVisitItem;
+  billNumber: string;
+  totalAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  paymentStatus: 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'VOID' | string;
+  paymentMethod?: string | null;
+  paymentReference?: string | null;
+  paidAt?: string | null;
+  voidReason?: string | null;
+  voidedAt?: string | null;
+  voidedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: BillingItemRecord[];
+  payments: GuestPaymentRecord[];
 }
 

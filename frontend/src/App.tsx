@@ -26,6 +26,7 @@ import { MessManagementPage } from './pages/MessManagementPage';
 import { OutingApprovalsPage } from './pages/OutingApprovalsPage';
 import { ManagementLeavesPage } from './pages/ManagementLeavesPage';
 import { ManagementComplaintsPage } from './pages/ManagementComplaintsPage';
+import { GuestBillingManagementPage } from './pages/GuestBillingManagementPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -183,6 +184,7 @@ const AuthenticatedManagementApp: React.FC<{
   const isOutingsPage = currentPath === '/management/outings';
   const isLeavesPage = currentPath === '/management/leaves';
   const isComplaintsPage = currentPath === '/management/complaints' || currentPath === '/management/maintenance';
+  const isGuestBillingPage = currentPath === '/management/guest-billing' || currentPath === '/management/billing';
 
   return (
     <div className="portal-layout management-layout">
@@ -206,7 +208,9 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isComplaintsPage
+            isGuestBillingPage
+              ? 'Guest Visits & Billing Management'
+              : isComplaintsPage
               ? 'Complaints & Maintenance Operations'
               : isLeavesPage
               ? 'Leaves & Suspension Management'
@@ -221,7 +225,9 @@ const AuthenticatedManagementApp: React.FC<{
               : 'Management Dashboard'
           }
           pageSubtitle={
-            isComplaintsPage
+            isGuestBillingPage
+              ? 'Manage guest visit records, track student host check-ins, record itemized bills, and process authoritative payments.'
+              : isComplaintsPage
               ? 'Review maintenance tickets, assign technicians, track repair lifecycles, and confirm ticket resolutions.'
               : isLeavesPage
               ? 'Review student leave applications, authorize leaves, track campus absence, and manage disciplinary suspensions.'
@@ -239,7 +245,9 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isComplaintsPage ? (
+          {isGuestBillingPage ? (
+            <GuestBillingManagementPage onNavigate={onNavigate} />
+          ) : isComplaintsPage ? (
             <ManagementComplaintsPage onNavigate={onNavigate} />
           ) : isLeavesPage ? (
             <ManagementLeavesPage onNavigate={onNavigate} />

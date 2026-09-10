@@ -18,6 +18,7 @@ const suites = [
   { name: 'Outing Approvals', script: 'test-management-outing-api.cjs', expected: 17 },
   { name: 'Management Leaves', script: 'test-management-leaves-api.cjs', expected: 23 },
   { name: 'Management Complaints', script: 'test-management-complaints-api.cjs', expected: 28 },
+  { name: 'Guest Billing', script: 'test-management-guest-billing-api.cjs', expected: 36 },
 ];
 
 console.log('====================================================');

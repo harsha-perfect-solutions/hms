@@ -13738,3 +13738,449 @@ input[type="checkbox"] {
   }
 }
 
+/* ==========================================================================
+   GUEST BILLING MANAGEMENT (STEP 17)
+   ========================================================================== */
+
+.guest-billing-management-page {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.guest-billing-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #F1F5F9;
+  padding: 0.35rem;
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.guest-billing-tabs .tab-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.2rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.guest-billing-tabs .tab-item:hover {
+  color: #1E293B;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.guest-billing-tabs .tab-item.tab-active {
+  background: #FFFFFF;
+  color: #1E3A8A;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.tab-counter {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  background: #E2E8F0;
+  border-radius: 9999px;
+  color: #334155;
+}
+
+.tab-active .tab-counter {
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+
+/* KPI Card Accents */
+.stat-card.stat-blue .stat-icon-wrapper {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+.stat-card.stat-emerald .stat-icon-wrapper {
+  background: #ECFDF5;
+  color: #059669;
+}
+.stat-card.stat-amber .stat-icon-wrapper {
+  background: #FFFBEB;
+  color: #D97706;
+}
+.stat-card.stat-purple .stat-icon-wrapper {
+  background: #FAF5FF;
+  color: #7C3AED;
+}
+.stat-card.stat-rose .stat-icon-wrapper {
+  background: #FFF1F2;
+  color: #E11D48;
+}
+.stat-card.stat-teal .stat-icon-wrapper {
+  background: #F0FDFA;
+  color: #0D9488;
+}
+
+/* Status Badges */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.status-pill.status-paid {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+}
+
+.status-pill.status-partially-paid {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.status-pill.status-unpaid {
+  background: #FFE4E6;
+  color: #BE123C;
+  border: 1px solid #FECDD3;
+}
+
+.status-pill.status-void {
+  background: #F1F5F9;
+  color: #64748B;
+  border: 1px solid #E2E8F0;
+}
+
+.status-pill.status-checked-in {
+  background: #DCFCE7;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+.status-pill.status-checked-out {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+}
+
+.badge-relation {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: #EEF2FF;
+  color: #4338CA;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-method {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: #F5F3FF;
+  color: #6D28D9;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.row-voided {
+  background-color: #F8FAFC !important;
+  opacity: 0.8;
+}
+
+/* Line Items Builder in Bill Modal */
+.line-items-section {
+  background: #F8FAFC;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+}
+
+.line-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.item-col-desc {
+  flex: 3;
+}
+
+.item-col-qty {
+  flex: 1;
+  min-width: 70px;
+}
+
+.item-col-unit {
+  flex: 1.5;
+  min-width: 100px;
+}
+
+.item-col-subtotal {
+  min-width: 90px;
+  text-align: right;
+}
+
+.item-col-del {
+  width: 36px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-icon-del {
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-icon-del:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.bill-total-summary-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #FFFFFF;
+  padding: 0.85rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+}
+
+/* Bill Details Modal */
+.bill-header-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.bill-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.meta-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meta-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.detail-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.detail-items-table th {
+  background: #F1F5F9;
+  padding: 0.6rem 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 1px solid #CBD5E1;
+}
+
+.detail-items-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.detail-items-table tfoot td {
+  padding: 0.65rem 0.75rem;
+  border-top: 1px solid #CBD5E1;
+  background: #F8FAFC;
+}
+
+/* Payment History */
+.payment-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.payment-history-item {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-left: 3px solid #10B981;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.payment-balance-summary {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.void-warning-banner {
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+  color: #9F1239;
+  padding: 0.85rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.void-alert-box {
+  background: #FFF1F2;
+  border: 1px solid #FECDD3;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+}
+
+/* Host Selection in Modal */
+.host-select-container {
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+  background: #FFFFFF;
+}
+
+.host-options-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.host-option-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #F1F5F9;
+  transition: background 0.15s ease;
+}
+
+.host-option-item:hover {
+  background: #F8FAFC;
+}
+
+.host-option-item.host-selected {
+  background: #EFF6FF;
+  border-left: 3px solid #2563EB;
+}
+
+.btn-checkout-confirm {
+  background: #D97706 !important;
+  color: #FFFFFF !important;
+}
+
+.btn-checkout-confirm:hover {
+  background: #B45309 !important;
+}
+
+/* Responsive Rules for Guest Billing */
+@media (max-width: 1024px) {
+  .guest-billing-management-page {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .guest-billing-management-page {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+
+  .bill-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .line-item-row {
+    flex-wrap: wrap;
+  }
+
+  .item-col-desc {
+    flex: 1 1 100%;
+  }
+
+  .item-col-qty {
+    flex: 1 1 40%;
+  }
+
+  .item-col-unit {
+    flex: 1 1 45%;
+  }
+
+  .item-col-subtotal {
+    flex: 1 1 100%;
+    text-align: left;
+    margin-top: 0.25rem;
+  }
+
+  .item-col-del {
+    flex: 1 1 auto;
+  }
+
+  .modal-dialog-lg {
+    max-width: 95vw !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-bar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .top-bar-actions button {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .guest-billing-tabs {
+    width: 100%;
+  }
+
+  .guest-billing-tabs .tab-item {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.78rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+

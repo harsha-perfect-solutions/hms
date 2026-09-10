@@ -23,6 +23,7 @@ const suites = [
   { name: 'Management Log History', script: 'test-management-log-history-api.cjs', expected: 34 },
   { name: 'Management User Management', script: 'test-management-user-management-api.cjs', expected: 47 },
   { name: 'Admin Portal Identity', script: 'test-admin-portal-identity-api.cjs', expected: 10 },
+  { name: 'Fee Management & Collection', script: 'test-fee-management-collection-api.cjs', expected: 17 },
 ];
 
 console.log('====================================================');

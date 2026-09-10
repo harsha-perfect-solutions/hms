@@ -3068,6 +3068,691 @@ export const managementApiService = {
     if (!res.ok) throw new Error(data.message || 'Failed to reset user password.');
     return data;
   },
+
+  // =========================================================================
+  // FEE MANAGEMENT API METHODS
+  // =========================================================================
+
+  async getFeeKpiStats(): Promise<{ success: boolean; stats: FeeKpiStats }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/kpi-stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve KPI stats.');
+    return data;
+  },
+
+  async getAcademicYears(): Promise<{ success: boolean; academicYears: AcademicYearItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/academic-years', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve academic years.');
+    return data;
+  },
+
+  async createAcademicYear(dto: {
+    code: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    isCurrent?: boolean;
+  }): Promise<{ success: boolean; academicYear: AcademicYearItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/academic-years', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to create academic year.');
+    return data;
+  },
+
+  async setCurrentAcademicYear(id: string): Promise<{ success: boolean; academicYear: AcademicYearItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-management/academic-years/${id}/set-current`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to set current academic year.');
+    return data;
+  },
+
+  async getFeeStructures(query?: {
+    module?: string;
+    academicYearId?: string;
+    category?: string;
+    status?: string;
+    search?: string;
+  }): Promise<{ success: boolean; feeStructures: FeeStructureItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const p = new URLSearchParams();
+    if (query?.module) p.set('module', query.module);
+    if (query?.academicYearId) p.set('academicYearId', query.academicYearId);
+    if (query?.category) p.set('category', query.category);
+    if (query?.status) p.set('status', query.status);
+    if (query?.search) p.set('search', query.search);
+
+    const res = await fetch(`/api/management/fee-management/fee-structures?${p.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve fee structures.');
+    return data;
+  },
+
+  async createFeeStructure(dto: {
+    academicYearId: string;
+    module: string;
+    category?: string;
+    feeKind: string;
+    name: string;
+    amount: number;
+    applicability?: any;
+    effectiveFrom?: string;
+    effectiveTo?: string;
+  }): Promise<{ success: boolean; feeStructure: FeeStructureItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/fee-structures', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to create fee structure.');
+    return data;
+  },
+
+  async updateFeeStructure(
+    id: string,
+    dto: {
+      name?: string;
+      amount?: number;
+      category?: string;
+      feeKind?: string;
+      applicability?: any;
+      effectiveFrom?: string;
+      effectiveTo?: string;
+    }
+  ): Promise<{ success: boolean; feeStructure: FeeStructureItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-management/fee-structures/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to update fee structure.');
+    return data;
+  },
+
+  async toggleFeeStructureStatus(id: string): Promise<{ success: boolean; feeStructure: FeeStructureItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-management/fee-structures/${id}/toggle-status`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to toggle fee structure status.');
+    return data;
+  },
+
+  async getBankAccounts(): Promise<{ success: boolean; bankAccounts: BankAccountItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/bank-accounts', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve bank accounts.');
+    return data;
+  },
+
+  async createBankAccount(dto: {
+    name: string;
+    accountIdentifier: string;
+    bankName: string;
+    accountNumber: string;
+    ifsc: string;
+    kind: string;
+    module?: string;
+    displayLabel?: string;
+  }): Promise<{ success: boolean; bankAccount: BankAccountItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/bank-accounts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to create bank account.');
+    return data;
+  },
+
+  async updateBankAccount(
+    id: string,
+    dto: {
+      name?: string;
+      bankName?: string;
+      accountNumber?: string;
+      ifsc?: string;
+      kind?: string;
+      module?: string;
+      displayLabel?: string;
+    }
+  ): Promise<{ success: boolean; bankAccount: BankAccountItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-management/bank-accounts/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to update bank account.');
+    return data;
+  },
+
+  async toggleBankAccountStatus(id: string): Promise<{ success: boolean; bankAccount: BankAccountItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-management/bank-accounts/${id}/toggle-status`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to toggle bank account status.');
+    return data;
+  },
+
+  async getScholarshipTypes(): Promise<{ success: boolean; scholarshipTypes: ScholarshipTypeItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/scholarship-types', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve scholarship types.');
+    return data;
+  },
+
+  async createScholarshipType(dto: {
+    code: string;
+    name: string;
+    provider?: string;
+    maxAmount?: number;
+    description?: string;
+  }): Promise<{ success: boolean; scholarshipType: ScholarshipTypeItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/scholarship-types', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to create scholarship type.');
+    return data;
+  },
+
+  async getStudentScholarships(query?: {
+    studentSearch?: string;
+    academicYearId?: string;
+    status?: string;
+    scholarshipTypeId?: string;
+  }): Promise<{ success: boolean; scholarships: StudentScholarshipItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const p = new URLSearchParams();
+    if (query?.studentSearch) p.set('studentSearch', query.studentSearch);
+    if (query?.academicYearId) p.set('academicYearId', query.academicYearId);
+    if (query?.status) p.set('status', query.status);
+    if (query?.scholarshipTypeId) p.set('scholarshipTypeId', query.scholarshipTypeId);
+
+    const res = await fetch(`/api/management/fee-management/scholarships?${p.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve scholarships.');
+    return data;
+  },
+
+  async assignScholarship(dto: {
+    studentId: string;
+    scholarshipTypeId: string;
+    academicYearId: string;
+    sanctionedAmount: number;
+    referenceNumber?: string;
+    remarks?: string;
+  }): Promise<{ success: boolean; scholarship: StudentScholarshipItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/scholarships', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to assign scholarship.');
+    return data;
+  },
+
+  async approveScholarship(id: string): Promise<{ success: boolean; scholarship: StudentScholarshipItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-management/scholarships/${id}/approve`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to approve scholarship.');
+    return data;
+  },
+
+  async applyScholarship(id: string): Promise<{ success: boolean; appliedAmount: number; scholarship: StudentScholarshipItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-management/scholarships/${id}/apply`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to apply scholarship.');
+    return data;
+  },
+
+  async getDetentions(query?: {
+    studentSearch?: string;
+    academicYearId?: string;
+    status?: string;
+  }): Promise<{ success: boolean; detentions: DetentionItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const p = new URLSearchParams();
+    if (query?.studentSearch) p.set('studentSearch', query.studentSearch);
+    if (query?.academicYearId) p.set('academicYearId', query.academicYearId);
+    if (query?.status) p.set('status', query.status);
+
+    const res = await fetch(`/api/management/fee-management/detentions?${p.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve detentions.');
+    return data;
+  },
+
+  async createDetention(dto: {
+    studentId: string;
+    academicYearId: string;
+    currentYearOfStudy: string;
+    detainedYearOfStudy: string;
+    reason: string;
+    remarks?: string;
+  }): Promise<{ success: boolean; detention: DetentionItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/detentions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to record detention.');
+    return data;
+  },
+
+  async revokeDetention(id: string, reason?: string): Promise<{ success: boolean; detention: DetentionItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-management/detentions/${id}/revoke`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to revoke detention.');
+    return data;
+  },
+
+  async getInstitutionSettings(): Promise<{ success: boolean; settings: InstitutionSettingsItem }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/settings', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve settings.');
+    return data;
+  },
+
+  async updateInstitutionSettings(dto: {
+    institutionMode?: string;
+    institutionName?: string;
+    institutionCode?: string;
+    enableScholarships?: boolean;
+    enableDetentions?: boolean;
+    enableBulkUploads?: boolean;
+  }): Promise<{ success: boolean; settings: InstitutionSettingsItem; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-management/settings', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to update settings.');
+    return data;
+  },
+
+  // =========================================================================
+  // FEE COLLECTION API METHODS
+  // =========================================================================
+
+  async getStudentsWithFees(query?: {
+    academicYearId?: string;
+    search?: string;
+    module?: string;
+    paymentStatus?: string;
+    dueStatus?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<FeeCollectionStudentsResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const p = new URLSearchParams();
+    if (query?.academicYearId) p.set('academicYearId', query.academicYearId);
+    if (query?.search) p.set('search', query.search);
+    if (query?.module) p.set('module', query.module);
+    if (query?.paymentStatus) p.set('paymentStatus', query.paymentStatus);
+    if (query?.dueStatus) p.set('dueStatus', query.dueStatus);
+    if (query?.page) p.set('page', query.page.toString());
+    if (query?.limit) p.set('limit', query.limit.toString());
+
+    const res = await fetch(`/api/management/fee-collection/students?${p.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve students.');
+    return data;
+  },
+
+  async getStudentFeeDetails(studentId: string, academicYearId?: string): Promise<StudentFeeDetailsResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const p = academicYearId ? `?academicYearId=${academicYearId}` : '';
+    const res = await fetch(`/api/management/fee-collection/students/${studentId}${p}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve student details.');
+    return data;
+  },
+
+  async recordPayment(dto: {
+    studentId: string;
+    academicYearId: string;
+    feeItemId?: string;
+    allocations?: Array<{ feeItemId: string; amount: number }>;
+    amount: number;
+    paymentMethod: 'UPI' | 'CHEQUE' | 'SBI_COLLECT';
+    bankAccountId: string;
+    upiApp?: string;
+    upiReference?: string;
+    chequeNumber?: string;
+    bankName?: string;
+    receivedBy?: string;
+    sbiCollectReference?: string;
+    verifiedBy?: string;
+  }): Promise<RecordPaymentResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-collection/payments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to record payment.');
+    return data;
+  },
+
+  async getReceiptDetails(receiptNumber: string): Promise<ReceiptDetailsResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch(`/api/management/fee-collection/receipts/${receiptNumber}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve receipt.');
+    return data;
+  },
+
+  async getStudentPaymentHistory(studentId: string, academicYearId?: string): Promise<{ success: boolean; payments: FeePaymentItem[] }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const p = academicYearId ? `?academicYearId=${academicYearId}` : '';
+    const res = await fetch(`/api/management/fee-collection/students/${studentId}/payment-history${p}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to retrieve payment history.');
+    return data;
+  },
+
+  async processRefund(dto: {
+    feeItemId: string;
+    paymentId?: string;
+    amount: number;
+    reason: string;
+  }): Promise<{ success: boolean; refund: any; updatedFeeItem: any; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-collection/refunds', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to process refund.');
+    return data;
+  },
+
+  async addExtraFee(dto: {
+    studentId: string;
+    academicYearId: string;
+    feeType: string;
+    module?: 'HOSTEL' | 'COLLEGE';
+    amount?: number;
+    isBiometricAttendance?: boolean;
+    startDate?: string;
+    endDate?: string;
+    workingDays?: number;
+    dailyRate?: number;
+  }): Promise<{ success: boolean; feeItem: any; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-collection/extra-fee', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to add extra fee.');
+    return data;
+  },
+
+  async promoteStudents(dto: {
+    studentIds: string[];
+    currentAcademicYearId: string;
+    targetAcademicYearId: string;
+    promotionType: 'SEMESTER' | 'ACADEMIC_YEAR';
+  }): Promise<{ success: boolean; promotedCount: number; targetAcademicYear: any; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-collection/promote', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to promote students.');
+    return data;
+  },
+
+  async syncFeeItems(academicYearId: string): Promise<{ success: boolean; createdCount: number; preservedCount: number; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-collection/sync-fees', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ academicYearId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to sync fee items.');
+    return data;
+  },
+
+  async sendFeeDueNotifications(dto: {
+    academicYearId: string;
+    studentIds?: string[];
+    customMessage?: string;
+  }): Promise<{ success: boolean; sentCount: number; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-collection/send-notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to send notifications.');
+    return data;
+  },
+
+  async importFeeExcel(file: File): Promise<{
+    success: boolean;
+    totalRows: number;
+    successRows: number;
+    failedRows: number;
+    errors: Array<{ row: number; error: string }>;
+    message: string;
+  }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch('/api/management/fee-collection/import-excel', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Excel import failed.');
+    return data;
+  },
+
+  async bulkFeeAdjustment(dto: {
+    feeItemIds: string[];
+    adjustmentType: 'DISCOUNT' | 'FINE';
+    amount: number;
+    reason: string;
+  }): Promise<{ success: boolean; adjustedCount: number; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-collection/bulk-adjust', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Bulk adjustment failed.');
+    return data;
+  },
+
+  async bulkRemoveFee(dto: {
+    feeItemIds: string[];
+    reason: string;
+  }): Promise<{ success: boolean; removedCount: number; message: string }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const res = await fetch('/api/management/fee-collection/bulk-remove', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Bulk removal failed.');
+    return data;
+  },
 };
 
 
@@ -3814,5 +4499,303 @@ export interface UserListResponse {
   };
 }
 
+// =========================================================================
+// FEE MANAGEMENT & COLLECTION INTERFACES
+// =========================================================================
 
+export interface FeeKpiStats {
+  feeStructuresCount: number;
+  hostelDue: number;
+  collegeDue: number;
+  studentsWithDuesCount: number;
+  scholarshipsPendingCount: number;
+  activeDetentionsCount: number;
+}
 
+export interface AcademicYearItem {
+  id: string;
+  code: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isCurrent: boolean;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    structures?: number;
+    feeItems?: number;
+    payments?: number;
+    scholarships?: number;
+    detentions?: number;
+  };
+}
+
+export interface FeeStructureItem {
+  id: string;
+  academicYearId: string;
+  academicYear?: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  module: 'HOSTEL' | 'COLLEGE';
+  category: string;
+  feeKind: string;
+  name: string;
+  amount: number | string;
+  applicability?: string | null;
+  status: 'ACTIVE' | 'INACTIVE';
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    feeItems?: number;
+  };
+}
+
+export interface BankAccountItem {
+  id: string;
+  name: string;
+  accountIdentifier: string;
+  bankName: string;
+  accountNumber: string;
+  ifsc: string;
+  kind: string;
+  module: string;
+  displayLabel: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    payments?: number;
+  };
+}
+
+export interface ScholarshipTypeItem {
+  id: string;
+  code: string;
+  name: string;
+  provider: string;
+  maxAmount?: number | null;
+  description?: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface StudentScholarshipItem {
+  id: string;
+  studentId: string;
+  student?: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    roomNumber?: string | null;
+    blockName?: string | null;
+  };
+  scholarshipTypeId: string;
+  scholarshipType?: ScholarshipTypeItem;
+  academicYearId: string;
+  academicYear?: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  sanctionedAmount: number | string;
+  appliedAmount: number | string;
+  remainingAmount: number | string;
+  referenceNumber?: string | null;
+  remarks?: string | null;
+  status: 'ASSIGNED' | 'APPROVED' | 'APPLIED' | 'REJECTED' | 'CLOSED';
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  appliedAt?: string | null;
+  createdAt: string;
+}
+
+export interface DetentionItem {
+  id: string;
+  studentId: string;
+  student?: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    roomNumber?: string | null;
+    blockName?: string | null;
+  };
+  academicYearId: string;
+  academicYear?: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  currentYearOfStudy: string;
+  detainedYearOfStudy: string;
+  reason: string;
+  status: 'ACTIVE' | 'REVOKED' | 'COMPLETED';
+  detainedBy?: string | null;
+  detainedAt: string;
+  revokedBy?: string | null;
+  revokedAt?: string | null;
+  remarks?: string | null;
+  createdAt: string;
+}
+
+export interface InstitutionSettingsItem {
+  id: string;
+  institutionMode: 'HOSTEL_ONLY' | 'COLLEGE_ONLY' | 'BOTH';
+  institutionName: string;
+  institutionCode: string;
+  enableScholarships: boolean;
+  enableDetentions: boolean;
+  enableBulkUploads: boolean;
+  updatedBy?: string | null;
+  updatedAt: string;
+}
+
+export interface FeeItemDetail {
+  id: string;
+  feeType: string;
+  module: string;
+  totalFee: number;
+  paidAmount: number;
+  concessionAmount: number;
+  dueAmount: number;
+  excessPaid: number;
+  refundedAmount: number;
+  paidPercent: number;
+  status: string;
+  isExtraFee: boolean;
+  extraFeeDetails?: any;
+}
+
+export interface StudentFeeItemSummary {
+  student: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    roomNumber: string | null;
+    blockName: string | null;
+    role: string;
+  };
+  academicYear: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  totalFee: number;
+  paidAmount: number;
+  concessionAmount: number;
+  dueAmount: number;
+  excessPaid: number;
+  refundedAmount: number;
+  paidPercent: number;
+  overallStatus: 'UNPAID' | 'PARTIAL' | 'PAID' | 'OVERPAID';
+  hasActiveDetention: boolean;
+  detentionDetails?: any;
+  items: FeeItemDetail[];
+}
+
+export interface FeeCollectionStudentsResponse {
+  success: boolean;
+  academicYear: {
+    id: string;
+    code: string;
+    name: string;
+  } | null;
+  students: StudentFeeItemSummary[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface FeePaymentItem {
+  id: string;
+  studentId: string;
+  academicYearId: string;
+  bankAccountId: string;
+  bankAccount?: BankAccountItem;
+  amount: number | string;
+  paymentMethod: string;
+  transactionReference: string;
+  methodDetails?: string | null;
+  status: string;
+  receiptNumber: string;
+  recordedBy: string;
+  recordedById: string;
+  createdAt: string;
+  allocations?: Array<{
+    id: string;
+    amount: number | string;
+    feeItem?: {
+      id: string;
+      feeType: string;
+      totalFee: number;
+      dueAmount: number;
+    };
+  }>;
+  receipt?: {
+    id: string;
+    receiptNumber: string;
+    receiptData: string;
+  };
+  refunds?: any[];
+}
+
+export interface StudentFeeDetailsResponse {
+  success: boolean;
+  student: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    roomNumber: string | null;
+    blockName: string | null;
+  };
+  academicYear: {
+    id: string;
+    code: string;
+    name: string;
+  };
+  feeItems: any[];
+  payments: FeePaymentItem[];
+  detentions: any[];
+  scholarships: any[];
+}
+
+export interface RecordPaymentResponse {
+  success: boolean;
+  payment: FeePaymentItem;
+  receipt: {
+    id: string;
+    receiptNumber: string;
+  };
+  receiptDetails: any;
+  message: string;
+}
+
+export interface ReceiptDetailsResponse {
+  success: boolean;
+  receipt: {
+    id: string;
+    receiptNumber: string;
+    totalAmount: number | string;
+    receiptData: string;
+    createdAt: string;
+    student: any;
+    academicYear: any;
+    payment: any;
+  };
+  snapshot: any;
+}

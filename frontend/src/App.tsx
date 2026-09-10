@@ -29,6 +29,8 @@ import { ManagementComplaintsPage } from './pages/ManagementComplaintsPage';
 import { GuestBillingManagementPage } from './pages/GuestBillingManagementPage';
 import { ManagementLogHistoryPage } from './pages/ManagementLogHistoryPage';
 import { ManagementUserManagementPage } from './pages/ManagementUserManagementPage';
+import { FeeManagementPage } from './pages/FeeManagementPage';
+import { FeeCollectionPage } from './pages/FeeCollectionPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -189,6 +191,8 @@ const AuthenticatedManagementApp: React.FC<{
   const isGuestBillingPage = currentPath === '/management/guest-billing' || currentPath === '/management/billing';
   const isLogHistoryPage = currentPath === '/management/log-history' || currentPath === '/management/logs';
   const isUserManagementPage = currentPath === '/management/users';
+  const isFeeManagementPage = currentPath === '/management/fee-management';
+  const isFeeCollectionPage = currentPath === '/management/fee-collection';
 
   return (
     <div className="portal-layout management-layout">
@@ -212,7 +216,11 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isUserManagementPage
+            isFeeCollectionPage
+              ? 'Fee Management / Fee Collection'
+              : isFeeManagementPage
+              ? 'Fee Management'
+              : isUserManagementPage
               ? 'User Management & Role Administration'
               : isLogHistoryPage
               ? 'System Log History & Audit'
@@ -233,7 +241,11 @@ const AuthenticatedManagementApp: React.FC<{
               : 'Admin Dashboard'
           }
           pageSubtitle={
-            isUserManagementPage
+            isFeeCollectionPage
+              ? 'Manage student fees, apply filters, add fines, and promote students efficiently.'
+              : isFeeManagementPage
+              ? 'Configure fee structures, institutional bank accounts, academic years, scholarships, detentions, and configuration settings.'
+              : isUserManagementPage
               ? 'Authoritative account administration, role assignment hierarchy, credential resets, and security status control.'
               : isLogHistoryPage
               ? 'Comprehensive administrative activity logging, operational state change inspection, and multi-factor traceability.'
@@ -257,7 +269,11 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isUserManagementPage ? (
+          {isFeeCollectionPage ? (
+            <FeeCollectionPage onNavigate={onNavigate} />
+          ) : isFeeManagementPage ? (
+            <FeeManagementPage onNavigate={onNavigate} />
+          ) : isUserManagementPage ? (
             <ManagementUserManagementPage onNavigate={onNavigate} />
           ) : isLogHistoryPage ? (
             <ManagementLogHistoryPage onNavigate={onNavigate} />

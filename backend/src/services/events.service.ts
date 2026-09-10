@@ -134,7 +134,28 @@ export interface OutingDomainEvent {
   timestamp: string;
 }
 
+export type FeeEventType =
+  | 'FEE_STRUCTURE_UPDATED'
+  | 'FEE_ITEM_CREATED'
+  | 'FEE_ITEM_UPDATED'
+  | 'FEE_PAYMENT_CREATED'
+  | 'FEE_PAYMENT_UPDATED'
+  | 'FEE_REFUND_CREATED'
+  | 'SCHOLARSHIP_UPDATED'
+  | 'DETENTION_UPDATED'
+  | 'ACADEMIC_YEAR_UPDATED'
+  | 'BANK_ACCOUNT_UPDATED'
+  | 'INSTITUTION_SETTINGS_UPDATED'
+  | 'FEE_COLLECTION_STATS_UPDATED';
 
+export interface FeeDomainEvent {
+  type: FeeEventType;
+  entityId?: string;
+  studentId?: string;
+  academicYearId?: string;
+  details?: any;
+  timestamp: string;
+}
 
 class ComplaintEventsService extends EventEmitter {
   // Map of studentId -> Set of active SSE Response connections
@@ -229,6 +250,27 @@ class ComplaintEventsService extends EventEmitter {
         }
       }
     }
+  }
+
+  /**
+   * Broadcasts a fee domain event to management clients and student if specified
+   */
+  public emitFeeEvent(event: FeeDomainEvent): void {
+    const payload = `event: fee_event\ndata: ${JSON.stringify(event)}\n\n`;
+    for (const [, connections] of this.managementConnections.entries()) {
+      for (const res of connections) {
+        try {
+          res.write(payload);
+        } catch (err) {
+          console.error('Failed to write SSE fee event to management connection:', err);
+        }
+      }
+    }
+    this.emitManagementDashboardUpdate({
+      type: event.type,
+      timestamp: event.timestamp || new Date().toISOString(),
+      details: event,
+    });
   }
 
   /**

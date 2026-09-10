@@ -104,7 +104,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
                   padding: '4px 8px',
                 }}
               >
-                Hostel Staff / Warden? Sign in to Management Portal &rarr;
+                Hostel Staff / Administrator? Sign in to Admin Portal &rarr;
               </button>
             </div>
           )}

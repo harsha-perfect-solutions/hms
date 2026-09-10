@@ -21,6 +21,7 @@ const suites = [
   { name: 'Guest Billing', script: 'test-management-guest-billing-api.cjs', expected: 36 },
   { name: 'Management Log History', script: 'test-management-log-history-api.cjs', expected: 34 },
   { name: 'Management User Management', script: 'test-management-user-management-api.cjs', expected: 47 },
+  { name: 'Admin Portal Identity', script: 'test-admin-portal-identity-api.cjs', expected: 10 },
 ];
 
 console.log('====================================================');

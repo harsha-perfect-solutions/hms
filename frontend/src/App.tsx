@@ -230,7 +230,7 @@ const AuthenticatedManagementApp: React.FC<{
               ? 'Room Management & Allocation'
               : isBlockPage
               ? 'Block Management'
-              : 'Management Dashboard'
+              : 'Admin Dashboard'
           }
           pageSubtitle={
             isUserManagementPage
@@ -251,7 +251,7 @@ const AuthenticatedManagementApp: React.FC<{
               ? 'Configure rooms, track bed occupancy, and assign residential accommodations.'
               : isBlockPage
               ? 'Configure, organize, and monitor hostel residential blocks and zones.'
-              : 'A concise operational overview of hostel activity.'
+              : 'A concise operational overview of hostel administration and residential oversight.'
           }
         />
 
@@ -419,7 +419,7 @@ const AppContent: React.FC = () => {
           }}
         />
         <p style={{ color: '#64748B', fontSize: '0.9rem', fontWeight: 500 }}>
-          {isManagementRoute ? 'Loading Management Portal...' : 'Loading student portal...'}
+          {isManagementRoute ? 'Loading Admin Portal...' : 'Loading student portal...'}
         </p>
       </div>
     );

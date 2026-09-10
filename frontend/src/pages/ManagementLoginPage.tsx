@@ -42,7 +42,7 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
 
     const trimmed = identifier.trim();
     if (!trimmed) {
-      errors.identifier = 'Please enter your management ID or username.';
+      errors.identifier = 'Please enter your administrator ID or username.';
     }
 
     if (!password) {
@@ -79,8 +79,8 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
   return (
     <main className="auth-viewport management-auth-viewport">
       <div className="auth-container">
-        {/* Left / Primary Panel: Management Administrative Showcase */}
-        <section className="auth-branding-panel management-branding-panel" aria-label="Management Branding">
+        {/* Left / Primary Panel: Admin Administrative Showcase */}
+        <section className="auth-branding-panel management-branding-panel" aria-label="Admin Branding">
           <div className="brand-badge">
             <div className="brand-logo-icon management-badge-icon" aria-hidden="true">
               <Shield size={24} />
@@ -93,10 +93,10 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
 
           <div className="brand-hero">
             <h1 className="brand-hero-title">
-              Management Portal
+              Admin Portal
             </h1>
             <p className="brand-hero-desc">
-              Authoritative operational console for wardens and hostel administration. Monitor residential presence, room occupancy, and actionable requests.
+              Authoritative operational console for hostel administration and oversight. Monitor residential presence, room occupancy, and actionable requests.
             </p>
 
             <div className="brand-features">
@@ -104,7 +104,7 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
                 <span className="feature-check-icon" aria-hidden="true">
                   <ShieldCheck size={14} />
                 </span>
-                <span>Server-Side RBAC Enforcement (Warden / Admin)</span>
+                <span>Server-Side RBAC Enforcement (Admin / Staff)</span>
               </div>
               <div className="brand-feature-item">
                 <span className="feature-check-icon" aria-hidden="true">
@@ -127,8 +127,8 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
           </div>
         </section>
 
-        {/* Right Section: Management Login Form */}
-        <section className="auth-form-panel" aria-label="Management Login Form">
+        {/* Right Section: Admin Login Form */}
+        <section className="auth-form-panel" aria-label="Admin Login Form">
           <div className="mobile-brand-header">
             <div className="mobile-logo-icon management-mobile-icon" aria-hidden="true">
               <Shield size={20} />
@@ -138,7 +138,7 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
                 {APP_BRANDING.appName}
               </span>
               <span className="brand-subtitle" style={{ color: 'var(--text-muted)' }}>
-                Management Console
+                Admin Console
               </span>
             </div>
           </div>
@@ -146,11 +146,11 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
           <div className="form-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <span className="role-badge-admin" style={{ fontSize: '0.75rem' }}>
-                WARDEN / ADMIN
+                ADMINISTRATOR
               </span>
             </div>
-            <h2 className="form-title">Management Sign In</h2>
-            <p className="form-subtitle">Enter your official administrative credentials to access operational controls.</p>
+            <h2 className="form-title">Admin Portal Sign In</h2>
+            <p className="form-subtitle">Enter your official administrator credentials to access operational controls.</p>
           </div>
 
           <form className="login-form" onSubmit={handleSubmit} noValidate>
@@ -163,7 +163,7 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
 
             <div className="form-group">
               <label htmlFor="management-identifier" className="form-label">
-                Management ID / Username
+                Admin ID / Username
               </label>
               <div className="form-input-wrapper">
                 <span className="input-icon-left" aria-hidden="true">
@@ -175,7 +175,7 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
                   type="text"
                   value={identifier}
                   onChange={handleIdentifierChange}
-                  placeholder="e.g. WARDEN01"
+                  placeholder="e.g. ADMIN01"
                   disabled={isSubmitting}
                   autoComplete="username"
                   autoCapitalize="characters"
@@ -202,7 +202,7 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
                 name="password"
                 value={password}
                 onChange={handlePasswordChange}
-                placeholder="Enter administrative password"
+                placeholder="Enter administrator password"
                 disabled={isSubmitting}
                 error={fieldErrors.password}
                 aria-describedby={fieldErrors.password ? 'mgmt-password-error' : undefined}
@@ -219,7 +219,7 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
               type="submit"
               disabled={isSubmitting}
               className="btn-submit management-btn-submit"
-              aria-label={isSubmitting ? 'Signing in' : 'Sign In as Management'}
+              aria-label={isSubmitting ? 'Signing in' : 'Sign In to Admin Portal'}
             >
               {isSubmitting ? (
                 <>
@@ -227,7 +227,7 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
                   <span>Authenticating...</span>
                 </>
               ) : (
-                <span>Access Management Console</span>
+                <span>Access Admin Console</span>
               )}
             </button>
           </form>

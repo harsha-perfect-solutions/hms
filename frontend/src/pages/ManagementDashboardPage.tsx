@@ -56,8 +56,8 @@ export const ManagementDashboardPage: React.FC<ManagementDashboardPageProps> = (
       setData(response);
       setLastRefreshedAt(new Date());
     } catch (err: any) {
-      console.error('Failed to load management dashboard:', err);
-      setError(err.message || 'Unable to load management metrics. Please try again.');
+      console.error('Failed to load admin dashboard:', err);
+      setError(err.message || 'Unable to load administration metrics. Please try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -305,7 +305,7 @@ export const ManagementDashboardPage: React.FC<ManagementDashboardPageProps> = (
         <div className="mgmt-section-header">
           <div>
             <h2 className="mgmt-section-title">Requires Attention</h2>
-            <p className="mgmt-section-subtitle">Items requiring management review or action</p>
+            <p className="mgmt-section-subtitle">Items requiring administrative review or action</p>
           </div>
           <span className="mgmt-attention-count-badge">{requests.actionableTotal} items</span>
         </div>

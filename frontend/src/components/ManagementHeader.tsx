@@ -20,7 +20,7 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
   onRefresh,
   isRefreshing = false,
   isRealtimeConnected = true,
-  pageTitle = 'Management Dashboard',
+  pageTitle = 'Admin Dashboard',
   pageSubtitle = 'A concise operational overview of hostel activity.',
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
@@ -38,7 +38,7 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
   }, []);
 
   const getInitials = (name?: string) => {
-    if (!name) return 'WM';
+    if (!name) return 'AD';
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
@@ -47,12 +47,29 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
   };
 
   const formatRole = (role?: string) => {
-    if (!role) return 'Warden';
-    return role.replace(/_/g, ' ');
+    if (!role) return 'Administrator';
+    switch (role) {
+      case 'ADMIN':
+        return 'Administrator';
+      case 'HOSTEL_ADMIN':
+        return 'Hostel Administrator';
+      case 'WARDEN':
+        return 'Warden';
+      case 'CHIEF_WARDEN':
+        return 'Chief Warden';
+      case 'MAINTENANCE_STAFF':
+        return 'Maintenance Staff';
+      case 'MESS_STAFF':
+        return 'Mess Staff';
+      case 'STUDENT':
+        return 'Student';
+      default:
+        return role.replace(/_/g, ' ');
+    }
   };
 
   return (
-    <header className="main-header management-header" aria-label="Management Dashboard Top Bar">
+    <header className="main-header management-header" aria-label="Admin Dashboard Top Bar">
       <div className="header-left-section">
         <button
           type="button"
@@ -102,7 +119,7 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
             className="profile-trigger-btn management-profile-trigger"
             aria-expanded={profileOpen}
             aria-haspopup="true"
-            aria-label="Open management profile menu"
+            aria-label="Open administrator profile menu"
           >
             <div className="avatar-circle management-avatar-circle">
               {getInitials(user?.name)}
@@ -119,7 +136,7 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
               <div className="dropdown-user-info">
                 <div className="dropdown-user-name">{user?.name}</div>
                 <div className="dropdown-user-email">{user?.jntuNo}</div>
-                <div className="dropdown-user-badge role-badge-admin">
+                <div className={`dropdown-user-badge ${user?.role === 'WARDEN' || user?.role === 'CHIEF_WARDEN' ? 'role-badge-warden' : 'role-badge-admin'}`}>
                   <Shield size={12} style={{ marginRight: 4 }} />
                   {formatRole(user?.role)}
                 </div>

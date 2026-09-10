@@ -21,9 +21,9 @@ export const ManagementAuthProvider: React.FC<{ children: ReactNode }> = ({ chil
     let isMounted = true;
     const checkSession = async () => {
       try {
-        const warden = await managementApiService.getMe();
+        const authUser = await managementApiService.getMe();
         if (isMounted) {
-          setUser(warden);
+          setUser(authUser);
         }
       } catch {
         if (isMounted) setUser(null);

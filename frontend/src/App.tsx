@@ -312,7 +312,7 @@ const AuthenticatedManagementApp: React.FC<{
                 The <strong>{moduleNotice}</strong> module is scheduled for future implementation according to the system roadmap.
               </p>
               <p className="notice-modal-sub">
-                Step 10 scope is strictly focused on the authoritative <strong>Management Dashboard</strong>. All operational analytics and actionable summary counts are active on this dashboard.
+                Current implementation is focused on active <strong>Admin Portal</strong> modules. All operational analytics and actionable summary counts are active on the dashboard.
               </p>
             </div>
             <div className="notice-modal-footer">

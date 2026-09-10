@@ -7,9 +7,12 @@ import {
   Footprints,
   Wrench,
   History,
+  ClipboardList,
   Users,
   Receipt,
   FileText,
+  Cpu,
+  Bell,
   LogOut,
   X,
   ShieldCheck,
@@ -27,15 +30,18 @@ export interface ManagementNavItem {
 
 export const MANAGEMENT_NAV_ITEMS: ManagementNavItem[] = [
   { id: 'dashboard', label: 'Dashboard', path: '/management/dashboard', icon: LayoutDashboard, isAvailable: true },
-  { id: 'blocks', label: 'Blocks', path: '/management/blocks', icon: Building, isAvailable: true },
-  { id: 'rooms', label: 'Rooms & Allocation', path: '/management/rooms', icon: BedDouble, isAvailable: true },
+  { id: 'blocks', label: 'Block Management', path: '/management/blocks', icon: Building, isAvailable: true },
+  { id: 'rooms', label: 'Room Allocation', path: '/management/rooms', icon: BedDouble, isAvailable: true },
   { id: 'mess', label: 'Mess Management', path: '/management/mess', icon: UtensilsCrossed, isAvailable: true },
   { id: 'outings', label: 'Outing Approvals', path: '/management/outings', icon: Footprints, isAvailable: true },
   { id: 'leaves', label: 'Leaves & Suspension', path: '/management/leaves', icon: FileText, isAvailable: true },
   { id: 'complaints', label: 'Complaints & Maintenance', path: '/management/complaints', icon: Wrench, isAvailable: true },
-  { id: 'billing', label: 'Guest Billing', path: '/management/guest-billing', icon: Receipt, isAvailable: true },
-  { id: 'logs', label: 'Log History & Audit', path: '/management/log-history', icon: History, isAvailable: true },
+  { id: 'logs', label: 'Log History', path: '/management/log-history', icon: History, isAvailable: true },
+  { id: 'outing-logs', label: 'Outing Log History', path: '/management/outing-logs', icon: ClipboardList, isAvailable: false },
   { id: 'users', label: 'User Management', path: '/management/users', icon: Users, isAvailable: true },
+  { id: 'billing', label: 'Guest Billing', path: '/management/guest-billing', icon: Receipt, isAvailable: true },
+  { id: 'devices', label: 'Device Management', path: '/management/devices', icon: Cpu, isAvailable: false },
+  { id: 'notifications', label: 'Notifications', path: '/management/notifications', icon: Bell, isAvailable: false },
 ];
 
 interface ManagementSidebarProps {
@@ -112,7 +118,7 @@ export const ManagementSidebar: React.FC<ManagementSidebarProps> = ({
           </button>
         </div>
 
-        {/* 10 Consolidated Admin Navigation Items */}
+        {/* 13 Admin Navigation Items */}
         <nav className="sidebar-nav management-sidebar-nav" aria-label="Admin Modules">
           {MANAGEMENT_NAV_ITEMS.map((item) => {
             const Icon = item.icon;

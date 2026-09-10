@@ -8367,3 +8367,765 @@ input[type="checkbox"] {
   }
 }
 
+/* ==========================================================================
+   Mess Management Module Styles (Step 13)
+   ========================================================================== */
+
+.mess-management-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.mess-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.mess-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mess-header-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+  font-size: 0.725rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.mess-page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.mess-page-desc {
+  font-size: 0.875rem;
+  color: #64748B;
+  margin: 0;
+}
+
+.mess-header-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.mess-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.mess-live-indicator.connected {
+  background: #ECFDF5;
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+
+.mess-live-indicator.connecting {
+  background: #FFFBEB;
+  color: #92400E;
+  border-color: #FDE68A;
+}
+
+.mess-date-selector {
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  gap: 0.4rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.mess-date-input {
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #1E293B;
+  font-family: inherit;
+  font-weight: 500;
+  outline: none;
+}
+
+.mess-today-btn {
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mess-today-btn:hover {
+  background: #DBEAFE;
+}
+
+/* Active Slot Banner */
+.mess-active-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border: 1px solid #FDE68A;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.08);
+}
+
+.mess-active-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.mess-active-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #F59E0B;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
+.mess-active-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: #B45309;
+  color: #FFFFFF;
+  font-size: 0.675rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.5rem;
+}
+
+.mess-active-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #78350F;
+  margin: 0;
+}
+
+.mess-active-desc {
+  font-size: 0.8rem;
+  color: #92400E;
+  margin: 0.2rem 0 0 0;
+}
+
+.mess-active-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #B45309;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #FCD34D;
+}
+
+/* KPI Cards Grid */
+.mess-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.mess-stat-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.mess-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mess-stat-label {
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748B;
+}
+
+.mess-stat-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mess-stat-icon-wrap.navy { background: #EEF2FF; color: #4F46E5; }
+.mess-stat-icon-wrap.emerald { background: #ECFDF5; color: #059669; }
+.mess-stat-icon-wrap.blue { background: #EFF6FF; color: #2563EB; }
+.mess-stat-icon-wrap.rose { background: #FEF2F2; color: #DC2626; }
+
+.mess-stat-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.1;
+}
+
+.mess-stat-value.emerald { color: #059669; }
+.mess-stat-value.blue { color: #2563EB; }
+.mess-stat-value.rose { color: #DC2626; }
+
+.mess-stat-subtext {
+  font-size: 0.775rem;
+  color: #94A3B8;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mess-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #E2E8F0;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 0.35rem;
+}
+
+.mess-progress-fill {
+  height: 100%;
+  background: #059669;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+/* 4 Meal Cards Grid */
+.mess-meals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.mess-meal-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 1.1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.mess-meal-card.active-slot {
+  border-color: #F59E0B;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+  background: #FFFDF8;
+}
+
+.mess-meal-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.mess-meal-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mess-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F59E0B;
+  animation: pulseDot 1.5s infinite;
+}
+
+.mess-meal-timing {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748B;
+  font-family: inherit;
+  margin-top: 0.2rem;
+}
+
+.mess-meal-total {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1E293B;
+}
+
+.mess-meal-stat-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  background: #F8FAFC;
+  border: 1px solid #F1F5F9;
+  border-radius: 8px;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.mess-chip-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94A3B8;
+  display: block;
+}
+
+.mess-chip-val {
+  font-size: 0.9rem;
+  font-weight: 800;
+  display: block;
+}
+
+.mess-chip-val.blue { color: #2563EB; }
+.mess-chip-val.emerald { color: #059669; }
+.mess-chip-val.rose { color: #DC2626; }
+
+/* Filter Bar */
+.mess-filter-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mess-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 260px;
+}
+
+.mess-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+}
+
+.mess-search-input {
+  width: 100%;
+  padding: 0.55rem 2rem 0.55rem 2.25rem;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  font-size: 0.85rem;
+  color: #1E293B;
+  background: #F8FAFC;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.mess-search-input:focus {
+  border-color: #151B54;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(21, 27, 84, 0.08);
+}
+
+.mess-search-clear {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.mess-dropdown-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mess-filter-select {
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #CBD5E1;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #334155;
+  background: #FFFFFF;
+  outline: none;
+  cursor: pointer;
+}
+
+.mess-filter-select:focus {
+  border-color: #151B54;
+}
+
+.mess-reset-btn {
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mess-reset-btn:hover {
+  background: #E2E8F0;
+  color: #1E293B;
+}
+
+/* Table Card */
+.mess-table-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.mess-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid #E2E8F0;
+  background: #FAFAFA;
+}
+
+.mess-table-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.mess-badge-count {
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background: #E2E8F0;
+  color: #475569;
+}
+
+.mess-table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.mess-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.mess-table th {
+  padding: 0.75rem 1rem;
+  background: #F8FAFC;
+  color: #64748B;
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #E2E8F0;
+  white-space: nowrap;
+}
+
+.mess-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #F1F5F9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.mess-table tr:hover td {
+  background: #F8FAFC;
+}
+
+.mess-token-badge {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 0.775rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.mess-resident-name {
+  font-weight: 700;
+  color: #0F172A;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.mess-resident-name:hover {
+  color: #2563EB;
+  text-decoration: underline;
+}
+
+.mess-resident-roll {
+  font-size: 0.75rem;
+  color: #64748B;
+  font-family: monospace;
+}
+
+.mess-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.mess-status-pill.booked {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border-color: #BFDBFE;
+}
+
+.mess-status-pill.consumed {
+  background: #ECFDF5;
+  color: #047857;
+  border-color: #A7F3D0;
+}
+
+.mess-status-pill.cancelled {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border-color: #FECACA;
+}
+
+.mess-action-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.mess-icon-action-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mess-icon-action-btn:hover {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+.mess-icon-action-btn.consume {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #047857;
+}
+
+.mess-icon-action-btn.consume:hover {
+  background: #D1FAE5;
+}
+
+.mess-icon-action-btn.cancel {
+  background: #FEF2F2;
+  border-color: #FECACA;
+  color: #B91C1C;
+}
+
+.mess-icon-action-btn.cancel:hover {
+  background: #FEE2E2;
+}
+
+/* Pagination */
+.mess-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  background: #FAFAFA;
+  border-top: 1px solid #E2E8F0;
+  font-size: 0.8rem;
+  color: #64748B;
+}
+
+.mess-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mess-page-btn:hover:not(:disabled) {
+  background: #F1F5F9;
+}
+
+.mess-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Modals */
+.mess-detail-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.mess-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.mess-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.mess-detail-item-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748B;
+}
+
+.mess-detail-item-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+/* Media Queries */
+@media (max-width: 1024px) {
+  .mess-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mess-meals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .mess-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mess-meals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mess-header-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mess-header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .mess-filter-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mess-dropdown-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .mess-filter-select {
+    flex: 1;
+  }
+}
+

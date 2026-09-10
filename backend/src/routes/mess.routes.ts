@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { authenticateStudent, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { prisma } from '../services/prisma.service';
+import { complaintEventsService } from '../services/events.service';
 
 const router = Router();
 
@@ -311,6 +312,17 @@ router.post('/mess-tokens/book', authenticateStudent, async (req: AuthenticatedR
         },
       }),
     ]);
+
+    // Emit real-time event
+    complaintEventsService.emitMessEventToStudent(studentId, {
+      type: 'MESS_TOKEN_BOOKED',
+      tokenId: newToken.id,
+      studentId,
+      date: newToken.date,
+      mealType: newToken.mealType,
+      status: newToken.status,
+      timestamp: new Date().toISOString(),
+    });
 
     res.status(201).json({
       success: true,

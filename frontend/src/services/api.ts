@@ -2075,6 +2075,153 @@ export const managementApiService = {
     }
     return data;
   },
+
+  async getMessOverview(date?: string): Promise<{ success: boolean; data: ManagementMessOverview }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const query = date ? `?date=${encodeURIComponent(date)}` : '';
+    const res = await fetch(`/api/management/mess/overview${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to retrieve mess overview.');
+    }
+    return data;
+  },
+
+  async getMessTokens(params?: {
+    page?: number;
+    limit?: number;
+    date?: string;
+    mealType?: string;
+    status?: string;
+    block?: string;
+    search?: string;
+  }): Promise<{
+    success: boolean;
+    tokens: ManagementMessToken[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.date) query.append('date', params.date);
+    if (params?.mealType && params.mealType !== 'ALL') query.append('mealType', params.mealType);
+    if (params?.status && params.status !== 'ALL') query.append('status', params.status);
+    if (params?.block && params.block !== 'ALL') query.append('block', params.block);
+    if (params?.search) query.append('search', params.search);
+
+    const url = `/api/management/mess/tokens${query.toString() ? `?${query.toString()}` : ''}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to retrieve mess tokens.');
+    }
+    return data;
+  },
+
+  async getMessToken(id: string): Promise<{ success: boolean; token: ManagementMessTokenDetail }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/mess/tokens/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to retrieve mess token detail.');
+    }
+    return data;
+  },
+
+  async getStudentMessHistory(studentId: string): Promise<{
+    success: boolean;
+    student: {
+      id: string;
+      name: string;
+      jntuNo: string;
+      email: string;
+      blockName?: string | null;
+      roomNumber?: string | null;
+      bedNumber?: string | null;
+    };
+    summary: {
+      totalBooked: number;
+      activeBooked: number;
+      consumedCount: number;
+      cancelledCount: number;
+    };
+    tokens: {
+      id: string;
+      tokenNumber: string;
+      date: string;
+      mealType: string;
+      mealName: string;
+      status: string;
+      consumedAt?: string | null;
+      cancelledAt?: string | null;
+      cancellationReason?: string | null;
+      createdAt: string;
+    }[];
+  }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/mess/students/${studentId}/history`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to retrieve resident mess history.');
+    }
+    return data;
+  },
+
+  async consumeMessToken(id: string): Promise<{ success: boolean; message: string; token: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/mess/tokens/${id}/consume`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to mark token as consumed.');
+    }
+    return data;
+  },
+
+  async cancelMessToken(id: string, reason: string): Promise<{ success: boolean; message: string; token: any }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/mess/tokens/${id}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to cancel mess token.');
+    }
+    return data;
+  },
 };
 
 export interface Block {
@@ -2230,4 +2377,102 @@ export interface ReallocateStudentDto {
   targetRoomId: string;
   newBedNumber?: string;
 }
+
+export interface MealSlotTiming {
+  mealType: string;
+  name: string;
+  timing: string;
+  description: string;
+}
+
+export interface MealBreakdownItem {
+  mealType: string;
+  name: string;
+  timing: string;
+  description: string;
+  total: number;
+  booked: number;
+  consumed: number;
+  cancelled: number;
+}
+
+export interface BlockDistributionItem {
+  blockName: string;
+  total: number;
+  booked: number;
+  consumed: number;
+  cancelled: number;
+}
+
+export interface ManagementMessOverview {
+  date: string;
+  isToday: boolean;
+  totalActiveResidents: number;
+  summary: {
+    totalBookings: number;
+    bookedCount: number;
+    consumedCount: number;
+    cancelledCount: number;
+    consumptionRate: number;
+  };
+  activeMealSlot: MealSlotTiming | null;
+  nextMealSlot: MealSlotTiming | null;
+  mealBreakdown: MealBreakdownItem[];
+  blockDistribution: BlockDistributionItem[];
+}
+
+export interface ManagementMessToken {
+  id: string;
+  tokenNumber: string | null;
+  date: string;
+  mealType: string;
+  mealName: string;
+  mealTiming: string;
+  status: 'BOOKED' | 'CONSUMED' | 'CANCELLED';
+  consumedAt?: string | null;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  student: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    blockName: string;
+    roomNumber: string;
+    bedNumber: string;
+    allocationStatus: string;
+  } | null;
+}
+
+export interface ManagementMessTokenDetail {
+  id: string;
+  tokenNumber: string | null;
+  date: string;
+  mealType: string;
+  mealName: string;
+  mealTiming: string;
+  mealDescription: string;
+  status: 'BOOKED' | 'CONSUMED' | 'CANCELLED';
+  consumedAt?: string | null;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  student: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    blockName?: string | null;
+    floorName?: string | null;
+    roomNumber?: string | null;
+    bedNumber?: string | null;
+    roomType?: string | null;
+    allocationStatus: string;
+    isActive: boolean;
+  } | null;
+}
+
 

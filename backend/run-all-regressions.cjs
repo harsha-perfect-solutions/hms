@@ -14,6 +14,7 @@ const suites = [
   { name: 'Management Dashboard', script: 'test-management-dashboard-api.cjs', expected: 18 },
   { name: 'Block Management', script: 'test-block-management-api.cjs', expected: 15 },
   { name: 'Room Management', script: 'test-room-management-api.cjs', expected: 20 },
+  { name: 'Mess Management', script: 'test-management-mess-api.cjs', expected: 22 },
 ];
 
 console.log('====================================================');

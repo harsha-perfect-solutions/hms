@@ -69,16 +69,26 @@ model OutingRequest {
 }
 
 model MessToken {
-  id          String   @id @default(uuid())
-  tokenNumber String?  @unique
-  studentId   String
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  date        String   // YYYY-MM-DD
-  mealType    String   // BREAKFAST, LUNCH, SNACKS, DINNER
-  status      String   @default("BOOKED") // BOOKED, CONSUMED, CANCELLED
-  createdAt   DateTime @default(now())
+  id                 String    @id @default(uuid())
+  tokenNumber        String?   @unique
+  studentId          String
+  student            Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date               String    // YYYY-MM-DD
+  mealType           String    // BREAKFAST, LUNCH, SNACKS, DINNER
+  status             String    @default("BOOKED") // BOOKED, CONSUMED, CANCELLED
+  consumedAt         DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @default(now()) @updatedAt
 
   @@unique([studentId, date, mealType])
+  @@index([date])
+  @@index([status])
+  @@index([mealType])
+  @@index([studentId])
+  @@index([date, mealType])
+  @@index([date, status])
 }
 
 model LeaveRequest {

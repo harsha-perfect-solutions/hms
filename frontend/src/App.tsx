@@ -22,6 +22,7 @@ import { ManagementLoginPage } from './pages/ManagementLoginPage';
 import { ManagementDashboardPage } from './pages/ManagementDashboardPage';
 import { BlockManagementPage } from './pages/BlockManagementPage';
 import { RoomManagementPage } from './pages/RoomManagementPage';
+import { MessManagementPage } from './pages/MessManagementPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -175,6 +176,7 @@ const AuthenticatedManagementApp: React.FC<{
 
   const isBlockPage = currentPath === '/management/blocks';
   const isRoomPage = currentPath === '/management/rooms';
+  const isMessPage = currentPath === '/management/mess';
 
   return (
     <div className="portal-layout management-layout">
@@ -198,14 +200,18 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isRoomPage
+            isMessPage
+              ? 'Mess Management'
+              : isRoomPage
               ? 'Room Management & Allocation'
               : isBlockPage
               ? 'Block Management'
               : 'Management Dashboard'
           }
           pageSubtitle={
-            isRoomPage
+            isMessPage
+              ? 'Monitor hostel meal services, verify resident tokens, and review meal statistics.'
+              : isRoomPage
               ? 'Configure rooms, track bed occupancy, and assign residential accommodations.'
               : isBlockPage
               ? 'Configure, organize, and monitor hostel residential blocks and zones.'
@@ -215,7 +221,9 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isRoomPage ? (
+          {isMessPage ? (
+            <MessManagementPage onNavigate={onNavigate} />
+          ) : isRoomPage ? (
             <RoomManagementPage onNavigate={onNavigate} />
           ) : isBlockPage ? (
             <BlockManagementPage onNavigate={onNavigate} />

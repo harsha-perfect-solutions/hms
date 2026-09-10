@@ -90,6 +90,23 @@ export interface RoomDomainEvent {
   timestamp: string;
 }
 
+export type MessEventType =
+  | 'MESS_TOKEN_BOOKED'
+  | 'MESS_TOKEN_CONSUMED'
+  | 'MESS_TOKEN_CANCELLED'
+  | 'MESS_STATS_UPDATED';
+
+export interface MessDomainEvent {
+  type: MessEventType;
+  tokenId?: string;
+  studentId?: string;
+  date?: string;
+  mealType?: string;
+  status?: string;
+  details?: any;
+  timestamp: string;
+}
+
 
 
 class ComplaintEventsService extends EventEmitter {
@@ -306,6 +323,39 @@ class ComplaintEventsService extends EventEmitter {
         roomId: event.roomId,
         studentId: event.studentId,
         allocationId: event.allocationId,
+        ...event.details,
+      },
+    });
+  }
+
+  /**
+   * Dispatches a mess domain event to a specific student's SSE stream and broadcasts to management
+   */
+  public emitMessEventToStudent(studentId: string | undefined, event: MessDomainEvent): void {
+    if (studentId) {
+      const connections = this.studentConnections.get(studentId);
+      if (connections && connections.size > 0) {
+        const payload = `event: mess_event\ndata: ${JSON.stringify(event)}\n\n`;
+        for (const res of connections) {
+          try {
+            res.write(payload);
+          } catch (err) {
+            console.error('Failed to write SSE mess event to student connection:', err);
+          }
+        }
+      }
+    }
+
+    // Also broadcast to management dashboard and mess listeners
+    this.emitManagementDashboardUpdate({
+      type: event.type,
+      timestamp: event.timestamp || new Date().toISOString(),
+      details: {
+        tokenId: event.tokenId,
+        studentId: event.studentId,
+        date: event.date,
+        mealType: event.mealType,
+        status: event.status,
         ...event.details,
       },
     });

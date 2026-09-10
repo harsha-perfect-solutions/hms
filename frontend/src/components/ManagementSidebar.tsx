@@ -32,7 +32,7 @@ export const MANAGEMENT_NAV_ITEMS: ManagementNavItem[] = [
   { id: 'dashboard', label: 'Dashboard', path: '/management/dashboard', icon: LayoutDashboard, isAvailable: true },
   { id: 'blocks', label: 'Block Management', path: '/management/blocks', icon: Building, isAvailable: true },
   { id: 'rooms', label: 'Room Allocation', path: '/management/rooms', icon: BedDouble, isAvailable: true },
-  { id: 'mess', label: 'Mess Management', path: '/management/mess', icon: UtensilsCrossed, isAvailable: false },
+  { id: 'mess', label: 'Mess Management', path: '/management/mess', icon: UtensilsCrossed, isAvailable: true },
   { id: 'outings', label: 'Outing Approvals', path: '/management/outings', icon: Footprints, isAvailable: false },
   { id: 'maintenance', label: 'Maintenance', path: '/management/maintenance', icon: Wrench, isAvailable: false },
   { id: 'logs', label: 'Log History', path: '/management/logs', icon: History, isAvailable: false },

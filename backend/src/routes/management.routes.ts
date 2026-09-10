@@ -13,6 +13,7 @@ import { complaintEventsService } from '../services/events.service';
 import { loginRateLimiter } from '../middleware/rate-limiter';
 import blockRoutes from './block.routes';
 import { roomManagementRouter, roomAllocationRouter } from './room-management.routes';
+import messManagementRouter from './mess-management.routes';
 
 const router = Router();
 
@@ -20,6 +21,7 @@ const router = Router();
 router.use('/blocks', blockRoutes);
 router.use('/rooms', roomManagementRouter);
 router.use('/room-allocations', roomAllocationRouter);
+router.use('/mess', messManagementRouter);
 
 
 /**

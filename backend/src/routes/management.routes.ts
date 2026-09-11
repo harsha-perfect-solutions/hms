@@ -24,6 +24,7 @@ import userManagementRouter from './user-management.routes';
 import feeManagementRouter from './fee-management.routes';
 import feeCollectionRouter from './fee-collection.routes';
 import outingLogHistoryRouter from './outing-log-history.routes';
+import deviceRouter from './device.routes';
 import { auditService } from '../services/audit.service';
 
 
@@ -41,6 +42,7 @@ router.use('/complaints', complaintManagementRouter);
 router.use('/guest-billing', guestBillingRouter);
 router.use('/log-history', logHistoryRouter);
 router.use('/outing-log-history', outingLogHistoryRouter);
+router.use('/devices', deviceRouter);
 router.use('/users', userManagementRouter);
 router.use('/fee-management', feeManagementRouter);
 router.use('/fee-collection', feeCollectionRouter);

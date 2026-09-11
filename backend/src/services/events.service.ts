@@ -490,6 +490,41 @@ class ComplaintEventsService extends EventEmitter {
     });
   }
 
+  /**
+   * Broadcasts a device domain event to all connected management listeners and dashboards
+   */
+  public emitDeviceManagementUpdate(event: {
+    type: string;
+    deviceId?: string;
+    deviceIdentifier?: string;
+    status?: string;
+    timestamp?: string;
+    details?: any;
+  }): void {
+    const timestamp = event.timestamp || new Date().toISOString();
+    this.emitManagementDashboardUpdate({
+      type: event.type,
+      timestamp,
+      details: {
+        deviceId: event.deviceId,
+        deviceIdentifier: event.deviceIdentifier,
+        status: event.status,
+        ...event.details,
+      },
+    });
+
+    const payload = `event: device_event\ndata: ${JSON.stringify({ ...event, timestamp })}\n\n`;
+    for (const [, connections] of this.managementConnections.entries()) {
+      for (const res of connections) {
+        try {
+          res.write(payload);
+        } catch (err) {
+          console.error('Failed to write SSE device event to connection:', err);
+        }
+      }
+    }
+  }
+
 
   /**
    * Keep-alive ping to prevent proxy/browser timeout

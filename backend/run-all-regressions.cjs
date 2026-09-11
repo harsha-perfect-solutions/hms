@@ -26,6 +26,7 @@ const suites = [
   { name: 'Fee Management & Collection', script: 'test-fee-management-collection-api.cjs', expected: 17 },
   { name: 'Fee Hardening & Reconciliation', script: 'test-fee-hardening-reconciliation.cjs', expected: 12 },
   { name: 'Outing Log History', script: 'test-management-outing-log-history.cjs', expected: 25 },
+  { name: 'Device Management', script: 'test-management-device-api.cjs', expected: 32 },
 ];
 
 console.log('====================================================');
@@ -45,6 +46,7 @@ for (const suite of suites) {
     const match =
       output.match(/Passed:\s*(\d+)/i) ||
       output.match(/(\d+)\/(\d+)\s*tests passed/i) ||
+      output.match(/SUITE:\s*(\d+)\/(\d+)\s*TESTS PASSED/i) ||
       output.match(/COMPLETE:\s*(\d+)\/(\d+)\s*TESTS PASSED/i);
     if (match) {
       passedCount = parseInt(match[1], 10);

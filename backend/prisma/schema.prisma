@@ -671,4 +671,33 @@ model FeeImportBatch {
   @@index([createdAt])
 }
 
+model BiometricDevice {
+  id                  String    @id @default(uuid())
+  deviceIdentifier    String    @unique // e.g. "DEV-GATE-01", "DEV-TURNSTILE-02"
+  name                String    // e.g. "Main Gate Biometric Reader #1"
+  deviceType          String    // BIOMETRIC, GATE_READER, RFID, TURNSTILE, OTHER
+  location            String    // e.g. "Main Hostel Gate", "Mess Entrance", "Block A Entry"
+  description         String?
+  status              String    @default("OFFLINE") // ONLINE, OFFLINE, MAINTENANCE, DISABLED
+  isEnabled           Boolean   @default(true)
+  apiKeyHash          String?   // SHA-256 hash of device secret; NEVER store plaintext
+  keyLastRotatedAt    DateTime?
+  lastSeenAt          DateTime?
+  ipAddress           String?
+  macAddress          String?
+  firmwareVersion     String?
+  maintenanceNotes    String?
+  lastMaintenanceDate DateTime?
+  configMetadata      String?   // JSON string for device configs
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([deviceIdentifier])
+  @@index([deviceType])
+  @@index([status])
+  @@index([isEnabled])
+  @@index([lastSeenAt])
+  @@index([location])
+}
+
 

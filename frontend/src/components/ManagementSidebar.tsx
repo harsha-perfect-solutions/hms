@@ -44,7 +44,7 @@ export const MANAGEMENT_NAV_ITEMS: ManagementNavItem[] = [
   { id: 'outing-logs', label: 'Outing Log History', path: '/management/outing-log-history', icon: ClipboardList, isAvailable: true },
   { id: 'users', label: 'User Management', path: '/management/users', icon: Users, isAvailable: true },
   { id: 'billing', label: 'Guest Billing', path: '/management/guest-billing', icon: Receipt, isAvailable: true },
-  { id: 'devices', label: 'Device Management', path: '/management/devices', icon: Cpu, isAvailable: false },
+  { id: 'devices', label: 'Device Management', path: '/management/devices', icon: Cpu, isAvailable: true },
   { id: 'notifications', label: 'Notifications', path: '/management/notifications', icon: Bell, isAvailable: false },
 ];
 

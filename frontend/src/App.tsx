@@ -32,6 +32,7 @@ import { ManagementOutingLogHistoryPage } from './pages/ManagementOutingLogHisto
 import { ManagementUserManagementPage } from './pages/ManagementUserManagementPage';
 import { FeeManagementPage } from './pages/FeeManagementPage';
 import { FeeCollectionPage } from './pages/FeeCollectionPage';
+import { ManagementDevicePage } from './pages/ManagementDevicePage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -192,13 +193,14 @@ const AuthenticatedManagementApp: React.FC<{
   const isGuestBillingPage = currentPath === '/management/guest-billing' || currentPath === '/management/billing';
   const isLogHistoryPage = currentPath === '/management/log-history' || currentPath === '/management/logs';
   const isOutingLogHistoryPage = currentPath === '/management/outing-log-history' || currentPath === '/management/outing-logs';
+  const isDevicePage = currentPath === '/management/devices';
   const isUserManagementPage = currentPath === '/management/users';
   const isFeeManagementPage = currentPath === '/management/fee-management';
   const isFeeCollectionPage = currentPath === '/management/fee-collection';
 
   return (
     <div className="portal-layout management-layout">
-      {/* Management Sidebar with all 13 modules */}
+      {/* Management Sidebar with all 14 modules */}
       <ManagementSidebar
         currentPath={currentPath}
         isOpen={mobileMenuOpen}
@@ -218,7 +220,9 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isOutingLogHistoryPage
+            isDevicePage
+              ? 'Device Management & Turnstile Registry'
+              : isOutingLogHistoryPage
               ? 'Outing Log History & Gate Transit'
               : isFeeCollectionPage
               ? 'Fee Management / Fee Collection'
@@ -245,7 +249,9 @@ const AuthenticatedManagementApp: React.FC<{
               : 'Admin Dashboard'
           }
           pageSubtitle={
-            isOutingLogHistoryPage
+            isDevicePage
+              ? 'Authoritative hardware control plane for hostel turnstiles, biometric scanners, and RFID readers.'
+              : isOutingLogHistoryPage
               ? 'Authoritative historical record of student outing requests, approvals, and physical gate movement events.'
               : isFeeCollectionPage
               ? 'Manage student fees, apply filters, add fines, and promote students efficiently.'
@@ -275,7 +281,9 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isOutingLogHistoryPage ? (
+          {isDevicePage ? (
+            <ManagementDevicePage onNavigate={onNavigate} />
+          ) : isOutingLogHistoryPage ? (
             <ManagementOutingLogHistoryPage onNavigate={onNavigate} />
           ) : isFeeCollectionPage ? (
             <FeeCollectionPage onNavigate={onNavigate} />

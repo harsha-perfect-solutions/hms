@@ -1,5 +1,6 @@
 import { prisma } from './prisma.service';
 import { complaintEventsService } from './events.service';
+import { deviceService } from './device.service';
 
 export interface TodayBiometricStatus {
   status: 'INSIDE_HOSTEL' | 'OUTSIDE_HOSTEL' | 'NO_RECORD';
@@ -540,6 +541,11 @@ export class BiometricService {
           source: result.createdEvent.source,
         },
       });
+    }
+
+    // 7. Update device last seen timestamp if deviceId is provided
+    if (dto.deviceId) {
+      deviceService.updateDeviceLastSeen(dto.deviceId).catch(() => {});
     }
 
     return {

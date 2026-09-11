@@ -163,6 +163,16 @@ router.post('/auth/login', loginRateLimiter, async (req, res): Promise<void> => 
       })
       .catch((err) => console.error('Error recording login audit:', err));
 
+    const hostelScope = user.role === 'CHIEF_WARDEN_BOYS'
+      ? 'BOYS'
+      : user.role === 'CHIEF_WARDEN_GIRLS'
+      ? 'GIRLS'
+      : user.blockName?.toLowerCase().includes('girls')
+      ? 'GIRLS'
+      : user.blockName?.toLowerCase().includes('boys')
+      ? 'BOYS'
+      : 'ALL';
+
     res.status(200).json({
       success: true,
       message: 'Management authentication successful.',
@@ -173,6 +183,8 @@ router.post('/auth/login', loginRateLimiter, async (req, res): Promise<void> => 
         name: user.name,
         email: user.email,
         role: user.role,
+        blockName: user.blockName,
+        hostelScope,
       },
     });
   } catch (error) {
@@ -257,7 +269,7 @@ router.get(
   authenticateManagement,
   async (req: AuthenticatedManagementRequest, res: Response): Promise<void> => {
     try {
-      const data = await managementService.getDashboardData();
+      const data = await managementService.getDashboardData(req.managementUser?.hostelScope);
       res.status(200).json({
         success: true,
         data,

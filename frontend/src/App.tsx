@@ -30,6 +30,7 @@ import { GuestBillingManagementPage } from './pages/GuestBillingManagementPage';
 import { ManagementLogHistoryPage } from './pages/ManagementLogHistoryPage';
 import { ManagementOutingLogHistoryPage } from './pages/ManagementOutingLogHistoryPage';
 import { ManagementUserManagementPage } from './pages/ManagementUserManagementPage';
+import { OutingLogHistoryPage } from './pages/OutingLogHistoryPage';
 import { FeeManagementPage } from './pages/FeeManagementPage';
 import { FeeCollectionPage } from './pages/FeeCollectionPage';
 import { ManagementDevicePage } from './pages/ManagementDevicePage';
@@ -291,8 +292,10 @@ const AuthenticatedManagementApp: React.FC<{
             <ManagementNotificationsPage />
           ) : isDevicePage ? (
             <ManagementDevicePage onNavigate={onNavigate} />
-          ) : isOutingLogHistoryPage ? (
+          ) : currentPath === '/management/outing-log-history' ? (
             <ManagementOutingLogHistoryPage onNavigate={onNavigate} />
+          ) : isOutingLogHistoryPage ? (
+            <OutingLogHistoryPage onNavigate={onNavigate} />
           ) : isFeeCollectionPage ? (
             <FeeCollectionPage onNavigate={onNavigate} />
           ) : isFeeManagementPage ? (

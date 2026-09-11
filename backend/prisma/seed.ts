@@ -270,25 +270,72 @@ async function main() {
     },
   });
 
-  // 5b. Warden account
+  // 5b. Chief Warden Boys account
+  await prisma.student.upsert({
+    where: { jntuNo: 'CW_BOYS' },
+    update: {
+      passwordHash: studentPasswordHash,
+      isActive: true,
+      role: 'CHIEF_WARDEN_BOYS',
+      name: 'Chief Warden (Boys Hostel)',
+      email: 'chiefwarden.boys@college.edu',
+      blockName: 'Boys Hostel',
+    },
+    create: {
+      jntuNo: 'CW_BOYS',
+      passwordHash: studentPasswordHash,
+      name: 'Chief Warden (Boys Hostel)',
+      email: 'chiefwarden.boys@college.edu',
+      role: 'CHIEF_WARDEN_BOYS',
+      blockName: 'Boys Hostel',
+      isActive: true,
+    },
+  });
+
+  // 5c. Chief Warden Girls account
+  await prisma.student.upsert({
+    where: { jntuNo: 'CW_GIRLS' },
+    update: {
+      passwordHash: studentPasswordHash,
+      isActive: true,
+      role: 'CHIEF_WARDEN_GIRLS',
+      name: 'Chief Warden (Girls Hostel)',
+      email: 'chiefwarden.girls@college.edu',
+      blockName: 'Girls Hostel',
+    },
+    create: {
+      jntuNo: 'CW_GIRLS',
+      passwordHash: studentPasswordHash,
+      name: 'Chief Warden (Girls Hostel)',
+      email: 'chiefwarden.girls@college.edu',
+      role: 'CHIEF_WARDEN_GIRLS',
+      blockName: 'Girls Hostel',
+      isActive: true,
+    },
+  });
+
+  // 5d. Warden account
   await prisma.student.upsert({
     where: { jntuNo: 'WARDEN01' },
     update: {
       passwordHash: studentPasswordHash,
       isActive: true,
       role: 'WARDEN',
+      name: 'Girls Hostel Warden',
+      blockName: 'Girls Hostel',
     },
     create: {
       jntuNo: 'WARDEN01',
       passwordHash: studentPasswordHash,
-      name: 'Hostel Warden',
+      name: 'Girls Hostel Warden',
       email: 'warden@college.edu',
       role: 'WARDEN',
+      blockName: 'Girls Hostel',
       isActive: true,
     },
   });
 
-  // 5b. Maintenance Staff account (Step 16)
+  // 5e. Maintenance Staff account
   await prisma.student.upsert({
     where: { jntuNo: 'MAINT01' },
     update: {
@@ -306,47 +353,68 @@ async function main() {
     },
   });
 
-
-  // 6. Authoritative Hostel Blocks
+  // 6. Authoritative Hostel Blocks (matching screenshot: Boys A, B, C, D and Girls A, B)
   const initialBlocks = [
-    {
-      name: 'Girls-Block-B',
-      code: 'GB-B',
-      description: 'Main residential block B for female students (Rooms 101-220).',
-      status: 'ACTIVE',
-    },
     {
       name: 'Boys-Block-A',
       code: 'BB-A',
-      description: 'North residential wing for male engineering undergraduates.',
+      description: 'North residential wing for male students.',
       status: 'ACTIVE',
     },
     {
-      name: 'West-Wing-C',
-      code: 'WW-C',
-      description: 'West Wing residential facility undergoing summer renovation.',
-      status: 'INACTIVE',
+      name: 'Boys-Block-B',
+      code: 'BB-B',
+      description: 'East residential wing for male students.',
+      status: 'ACTIVE',
+    },
+    {
+      name: 'Boys-Block-C',
+      code: 'BB-C',
+      description: 'West residential wing for male students.',
+      status: 'ACTIVE',
+    },
+    {
+      name: 'Boys-Block-D',
+      code: 'BB-D',
+      description: 'South residential wing for male students.',
+      status: 'ACTIVE',
+    },
+    {
+      name: 'Girls-Block-A',
+      code: 'GB-A',
+      description: 'Main residential block A for female students.',
+      status: 'ACTIVE',
+    },
+    {
+      name: 'Girls-Block-B',
+      code: 'GB-B',
+      description: 'Main residential block B for female students.',
+      status: 'ACTIVE',
     },
   ];
 
   for (const b of initialBlocks) {
     await prisma.block.upsert({
       where: { code: b.code },
-      update: {},
+      update: { status: b.status, description: b.description },
       create: b,
     });
   }
 
   // 7. Authoritative Rooms & Allocations
-  const gbBlock = await prisma.block.findUnique({ where: { code: 'GB-B' } });
-  const bbBlock = await prisma.block.findUnique({ where: { code: 'BB-A' } });
+  const gbBlockA = await prisma.block.findUnique({ where: { code: 'GB-A' } });
+  const gbBlockB = await prisma.block.findUnique({ where: { code: 'GB-B' } });
+  const bbBlockA = await prisma.block.findUnique({ where: { code: 'BB-A' } });
+  const bbBlockB = await prisma.block.findUnique({ where: { code: 'BB-B' } });
+  const bbBlockC = await prisma.block.findUnique({ where: { code: 'BB-C' } });
+  const bbBlockD = await prisma.block.findUnique({ where: { code: 'BB-D' } });
 
-  if (gbBlock) {
+  if (gbBlockB) {
     const room119 = await prisma.room.upsert({
-      where: { blockId_roomNumber: { blockId: gbBlock.id, roomNumber: '119' } },
+      where: { blockId_roomNumber: { blockId: gbBlockB.id, roomNumber: '119' } },
       update: {},
       create: {
-        blockId: gbBlock.id,
+        blockId: gbBlockB.id,
         roomNumber: '119',
         floor: 1,
         roomType: 'Non-AC Room (2 Sharing)',
@@ -356,10 +424,10 @@ async function main() {
     });
 
     await prisma.room.upsert({
-      where: { blockId_roomNumber: { blockId: gbBlock.id, roomNumber: '120' } },
+      where: { blockId_roomNumber: { blockId: gbBlockB.id, roomNumber: '120' } },
       update: {},
       create: {
-        blockId: gbBlock.id,
+        blockId: gbBlockB.id,
         roomNumber: '120',
         floor: 1,
         roomType: 'Non-AC Room (2 Sharing)',
@@ -400,27 +468,121 @@ async function main() {
     }
   }
 
-  if (bbBlock) {
+  if (bbBlockD) {
     await prisma.room.upsert({
-      where: { blockId_roomNumber: { blockId: bbBlock.id, roomNumber: '201' } },
+      where: { blockId_roomNumber: { blockId: bbBlockD.id, roomNumber: '101' } },
       update: {},
       create: {
-        blockId: bbBlock.id,
-        roomNumber: '201',
-        floor: 2,
-        roomType: 'Non-AC Room (3 Sharing)',
-        capacity: 3,
+        blockId: bbBlockD.id,
+        roomNumber: '101',
+        floor: 1,
+        roomType: 'Non-AC Room (2 Sharing)',
+        capacity: 2,
         status: 'ACTIVE',
       },
     });
   }
 
+  // 8. Pending Room Allocation Candidate (from reference screenshot): VANA BHARGAV PRASAD
+  const pendingStudent = await prisma.student.upsert({
+    where: { jntuNo: '23331A4462' },
+    update: {
+      passwordHash: studentPasswordHash,
+      isActive: true,
+      role: 'STUDENT',
+      name: 'VANA BHARGAV PRASAD',
+      email: 'bhargavvana80@gmail.com',
+      allocationStatus: 'PENDING',
+      blockName: 'Boys-Block-D',
+      floorName: 'First Floor',
+      roomType: 'Non-AC Room (2 Sharing)',
+      roomCapacity: 2,
+    },
+    create: {
+      jntuNo: '23331A4462',
+      passwordHash: studentPasswordHash,
+      name: 'VANA BHARGAV PRASAD',
+      email: 'bhargavvana80@gmail.com',
+      role: 'STUDENT',
+      allocationStatus: 'PENDING',
+      blockName: 'Boys-Block-D',
+      floorName: 'First Floor',
+      roomType: 'Non-AC Room (2 Sharing)',
+      roomCapacity: 2,
+      isActive: true,
+    },
+  });
+
+  // 9. Outing Requests from reference screenshots (KUMARI CHINTA, Sivaparvathi Gunturu)
+  const outingStudent1 = await prisma.student.upsert({
+    where: { jntuNo: '25331A0236' },
+    update: { passwordHash: studentPasswordHash, isActive: true, role: 'STUDENT', name: 'KUMARI CHINTA', blockName: 'Girls-Block-B' },
+    create: { jntuNo: '25331A0236', passwordHash: studentPasswordHash, name: 'KUMARI CHINTA', email: 'kumari.chinta@college.edu', role: 'STUDENT', blockName: 'Girls-Block-B', isActive: true },
+  });
+
+  await prisma.outingRequest.upsert({
+    where: { id: 'outing-demo-01' },
+    update: {},
+    create: {
+      id: 'outing-demo-01',
+      requestNumber: 'OUT-20260904-001',
+      studentId: outingStudent1.id,
+      purpose: 'To meet my sister in srikakulam',
+      passType: 'LOCAL_OUTING',
+      status: 'PENDING',
+      outDate: new Date('2026-09-04T08:30:00.000Z'),
+      returnDate: new Date('2026-09-04T16:30:00.000Z'),
+    },
+  });
+
+  const outingStudent2 = await prisma.student.upsert({
+    where: { jntuNo: '24331A1249' },
+    update: { passwordHash: studentPasswordHash, isActive: true, role: 'STUDENT', name: 'Sivaparvathi Gunturu', blockName: 'Girls-Block-A' },
+    create: { jntuNo: '24331A1249', passwordHash: studentPasswordHash, name: 'Sivaparvathi Gunturu', email: 'siva.g@college.edu', role: 'STUDENT', blockName: 'Girls-Block-A', isActive: true },
+  });
+
+  await prisma.outingRequest.upsert({
+    where: { id: 'outing-demo-02' },
+    update: {},
+    create: {
+      id: 'outing-demo-02',
+      requestNumber: 'OUT-20260826-002',
+      studentId: outingStudent2.id,
+      purpose: 'Going with friends',
+      passType: 'LOCAL_OUTING',
+      status: 'PENDING',
+      outDate: new Date('2026-08-26T21:04:00.000Z'),
+      returnDate: new Date('2026-08-27T09:04:00.000Z'),
+    },
+  });
+
+  // 10. Biometric Check-In Events from reference screenshots (Reshma Borra, etc.)
+  const biometricStudent = await prisma.student.upsert({
+    where: { jntuNo: '24331A0545' },
+    update: { passwordHash: studentPasswordHash, isActive: true, role: 'STUDENT', name: 'Reshma Borra', blockName: 'Girls-Block-B', floorName: 'Floor 4', roomNumber: '410' },
+    create: { jntuNo: '24331A0545', passwordHash: studentPasswordHash, name: 'Reshma Borra', email: 'reshma.b@college.edu', role: 'STUDENT', blockName: 'Girls-Block-B', floorName: 'Floor 4', roomNumber: '410', isActive: true },
+  });
+
+  await prisma.biometricEvent.create({
+    data: {
+      studentId: biometricStudent.id,
+      eventType: 'ENTRY',
+      direction: 'IN',
+      verificationStatus: 'VERIFIED',
+      source: 'BIOMETRIC_DEVICE',
+      gate: 'Girls Hostel Biometric',
+      deviceId: 'DEV-GH-01',
+      deviceLabel: 'Fingerprint',
+      eventTimestamp: new Date('2026-07-15T13:38:27.000Z'),
+    },
+  });
+
   console.log('Database seeded successfully:');
-  console.log(`- Student 1: ${student1.name} (${student1.jntuNo}) - Allocated (Girls-Block-B - 119) with 2 mess tokens today`);
-  console.log(`- Student 2: ${student2.name} (${student2.jntuNo}) - Allocated (Girls-Block-B - 119) with 0 mess tokens`);
-  console.log(`- Student 3: ${studentUnallocated.name} (${studentUnallocated.jntuNo}) - NOT_ALLOCATED (Empty State)`);
-  console.log(`- Blocks: Seeded ${initialBlocks.length} authoritative baseline blocks (GB-B, BB-A, WW-C)`);
-  console.log(`- Rooms: Seeded authoritative rooms (119, 120 in GB-B; 201 in BB-A)`);
+  console.log(`- Administrator: System Administrator (ADMIN01)`);
+  console.log(`- Chief Warden Boys: Chief Warden (Boys Hostel) (CW_BOYS)`);
+  console.log(`- Chief Warden Girls: Chief Warden (Girls Hostel) (CW_GIRLS)`);
+  console.log(`- Blocks: Seeded 6 authoritative blocks (BB-A, BB-B, BB-C, BB-D, GB-A, GB-B)`);
+  console.log(`- Pending Candidate: ${pendingStudent.name} (${pendingStudent.jntuNo})`);
 }
 
 main()

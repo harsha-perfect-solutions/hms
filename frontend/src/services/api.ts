@@ -1508,8 +1508,9 @@ export interface ManagementUser {
   jntuNo: string;
   name: string;
   email?: string | null;
-  role: 'WARDEN' | 'CHIEF_WARDEN' | 'ADMIN' | 'HOSTEL_ADMIN' | string;
+  role: 'WARDEN' | 'CHIEF_WARDEN' | 'CHIEF_WARDEN_BOYS' | 'CHIEF_WARDEN_GIRLS' | 'ADMIN' | 'HOSTEL_ADMIN' | string;
   blockName?: string | null;
+  hostelScope?: 'BOYS' | 'GIRLS' | 'ALL';
 }
 
 export interface ResidentPresenceMetrics {

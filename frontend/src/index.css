@@ -502,9 +502,14 @@ a {
   display: flex;
   min-height: 100vh;
   min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   width: 100%;
   background-color: #F8FAFC;
   position: relative;
+  overflow: hidden;
 }
 
 /* --------------------------------------------------------------------------
@@ -514,14 +519,15 @@ a {
 .dashboard-sidebar {
   width: 260px;
   height: 100vh;
+  height: 100dvh;
   background: #FFFFFF;
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
+  position: relative;
   flex-shrink: 0;
   z-index: 30;
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -531,6 +537,7 @@ a {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .sidebar-brand-group {
@@ -585,7 +592,42 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease;
+}
+
+/* Sidebar only scrolls when cursor hovers on sidebar */
+.dashboard-sidebar:hover .sidebar-nav,
+.sidebar-nav:hover {
   overflow-y: auto;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+.dashboard-sidebar:hover .sidebar-nav::-webkit-scrollbar-thumb,
+.sidebar-nav:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+.dashboard-sidebar:hover .sidebar-nav::-webkit-scrollbar-thumb:hover,
+.sidebar-nav:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
 }
 
 .sidebar-nav-item {
@@ -631,6 +673,7 @@ a {
 .sidebar-footer {
   padding: 1rem 0.75rem;
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .sidebar-logout-btn {
@@ -663,6 +706,14 @@ a {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .main-header {
@@ -676,6 +727,7 @@ a {
   position: sticky;
   top: 0;
   z-index: 20;
+  flex-shrink: 0;
 }
 
 .header-left-section {
@@ -3295,6 +3347,10 @@ a {
 
   .dashboard-sidebar.drawer-open {
     transform: translateX(0);
+  }
+
+  .sidebar-nav {
+    overflow-y: auto;
   }
 
   .drawer-backdrop {
@@ -6095,16 +6151,27 @@ input[type="checkbox"] {
   gap: 0.2rem;
 }
 
-/* Dark sidebar scrollbar (admin portal) */
+/* Dark sidebar scrollbar (admin portal) — hover only */
 .management-sidebar .sidebar-nav {
+  scrollbar-color: transparent transparent;
+}
+
+.management-sidebar:hover .sidebar-nav,
+.management-sidebar .sidebar-nav:hover {
   scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
 }
 
 .management-sidebar .sidebar-nav::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.management-sidebar:hover .sidebar-nav::-webkit-scrollbar-thumb,
+.management-sidebar .sidebar-nav:hover::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.3);
 }
 
-.management-sidebar .sidebar-nav::-webkit-scrollbar-thumb:hover {
+.management-sidebar:hover .sidebar-nav::-webkit-scrollbar-thumb:hover,
+.management-sidebar .sidebar-nav:hover::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.5);
 }
 

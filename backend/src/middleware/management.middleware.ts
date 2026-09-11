@@ -3,7 +3,14 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { prisma } from '../services/prisma.service';
 
-export const MANAGEMENT_ROLES = ['WARDEN', 'CHIEF_WARDEN', 'ADMIN', 'HOSTEL_ADMIN'];
+export const MANAGEMENT_ROLES = [
+  'WARDEN',
+  'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
+  'ADMIN',
+  'HOSTEL_ADMIN',
+];
 export const MAINTENANCE_ROLE = 'MAINTENANCE_STAFF';
 export const ALL_MANAGEMENT_ROLES = [...MANAGEMENT_ROLES, MAINTENANCE_ROLE];
 
@@ -13,7 +20,17 @@ export interface ManagementUser {
   name: string;
   email: string;
   role: string;
+  blockName?: string | null;
+  hostelScope?: 'BOYS' | 'GIRLS' | 'ALL';
 }
+
+export const resolveHostelScope = (role: string, blockName?: string | null): 'BOYS' | 'GIRLS' | 'ALL' => {
+  if (role === 'CHIEF_WARDEN_BOYS') return 'BOYS';
+  if (role === 'CHIEF_WARDEN_GIRLS') return 'GIRLS';
+  if (blockName?.toLowerCase().includes('girls')) return 'GIRLS';
+  if (blockName?.toLowerCase().includes('boys')) return 'BOYS';
+  return 'ALL';
+};
 
 export interface AuthenticatedManagementRequest extends Request {
   managementUser?: ManagementUser;
@@ -101,6 +118,8 @@ export const authenticateManagement = async (
       name: user.name,
       email: user.email,
       role: user.role,
+      blockName: user.blockName,
+      hostelScope: resolveHostelScope(user.role, user.blockName),
     };
 
     next();
@@ -191,6 +210,8 @@ export const authenticateManagementOrMaintenance = async (
       name: user.name,
       email: user.email,
       role: user.role,
+      blockName: user.blockName,
+      hostelScope: resolveHostelScope(user.role, user.blockName),
     };
 
     next();

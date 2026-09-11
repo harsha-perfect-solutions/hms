@@ -232,7 +232,89 @@ export const ManagementLoginPage: React.FC<ManagementLoginPageProps> = ({
             </button>
           </form>
 
-          <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
+          {/* Quick Demo Credentials for Website-Specific Testing */}
+          <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Shield size={12} style={{ color: '#2563EB' }} />
+              <span>Select Test Role Credentials</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('CW_BOYS');
+                  setPassword('Password@123');
+                  setFieldErrors({});
+                  setGeneralError(null);
+                }}
+                style={{
+                  padding: '6px 4px',
+                  borderRadius: '6px',
+                  border: '1px solid #BFDBFE',
+                  backgroundColor: identifier === 'CW_BOYS' ? '#EFF6FF' : '#FFFFFF',
+                  color: '#1D4ED8',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+                title="Chief Warden (Boys Hostel): Blocks A, B, C, D"
+              >
+                CW Boys
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('CW_GIRLS');
+                  setPassword('Password@123');
+                  setFieldErrors({});
+                  setGeneralError(null);
+                }}
+                style={{
+                  padding: '6px 4px',
+                  borderRadius: '6px',
+                  border: '1px solid #E9D5FF',
+                  backgroundColor: identifier === 'CW_GIRLS' ? '#FAF5FF' : '#FFFFFF',
+                  color: '#6B21A8',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+                title="Chief Warden (Girls Hostel): Blocks A, B"
+              >
+                CW Girls
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIdentifier('ADMIN01');
+                  setPassword('Password@123');
+                  setFieldErrors({});
+                  setGeneralError(null);
+                }}
+                style={{
+                  padding: '6px 4px',
+                  borderRadius: '6px',
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: identifier === 'ADMIN01' ? '#F1F5F9' : '#FFFFFF',
+                  color: '#334155',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                }}
+                title="System Administrator: Full campus oversight"
+              >
+                Admin
+              </button>
+            </div>
+            <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '6px', textAlign: 'center' }}>
+              Password: <code style={{ backgroundColor: '#E2E8F0', padding: '1px 4px', borderRadius: '4px', color: '#1E293B' }}>Password@123</code>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '1rem', textAlign: 'center' }}>
             <button
               type="button"
               onClick={onNavigateToStudent}

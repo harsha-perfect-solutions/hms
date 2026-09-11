@@ -29,6 +29,7 @@ import { ManagementComplaintsPage } from './pages/ManagementComplaintsPage';
 import { GuestBillingManagementPage } from './pages/GuestBillingManagementPage';
 import { ManagementLogHistoryPage } from './pages/ManagementLogHistoryPage';
 import { ManagementUserManagementPage } from './pages/ManagementUserManagementPage';
+import { OutingLogHistoryPage } from './pages/OutingLogHistoryPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -188,6 +189,7 @@ const AuthenticatedManagementApp: React.FC<{
   const isComplaintsPage = currentPath === '/management/complaints' || currentPath === '/management/maintenance';
   const isGuestBillingPage = currentPath === '/management/guest-billing' || currentPath === '/management/billing';
   const isLogHistoryPage = currentPath === '/management/log-history' || currentPath === '/management/logs';
+  const isOutingLogHistoryPage = currentPath === '/management/outing-logs';
   const isUserManagementPage = currentPath === '/management/users';
 
   return (
@@ -214,6 +216,8 @@ const AuthenticatedManagementApp: React.FC<{
           pageTitle={
             isUserManagementPage
               ? 'User Management & Role Administration'
+              : isOutingLogHistoryPage
+              ? 'Outing Log History'
               : isLogHistoryPage
               ? 'System Log History & Audit'
               : isGuestBillingPage
@@ -235,6 +239,8 @@ const AuthenticatedManagementApp: React.FC<{
           pageSubtitle={
             isUserManagementPage
               ? 'Authoritative account administration, role assignment hierarchy, credential resets, and security status control.'
+              : isOutingLogHistoryPage
+              ? 'Comprehensive gate entry, exit, and violation monitoring with automated timestamps.'
               : isLogHistoryPage
               ? 'Comprehensive administrative activity logging, operational state change inspection, and multi-factor traceability.'
               : isGuestBillingPage
@@ -259,6 +265,8 @@ const AuthenticatedManagementApp: React.FC<{
         <main className="portal-content-body management-content-body">
           {isUserManagementPage ? (
             <ManagementUserManagementPage onNavigate={onNavigate} />
+          ) : isOutingLogHistoryPage ? (
+            <OutingLogHistoryPage onNavigate={onNavigate} />
           ) : isLogHistoryPage ? (
             <ManagementLogHistoryPage onNavigate={onNavigate} />
           ) : isGuestBillingPage ? (

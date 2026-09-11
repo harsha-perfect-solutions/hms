@@ -485,6 +485,25 @@ button, input {
   flex-direction: column;
   gap: 0.35rem;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }
 
 .sidebar-nav-item {
@@ -5962,35 +5981,37 @@ input[type="checkbox"] {
    STEP 10 — MANAGEMENT DASHBOARD & ADMIN PORTAL STYLES
    ========================================================================= */
 
-/* Management portal layout — sidebar is dark but main content area stays light */
+/* Management portal layout */
 .management-layout {
-  background-color: #F1F5F9;
+  background-color: #F8FAFC;
 }
 
 .management-sidebar {
-  background: linear-gradient(180deg, #0D1527 0%, #101930 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+  background: #FFFFFF;
+  border-right: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .management-sidebar-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
   height: 68px;
 }
 
 .management-brand-icon {
-  background: linear-gradient(135deg, #2563EB, #1D4ED8) !important;
+  background: linear-gradient(135deg, #1E1B4B, #312E81) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 2px 6px rgba(30, 27, 75, 0.2);
 }
 
-/* Override brand text for dark sidebar */
+/* Brand text for white sidebar */
 .management-sidebar .sidebar-brand-name {
-  color: #F1F5F9;
+  color: #0F172A;
+  font-weight: 700;
 }
 
 .management-sidebar .sidebar-brand-sub {
-  color: #60A5FA;
+  color: #1E1B4B;
 }
 
 /* ADMIN PORTAL badge pill */
@@ -5998,24 +6019,25 @@ input[type="checkbox"] {
   font-size: 0.62rem !important;
   font-weight: 800 !important;
   letter-spacing: 0.08em !important;
-  color: #60A5FA !important;
-  background: rgba(96, 165, 250, 0.15);
+  color: #1E1B4B !important;
+  background: #EEF2FF;
   padding: 2px 7px;
   border-radius: 4px;
   display: inline-block;
   margin-top: 3px;
   text-transform: uppercase;
-  border: 1px solid rgba(96, 165, 250, 0.25);
+  border: 1px solid #C7D2FE;
 }
 
 .management-sidebar-nav {
   gap: 0.25rem;
 }
 
-/* Dark sidebar nav item overrides */
+/* White sidebar nav item styling */
 .management-sidebar .sidebar-nav-item {
-  color: #94A3B8;
+  color: #334155;
   padding: 0.7rem 0.85rem;
+  font-weight: 500;
 }
 
 .management-sidebar .sidebar-nav-item .nav-item-icon {
@@ -6023,22 +6045,23 @@ input[type="checkbox"] {
 }
 
 .management-sidebar .sidebar-nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #E2E8F0;
+  background: #F1F5F9;
+  color: #1E1B4B;
 }
 
 .management-sidebar .sidebar-nav-item:hover .nav-item-icon {
-  color: #93C5FD;
+  color: #1E1B4B;
 }
 
 .management-sidebar .sidebar-nav-item.active {
-  background: rgba(37, 99, 235, 0.2);
-  color: #93C5FD;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #EEF2FF;
+  color: #1E1B4B;
+  font-weight: 700;
+  border: 1px solid #C7D2FE;
 }
 
 .management-sidebar .sidebar-nav-item.active .nav-item-icon {
-  color: #60A5FA;
+  color: #1E1B4B;
 }
 
 .management-nav-item {
@@ -6056,8 +6079,8 @@ input[type="checkbox"] {
 }
 
 .management-nav-item.disabled-nav-item:hover {
-  background: rgba(255, 255, 255, 0.03) !important;
-  color: #64748B !important;
+  background: #F8FAFC !important;
+  color: #94A3B8 !important;
 }
 
 .disabled-pill {
@@ -6065,30 +6088,32 @@ input[type="checkbox"] {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: rgba(255, 255, 255, 0.1);
-  color: #94A3B8;
+  background: #F1F5F9;
+  color: #64748B;
   padding: 2px 6px;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
   margin-left: auto;
+  border: 1px solid #E2E8F0;
 }
 
 .management-sidebar-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid #E2E8F0;
+  background: #FFFFFF;
 }
 
-/* Override logout button for dark sidebar */
+/* Logout button for white sidebar */
 .management-sidebar .sidebar-logout-btn {
-  color: #F87171;
+  color: #DC2626;
   border-color: transparent;
+  font-weight: 600;
 }
 
 .management-sidebar .sidebar-logout-btn:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #FCA5A5;
-  border-color: rgba(239, 68, 68, 0.3);
+  background: #FEF2F2;
+  color: #B91C1C;
+  border-color: #FECACA;
 }
 
 /* Management Header */

@@ -25,7 +25,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           type={showPassword ? 'text' : 'password'}
           disabled={disabled}
           autoComplete="current-password"
-          className={`form-input ${error ? 'has-error' : ''} ${className}`}
+          className={`form-input password-input ${error ? 'has-error' : ''} ${className}`}
           aria-invalid={!!error}
         />
 

@@ -1,5 +1,7 @@
 const assert = require('assert');
 const http = require('http');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 async function testNotificationsApi() {
   console.log('=== Running Student Hostel Notifications API Tests ===\n');
@@ -107,35 +109,18 @@ async function testNotificationsApi() {
   // Find or create an unread notification for Student A
   let targetNotification = listData.notifications.find((n) => !n.isRead);
   if (!targetNotification) {
-    // Generate an outing to produce a fresh unread notification, then cancel it
-    const now = new Date();
-    const outDate = new Date(now.getTime() + 2 * 3600 * 1000).toISOString();
-    const returnDate = new Date(now.getTime() + 5 * 3600 * 1000).toISOString();
-    const outRes = await fetch('http://localhost:5001/api/student/outing-requests', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${tokenA}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        passType: 'LOCAL_OUTING',
-        destination: 'Bookstore',
-        purpose: 'Purchasing study guides',
-        outDate,
-        returnDate,
-      }),
+    // Mark one notification as unread for the idempotency of the test suite
+    const candidate = await prisma.notification.findFirst({
+      where: { studentId: studentAId },
+      orderBy: { createdAt: 'desc' },
     });
-    const outData = await outRes.json();
-    if (outData.request && outData.request.id) {
-      await fetch(`http://localhost:5001/api/student/outing-requests/${outData.request.id}/cancel`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${tokenA}` },
+    if (candidate) {
+      await prisma.notification.update({
+        where: { id: candidate.id },
+        data: { isRead: false, readAt: null },
       });
+      targetNotification = candidate;
     }
-    const refreshed = await (await fetch('http://localhost:5001/api/student/notifications', {
-      headers: { Authorization: `Bearer ${tokenA}` },
-    })).json();
-    targetNotification = refreshed.notifications.find((n) => !n.isRead);
   }
   assert.ok(targetNotification, 'Must have at least one unread notification for tests');
   const targetId = targetNotification.id;
@@ -367,7 +352,7 @@ async function testNotificationsApi() {
 
   // TEST 20: Baseline Notification Preservation
   // Confirm that the initial 2 system notifications are still present
-  const finalCheck = await (await fetch('http://localhost:5001/api/student/notifications?category=SYSTEM', {
+  const finalCheck = await (await fetch('http://localhost:5001/api/student/notifications?category=SYSTEM&limit=100', {
     headers: { Authorization: `Bearer ${tokenA}` },
   })).json();
   const hasRoomAllocation = finalCheck.notifications.some((n) => n.title.includes('Room Allocation'));

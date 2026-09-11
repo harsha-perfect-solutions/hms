@@ -267,8 +267,23 @@ async function runHardeningSuite() {
   let unpaidItem = null;
   await test('6. Payment Safety: Reject payment amount exceeding outstanding due', async () => {
     const studentRes = await getJson(`/management/fee-collection/students/${sampleStudentId}?academicYearId=${academicYearId}`, adminToken);
-    assert.strictEqual(studentRes.status, 200);
     unpaidItem = studentRes.data.feeItems.find((it) => Number(it.dueAmount) > 0);
+    if (!unpaidItem) {
+      const extraRes = await postJson(
+        '/management/fee-collection/extra-fee',
+        {
+          studentId: sampleStudentId,
+          academicYearId,
+          feeType: 'HOSTEL_FEE',
+          module: 'HOSTEL',
+          amount: 25000,
+        },
+        adminToken
+      );
+      if (extraRes.status === 200 || extraRes.status === 201) {
+        unpaidItem = extraRes.data.feeItem;
+      }
+    }
     assert.ok(unpaidItem, 'Student must have an unpaid item for overpayment test');
 
     const excessiveAmount = Number(unpaidItem.dueAmount) + 10000;

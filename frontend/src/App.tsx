@@ -28,6 +28,7 @@ import { ManagementLeavesPage } from './pages/ManagementLeavesPage';
 import { ManagementComplaintsPage } from './pages/ManagementComplaintsPage';
 import { GuestBillingManagementPage } from './pages/GuestBillingManagementPage';
 import { ManagementLogHistoryPage } from './pages/ManagementLogHistoryPage';
+import { ManagementOutingLogHistoryPage } from './pages/ManagementOutingLogHistoryPage';
 import { ManagementUserManagementPage } from './pages/ManagementUserManagementPage';
 import { FeeManagementPage } from './pages/FeeManagementPage';
 import { FeeCollectionPage } from './pages/FeeCollectionPage';
@@ -190,6 +191,7 @@ const AuthenticatedManagementApp: React.FC<{
   const isComplaintsPage = currentPath === '/management/complaints' || currentPath === '/management/maintenance';
   const isGuestBillingPage = currentPath === '/management/guest-billing' || currentPath === '/management/billing';
   const isLogHistoryPage = currentPath === '/management/log-history' || currentPath === '/management/logs';
+  const isOutingLogHistoryPage = currentPath === '/management/outing-log-history' || currentPath === '/management/outing-logs';
   const isUserManagementPage = currentPath === '/management/users';
   const isFeeManagementPage = currentPath === '/management/fee-management';
   const isFeeCollectionPage = currentPath === '/management/fee-collection';
@@ -216,7 +218,9 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isFeeCollectionPage
+            isOutingLogHistoryPage
+              ? 'Outing Log History & Gate Transit'
+              : isFeeCollectionPage
               ? 'Fee Management / Fee Collection'
               : isFeeManagementPage
               ? 'Fee Management'
@@ -241,7 +245,9 @@ const AuthenticatedManagementApp: React.FC<{
               : 'Admin Dashboard'
           }
           pageSubtitle={
-            isFeeCollectionPage
+            isOutingLogHistoryPage
+              ? 'Authoritative historical record of student outing requests, approvals, and physical gate movement events.'
+              : isFeeCollectionPage
               ? 'Manage student fees, apply filters, add fines, and promote students efficiently.'
               : isFeeManagementPage
               ? 'Configure fee structures, institutional bank accounts, academic years, scholarships, detentions, and configuration settings.'
@@ -269,7 +275,9 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isFeeCollectionPage ? (
+          {isOutingLogHistoryPage ? (
+            <ManagementOutingLogHistoryPage onNavigate={onNavigate} />
+          ) : isFeeCollectionPage ? (
             <FeeCollectionPage onNavigate={onNavigate} />
           ) : isFeeManagementPage ? (
             <FeeManagementPage onNavigate={onNavigate} />

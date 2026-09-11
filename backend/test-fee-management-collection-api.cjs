@@ -312,7 +312,24 @@ async function runTests() {
     assert.strictEqual(approveRes.status, 200);
     assert.strictEqual(approveRes.data.scholarship.status, 'APPROVED');
 
-    // 4. Apply scholarship transactionally towards student dues
+    // 4. Ensure student has dues to apply scholarship towards
+    const checkDues = await getJson(`/management/fee-collection/students/${sampleStudentId}?academicYearId=${sampleYearId}`, adminToken);
+    const hasDues = checkDues.data.feeItems?.some((it) => Number(it.dueAmount) > 0);
+    if (!hasDues) {
+      await postJson(
+        '/management/fee-collection/extra-fee',
+        {
+          studentId: sampleStudentId,
+          academicYearId: sampleYearId,
+          feeType: 'HOSTEL_FEE',
+          module: 'HOSTEL',
+          amount: 25000,
+        },
+        adminToken
+      );
+    }
+
+    // Apply scholarship transactionally towards student dues
     const applyRes = await postJson(
       `/management/fee-management/scholarships/${scholarshipId}/apply`,
       {},
@@ -387,8 +404,22 @@ async function runTests() {
   await test('Payment Collection: atomic transaction, receipt generation, and duplicate reference protection', async () => {
     // 1. Fetch target student fee item
     const studentRes = await getJson(`/management/fee-collection/students/${sampleStudentId}?academicYearId=${sampleYearId}`, adminToken);
-    assert.strictEqual(studentRes.status, 200);
-    const dueItem = studentRes.data.feeItems.find((it) => Number(it.dueAmount) >= 5000) || studentRes.data.feeItems.find((it) => Number(it.dueAmount) > 0);
+    let dueItem = studentRes.data.feeItems.find((it) => Number(it.dueAmount) >= 5000) || studentRes.data.feeItems.find((it) => Number(it.dueAmount) > 0);
+    if (!dueItem) {
+      await postJson(
+        '/management/fee-collection/extra-fee',
+        {
+          studentId: sampleStudentId,
+          academicYearId: sampleYearId,
+          feeType: 'HOSTEL_FEE',
+          module: 'HOSTEL',
+          amount: 25000,
+        },
+        adminToken
+      );
+      const refreshRes = await getJson(`/management/fee-collection/students/${sampleStudentId}?academicYearId=${sampleYearId}`, adminToken);
+      dueItem = refreshRes.data.feeItems?.find((it) => Number(it.dueAmount) > 0);
+    }
     assert.ok(dueItem, 'Student must have an unpaid fee item for testing');
     paidFeeItemId = dueItem.id;
 

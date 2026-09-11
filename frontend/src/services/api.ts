@@ -3753,6 +3753,53 @@ export const managementApiService = {
     if (!res.ok) throw new Error(data.message || 'Bulk removal failed.');
     return data;
   },
+
+  async getOutingLogHistory(query?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    studentId?: string;
+    requestNumber?: string;
+    movementType?: string;
+    status?: string;
+    source?: string;
+    from?: string;
+    to?: string;
+  }): Promise<OutingLogHistoryResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const params = new URLSearchParams();
+    if (query?.page) params.append('page', query.page.toString());
+    if (query?.pageSize) params.append('pageSize', query.pageSize.toString());
+    if (query?.search) params.append('search', query.search);
+    if (query?.studentId) params.append('studentId', query.studentId);
+    if (query?.requestNumber) params.append('requestNumber', query.requestNumber);
+    if (query?.movementType && query.movementType !== 'ALL') params.append('movementType', query.movementType);
+    if (query?.status && query.status !== 'ALL') params.append('status', query.status);
+    if (query?.source && query.source !== 'ALL') params.append('source', query.source);
+    if (query?.from) params.append('from', query.from);
+    if (query?.to) params.append('to', query.to);
+
+    const res = await fetch(`/api/management/outing-log-history?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch outing log history.');
+    return data;
+  },
+
+  async getOutingLogDetail(id: string): Promise<OutingLogDetailResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/outing-log-history/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch outing log detail.');
+    return data;
+  },
 };
 
 
@@ -4798,4 +4845,130 @@ export interface ReceiptDetailsResponse {
     payment: any;
   };
   snapshot: any;
+}
+
+export interface OutingLogItem {
+  id: string;
+  requestNumber: string;
+  student: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    blockName: string | null;
+    roomNumber: string | null;
+    bedNumber: string | null;
+  };
+  passType: string;
+  destination: string | null;
+  purpose: string;
+  outDate: string;
+  returnDate: string;
+  actualExitTime: string | null;
+  actualReturnTime: string | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
+  rejectionReason: string | null;
+  status: string;
+  rawStatus: string;
+  movementType: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'EXIT' | 'RETURN' | 'CANCELLED';
+  source: 'BIOMETRIC_DEVICE' | 'MANUAL_GATE' | 'STUDENT_PORTAL' | 'MANAGEMENT_PORTAL';
+  recordedBy: string;
+  eventTimestamp: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OutingLogHistoryStats {
+  todayRequests: number;
+  todayApproved: number;
+  todayExits: number;
+  todayReturns: number;
+  currentlyOutside: number;
+}
+
+export interface OutingLogHistoryResponse {
+  success: boolean;
+  records: OutingLogItem[];
+  stats: OutingLogHistoryStats;
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  message?: string;
+}
+
+export interface OutingTimelineStep {
+  stage: string;
+  label: string;
+  status: 'COMPLETED' | 'PENDING' | 'REJECTED' | 'ACTIVE' | 'CANCELLED';
+  timestamp: string | null;
+  actor: string;
+  source: string;
+  details: string;
+}
+
+export interface OutingBiometricEvent {
+  id: string;
+  eventType: string;
+  verificationStatus: string;
+  gate: string | null;
+  source: string;
+  eventTimestamp: string;
+}
+
+export interface OutingLogDetail {
+  outing: {
+    id: string;
+    requestNumber: string;
+    passType: string;
+    destination: string | null;
+    purpose: string;
+    emergencyContact: string | null;
+    remarks: string | null;
+    outDate: string;
+    returnDate: string;
+    actualExitTime: string | null;
+    actualReturnTime: string | null;
+    approvedAt: string | null;
+    approvedBy: string | null;
+    rejectedAt: string | null;
+    rejectedBy: string | null;
+    rejectionReason: string | null;
+    status: string;
+    rawStatus: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  student: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    email: string;
+    blockName: string | null;
+    roomNumber: string | null;
+    bedNumber: string | null;
+    roomType?: string | null;
+  } | null;
+  timeline: OutingTimelineStep[];
+  biometricEvents: OutingBiometricEvent[];
+  activityLogs: Array<{
+    id: string;
+    action: string;
+    entityType: string;
+    performedBy: string;
+    userRole: string;
+    details: any;
+    createdAt: string;
+  }>;
+}
+
+export interface OutingLogDetailResponse {
+  success: boolean;
+  data: OutingLogDetail;
+  message?: string;
 }

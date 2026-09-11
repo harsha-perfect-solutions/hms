@@ -25,6 +25,7 @@ const suites = [
   { name: 'Admin Portal Identity', script: 'test-admin-portal-identity-api.cjs', expected: 10 },
   { name: 'Fee Management & Collection', script: 'test-fee-management-collection-api.cjs', expected: 17 },
   { name: 'Fee Hardening & Reconciliation', script: 'test-fee-hardening-reconciliation.cjs', expected: 12 },
+  { name: 'Outing Log History', script: 'test-management-outing-log-history.cjs', expected: 25 },
 ];
 
 console.log('====================================================');

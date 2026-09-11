@@ -41,7 +41,7 @@ export const MANAGEMENT_NAV_ITEMS: ManagementNavItem[] = [
   { id: 'leaves', label: 'Leaves & Suspension', path: '/management/leaves', icon: FileText, isAvailable: true },
   { id: 'complaints', label: 'Complaints & Maintenance', path: '/management/complaints', icon: Wrench, isAvailable: true },
   { id: 'logs', label: 'Log History', path: '/management/log-history', icon: History, isAvailable: true },
-  { id: 'outing-logs', label: 'Outing Log History', path: '/management/outing-logs', icon: ClipboardList, isAvailable: false },
+  { id: 'outing-logs', label: 'Outing Log History', path: '/management/outing-log-history', icon: ClipboardList, isAvailable: true },
   { id: 'users', label: 'User Management', path: '/management/users', icon: Users, isAvailable: true },
   { id: 'billing', label: 'Guest Billing', path: '/management/guest-billing', icon: Receipt, isAvailable: true },
   { id: 'devices', label: 'Device Management', path: '/management/devices', icon: Cpu, isAvailable: false },

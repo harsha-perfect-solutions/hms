@@ -1,0 +1,967 @@
+/* ==========================================================================
+   HMS Outing Log History & Observability Module Styles
+   Clean Academic UI, Navy/Indigo Theme, Authoritative Timelines, Zero Overflow
+   ========================================================================== */
+
+.olh-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0.5rem 0.25rem 2.5rem;
+  box-sizing: border-box;
+}
+
+/* KPI Statistics Grid */
+.olh-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.olh-kpi-card {
+  background: #ffffff;
+  border-radius: var(--radius-md, 12px);
+  padding: 1.15rem 1.25rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px 0 rgba(15, 23, 42, 0.05));
+  border: 1px solid var(--border-color, #e2e8f0);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform var(--transition-fast, 150ms ease), box-shadow var(--transition-fast, 150ms ease);
+}
+
+.olh-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(15, 23, 42, 0.07));
+}
+
+.olh-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.olh-kpi-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.olh-kpi-icon.emerald {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.olh-kpi-icon.amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.olh-kpi-icon.indigo {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.olh-kpi-icon.purple {
+  background: #faf5ff;
+  color: #7c3aed;
+}
+
+.olh-kpi-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.olh-kpi-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 0.15rem;
+}
+
+.olh-kpi-value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text-main, #0f172a);
+  line-height: 1.2;
+}
+
+/* Filter Card & Toolbar */
+.olh-filter-card {
+  background: #ffffff;
+  border-radius: var(--radius-md, 12px);
+  padding: 1.25rem;
+  border: 1px solid var(--border-color, #e2e8f0);
+  box-shadow: var(--shadow-sm, 0 1px 3px 0 rgba(15, 23, 42, 0.05));
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.olh-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.olh-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main, #0f172a);
+}
+
+.olh-filter-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+  align-items: flex-end;
+}
+
+.olh-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.olh-filter-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-label, #1e293b);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.olh-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.olh-input-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.olh-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 0.75rem 0 2.25rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border-color, #e2e8f0);
+  background: #ffffff;
+  color: var(--text-main, #0f172a);
+  outline: none;
+  transition: border-color var(--transition-fast, 150ms ease), box-shadow var(--transition-fast, 150ms ease);
+}
+
+.olh-input:focus {
+  border-color: var(--primary-navy, #151b54);
+  box-shadow: 0 0 0 3px rgba(21, 27, 84, 0.08);
+}
+
+.olh-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 0.75rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border-color, #e2e8f0);
+  background: #ffffff;
+  color: var(--text-main, #0f172a);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast, 150ms ease);
+}
+
+.olh-select:focus {
+  border-color: var(--primary-navy, #151b54);
+  box-shadow: 0 0 0 3px rgba(21, 27, 84, 0.08);
+}
+
+.olh-date-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 0.75rem;
+  font-size: 0.82rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border-color, #e2e8f0);
+  background: #ffffff;
+  color: var(--text-main, #0f172a);
+  outline: none;
+}
+
+.olh-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 38px;
+}
+
+.olh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 38px;
+  padding: 0 1rem;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+  border: none;
+  white-space: nowrap;
+}
+
+.olh-btn-primary {
+  background: var(--primary-navy, #151b54);
+  color: #ffffff;
+}
+
+.olh-btn-primary:hover:not(:disabled) {
+  background: var(--primary-navy-hover, #0e1340);
+  transform: translateY(-1px);
+}
+
+.olh-btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.olh-btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.olh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Table Container & Layout */
+.olh-table-card {
+  background: #ffffff;
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--border-color, #e2e8f0);
+  box-shadow: var(--shadow-sm, 0 1px 3px 0 rgba(15, 23, 42, 0.05));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.olh-table-header-bar {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.olh-table-header-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.olh-count-badge {
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+}
+
+.olh-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.olh-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.olh-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.olh-table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  color: #1e293b;
+}
+
+.olh-table tr:hover td {
+  background-color: #f8fafc;
+}
+
+.olh-student-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.olh-student-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.olh-student-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.olh-req-num {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* Badges */
+.olh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Movement Type Badges */
+.olh-badge-req {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.olh-badge-app {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.olh-badge-exit {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.olh-badge-return {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.olh-badge-rej {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.olh-badge-can {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+/* Outing Status Badges */
+.olh-status-pending {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.olh-status-approved {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.olh-status-active {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.olh-status-returned {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.olh-status-rejected {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.olh-status-cancelled {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Source Badges */
+.olh-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.olh-dest-cell {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.olh-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-navy, #151b54);
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.olh-view-btn:hover {
+  background: var(--primary-navy, #151b54);
+  color: #ffffff;
+  border-color: var(--primary-navy, #151b54);
+}
+
+/* Pagination Bar */
+.olh-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.olh-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.olh-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.olh-page-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.olh-page-btn.active {
+  background: var(--primary-navy, #151b54);
+  color: #ffffff;
+  border-color: var(--primary-navy, #151b54);
+}
+
+.olh-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Mobile Stacked Cards (Hidden on Desktop) */
+.olh-mobile-cards {
+  display: none;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.85rem;
+}
+
+.olh-mobile-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md, 12px);
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  word-break: break-word;
+}
+
+.olh-mobile-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.olh-mobile-student {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.olh-mobile-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.olh-mobile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px dashed #f1f5f9;
+  gap: 0.5rem;
+}
+
+.olh-mobile-row:last-child {
+  border-bottom: none;
+}
+
+.olh-mobile-label {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.olh-mobile-value {
+  color: #0f172a;
+  font-weight: 600;
+  text-align: right;
+  max-width: 65%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.olh-mobile-footer {
+  margin-top: 0.4rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Read-Only Outing Log Details Modal */
+.olh-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.olh-modal-dialog {
+  background: #ffffff;
+  border-radius: var(--radius-lg, 18px);
+  width: 100%;
+  max-width: 760px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  animation: olhModalFadeIn 200ms ease-out;
+}
+
+@keyframes olhModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.olh-modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+}
+
+.olh-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.olh-modal-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.olh-modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.olh-modal-subtitle {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.olh-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.olh-modal-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.olh-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Student & Request Overview Cards in Modal */
+.olh-modal-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  margin-bottom: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.olh-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid #e2e8f0;
+}
+
+.olh-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.olh-info-item-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.olh-info-item-value {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+/* 4-Stage Visual Lifecycle Timeline */
+.olh-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem 0 0.5rem 0.5rem;
+}
+
+.olh-timeline::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 20px;
+  width: 2px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+.olh-timeline-step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  z-index: 2;
+}
+
+.olh-timeline-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  box-shadow: 0 0 0 3px #ffffff;
+}
+
+.olh-timeline-step.completed .olh-timeline-dot {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #059669;
+}
+
+.olh-timeline-step.active .olh-timeline-dot {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.olh-timeline-step.rejected .olh-timeline-dot {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #dc2626;
+}
+
+.olh-timeline-step.pending .olh-timeline-dot {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #94a3b8;
+}
+
+.olh-timeline-content {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.85rem 1rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.olh-timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.olh-timeline-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.olh-timeline-time {
+  font-size: 0.74rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.olh-timeline-desc {
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.olh-timeline-actor-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 0.2rem;
+}
+
+/* Modal Footer */
+.olh-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.olh-immutable-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+/* Loading & Empty States */
+.olh-loading-state,
+.olh-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+  gap: 0.75rem;
+  color: #64748b;
+}
+
+.olh-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--primary-navy, #151b54);
+  border-radius: 50%;
+  animation: olhSpin 0.8s linear infinite;
+}
+
+@keyframes olhSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 900px) {
+  .olh-filter-controls {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .olh-table-wrapper {
+    display: none;
+  }
+  .olh-mobile-cards {
+    display: flex;
+  }
+  .olh-filter-controls {
+    grid-template-columns: 1fr;
+  }
+  .olh-filter-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .olh-filter-actions .olh-btn {
+    flex: 1;
+  }
+  .olh-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .olh-modal-dialog {
+    max-width: 96vw;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .olh-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .olh-page {
+    padding: 0.25rem 0 2rem;
+  }
+  .olh-pagination-bar {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}

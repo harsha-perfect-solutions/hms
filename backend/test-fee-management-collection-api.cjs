@@ -185,7 +185,8 @@ async function runTests() {
     const listRes = await getJson('/management/fee-management/bank-accounts', adminToken);
     assert.strictEqual(listRes.status, 200);
     assert.ok(listRes.data.bankAccounts.length >= 1);
-    sampleBankAccountId = listRes.data.bankAccounts[0].id;
+    const activeAcc = listRes.data.bankAccounts.find((b) => b.status === 'ACTIVE') || listRes.data.bankAccounts[0];
+    sampleBankAccountId = activeAcc.id;
 
     // Reject invalid IFSC
     const badIfscRes = await postJson(
@@ -387,7 +388,7 @@ async function runTests() {
     // 1. Fetch target student fee item
     const studentRes = await getJson(`/management/fee-collection/students/${sampleStudentId}?academicYearId=${sampleYearId}`, adminToken);
     assert.strictEqual(studentRes.status, 200);
-    const dueItem = studentRes.data.feeItems.find((it) => Number(it.dueAmount) > 0);
+    const dueItem = studentRes.data.feeItems.find((it) => Number(it.dueAmount) >= 5000) || studentRes.data.feeItems.find((it) => Number(it.dueAmount) > 0);
     assert.ok(dueItem, 'Student must have an unpaid fee item for testing');
     paidFeeItemId = dueItem.id;
 

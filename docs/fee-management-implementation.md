@@ -41,7 +41,7 @@ The Fee subsystem integrates directly into the existing HMS Admin Portal infrast
 
 ## 2. Authoritative Database Schema (PostgreSQL via Prisma)
 
-12 normalized models were added to `backend/prisma/schema.prisma`:
+13 normalized models were added to `backend/prisma/schema.prisma`:
 
 1. **`AcademicYear`**
    - `id`, `name` (e.g., `2026-2027`), `code` (`2026-27`), `startDate`, `endDate`, `isCurrent`, `isArchived`, `createdBy`, `updatedBy`.

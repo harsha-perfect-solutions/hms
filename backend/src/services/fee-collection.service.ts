@@ -359,7 +359,15 @@ export class FeeCollectionService {
   }) {
     const paymentAmount = Number(params.amount);
     if (isNaN(paymentAmount) || paymentAmount <= 0) {
-      throw new Error('Payment amount must be greater than zero.');
+      throw new Error('Payment amount must be strictly greater than zero.');
+    }
+
+    const strAmount = params.amount.toString();
+    if (strAmount.includes('.')) {
+      const decimals = strAmount.split('.')[1];
+      if (decimals && decimals.length > 2) {
+        throw new Error('Payment amount cannot have more than 2 decimal places.');
+      }
     }
 
     // 1. Validate Bank Account (Must exist and be ACTIVE)
@@ -442,6 +450,9 @@ export class FeeCollectionService {
 
     // 4. Execute atomic PostgreSQL Transaction
     return prisma.$transaction(async (tx) => {
+      // Concurrency protection: lock student row to serialize financial mutations
+      await tx.$executeRaw`SELECT id FROM "Student" WHERE id = ${student.id} FOR UPDATE`;
+
       // Resolve fee items and re-calculate dues directly inside transaction
       let targetItems: Array<{ id: string; dueAmount: number; totalFee: number; paidAmount: number; concessionAmount: number }> = [];
 
@@ -497,9 +508,12 @@ export class FeeCollectionService {
 
       // Check total due from authoritative DB data
       const totalDue = targetItems.reduce((acc, it) => acc + it.dueAmount, 0);
-      if (paymentAmount > totalDue && totalDue > 0 && !params.feeItemId) {
+      if (totalDue <= 0) {
+        throw new Error('Target fee item(s) have no outstanding dues to pay.');
+      }
+      if (paymentAmount > totalDue) {
         throw new Error(
-          `Payment amount (₹${paymentAmount}) exceeds total outstanding due (₹${totalDue}). Overpayment not permitted.`
+          `Payment amount (₹${paymentAmount.toFixed(2)}) exceeds outstanding due (₹${totalDue.toFixed(2)}). Overpayment not permitted.`
         );
       }
 
@@ -741,6 +755,13 @@ export class FeeCollectionService {
     if (isNaN(refundAmount) || refundAmount <= 0) {
       throw new Error('Refund amount must be strictly greater than zero.');
     }
+    const strAmount = params.amount.toString();
+    if (strAmount.includes('.')) {
+      const decimals = strAmount.split('.')[1];
+      if (decimals && decimals.length > 2) {
+        throw new Error('Refund amount cannot have more than 2 decimal places.');
+      }
+    }
     const reason = params.reason.trim();
     if (!reason) throw new Error('Refund reason is required.');
 
@@ -751,16 +772,57 @@ export class FeeCollectionService {
       });
       if (!feeItem) throw new Error('Fee item not found.');
 
-      // Check refundable balance (excess paid or paid amount)
+      // Concurrency protection: lock student row to serialize financial mutations
+      await tx.$executeRaw`SELECT id FROM "Student" WHERE id = ${feeItem.studentId} FOR UPDATE`;
+
+      // If paymentId is specified, validate that payment belongs to this student and fee item
+      if (params.paymentId) {
+        const payment = await tx.feePayment.findUnique({
+          where: { id: params.paymentId },
+          include: { refunds: true, allocations: true },
+        });
+        if (!payment) {
+          throw new Error('Referenced payment record not found.');
+        }
+        if (payment.studentId !== feeItem.studentId) {
+          throw new Error('Referenced payment does not belong to the student associated with this fee item.');
+        }
+        if (payment.status === 'REFUNDED') {
+          throw new Error(`Payment with receipt ${payment.receiptNumber} has already been fully refunded.`);
+        }
+        // Verify payment has allocation to this fee item
+        const alloc = payment.allocations.find((a) => a.feeItemId === feeItem.id);
+        if (!alloc) {
+          throw new Error(`Payment with receipt ${payment.receiptNumber} has no allocation towards fee item '${feeItem.feeType}'.`);
+        }
+
+        const priorRefunds = payment.refunds.reduce((sum, r) => sum + Number(r.amount), 0);
+        const paymentRemaining = Number(payment.amount) - priorRefunds;
+        if (refundAmount > paymentRemaining) {
+          throw new Error(
+            `Refund amount (₹${refundAmount.toFixed(2)}) exceeds remaining balance on payment receipt ${payment.receiptNumber} (₹${paymentRemaining.toFixed(2)}).`
+          );
+        }
+
+        // If payment is completely refunded, mark payment status as REFUNDED
+        if (priorRefunds + refundAmount >= Number(payment.amount)) {
+          await tx.feePayment.update({
+            where: { id: payment.id },
+            data: { status: 'REFUNDED' },
+          });
+        }
+      }
+
+      // Check refundable balance (feeItem.paidAmount is the net paid amount)
       const currentPaid = Number(feeItem.paidAmount);
       const currentRefunded = Number(feeItem.refundedAmount);
-      const eligibleMax = currentPaid - currentRefunded;
+      const eligibleMax = currentPaid;
 
       if (eligibleMax <= 0) {
         throw new Error('This fee item has no refundable paid balance.');
       }
       if (refundAmount > eligibleMax) {
-        throw new Error(`Refund amount (₹${refundAmount}) exceeds eligible maximum (₹${eligibleMax}).`);
+        throw new Error(`Refund amount (₹${refundAmount.toFixed(2)}) exceeds eligible maximum (₹${eligibleMax.toFixed(2)}).`);
       }
 
       const refund = await tx.feeRefund.create({
@@ -872,7 +934,13 @@ export class FeeCollectionService {
         throw new Error('Valid start date and end date range is required.');
       }
       const workingDays = Number(params.workingDays || 30);
+      if (isNaN(workingDays) || workingDays <= 0) {
+        throw new Error('Working days must be greater than zero.');
+      }
       const dailyRate = Number(params.dailyRate || 120);
+      if (isNaN(dailyRate) || dailyRate <= 0) {
+        throw new Error('Daily rate must be greater than zero.');
+      }
 
       // Query real biometric events for this student within date range
       const eventCount = await prisma.biometricEvent.count({
@@ -899,9 +967,19 @@ export class FeeCollectionService {
       if (isNaN(finalAmount) || finalAmount <= 0) {
         throw new Error('Fee amount must be greater than zero.');
       }
+      const strAmount = params.amount!.toString();
+      if (strAmount.includes('.')) {
+        const decimals = strAmount.split('.')[1];
+        if (decimals && decimals.length > 2) {
+          throw new Error('Fee amount cannot have more than 2 decimal places.');
+        }
+      }
     }
 
     return prisma.$transaction(async (tx) => {
+      // Concurrency protection: lock student row
+      await tx.$executeRaw`SELECT id FROM "Student" WHERE id = ${student.id} FOR UPDATE`;
+
       const feeItem = await tx.feeItem.create({
         data: {
           studentId: student.id,

@@ -813,6 +813,9 @@ export class FeeManagementService {
         throw new Error(`Scholarship must be APPROVED to apply towards fees.`);
       }
 
+      // Concurrency protection: lock student row
+      await tx.$executeRaw`SELECT id FROM "Student" WHERE id = ${scholarship.studentId} FOR UPDATE`;
+
       const remainingSanctioned = Number(scholarship.remainingAmount);
       if (remainingSanctioned <= 0) {
         throw new Error('Scholarship has no remaining balance to apply.');

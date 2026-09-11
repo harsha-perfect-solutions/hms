@@ -24,6 +24,7 @@ const suites = [
   { name: 'Management User Management', script: 'test-management-user-management-api.cjs', expected: 47 },
   { name: 'Admin Portal Identity', script: 'test-admin-portal-identity-api.cjs', expected: 10 },
   { name: 'Fee Management & Collection', script: 'test-fee-management-collection-api.cjs', expected: 17 },
+  { name: 'Fee Hardening & Reconciliation', script: 'test-fee-hardening-reconciliation.cjs', expected: 12 },
 ];
 
 console.log('====================================================');
@@ -40,7 +41,10 @@ for (const suite of suites) {
     const output = execSync(`node ${suite.script}`, { encoding: 'utf-8' });
     // Look for passed tests in output
     let passedCount = suite.expected;
-    const match = output.match(/Passed:\s*(\d+)/i) || output.match(/(\d+)\/(\d+)\s*tests passed/i);
+    const match =
+      output.match(/Passed:\s*(\d+)/i) ||
+      output.match(/(\d+)\/(\d+)\s*tests passed/i) ||
+      output.match(/COMPLETE:\s*(\d+)\/(\d+)\s*TESTS PASSED/i);
     if (match) {
       passedCount = parseInt(match[1], 10);
     }

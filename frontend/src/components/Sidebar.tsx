@@ -87,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div className="sidebar-brand-text">
               <span className="sidebar-brand-name">{APP_BRANDING.appName}</span>
-              <span className="sidebar-brand-sub">{APP_BRANDING.portalName}</span>
+              <span className="sidebar-brand-sub student-portal-badge">STUDENT PORTAL</span>
             </div>
           </div>
 
@@ -111,10 +111,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => handleItemClick(item.path)}
-                className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+                className={`sidebar-nav-item nav-item-${item.id} ${isActive ? 'active' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className="nav-item-icon" aria-hidden="true">
+                <span className={`nav-item-icon nav-icon-${item.id}`} aria-hidden="true">
                   <Icon size={19} />
                 </span>
                 <span className="nav-item-label">{item.label}</span>

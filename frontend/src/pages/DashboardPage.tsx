@@ -274,7 +274,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <button
             type="button"
             onClick={() => onNavigate('/outing-requests')}
-            className="btn-quick-action"
+            className="btn-quick-action action-outing"
           >
             <div className="action-icon-wrap">
               <Footprints size={22} />
@@ -285,7 +285,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <button
             type="button"
             onClick={() => onNavigate('/biometric')}
-            className="btn-quick-action"
+            className="btn-quick-action action-biometric"
           >
             <div className="action-icon-wrap">
               <Fingerprint size={22} />
@@ -296,7 +296,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <button
             type="button"
             onClick={() => onNavigate('/complaints')}
-            className="btn-quick-action"
+            className="btn-quick-action action-complaint"
           >
             <div className="action-icon-wrap">
               <AlertCircle size={22} />
@@ -307,7 +307,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           <button
             type="button"
             onClick={() => onNavigate('/mess-tokens')}
-            className="btn-quick-action"
+            className="btn-quick-action action-mess"
           >
             <div className="action-icon-wrap">
               <Utensils size={22} />

@@ -525,6 +525,43 @@ class ComplaintEventsService extends EventEmitter {
     }
   }
 
+  /**
+   * Dispatches real-time notification events to all connected management dashboards
+   */
+  public emitAdminNotificationUpdate(event: {
+    type: string;
+    notificationId?: string;
+    category?: string;
+    recipientCount?: number;
+    title?: string;
+    timestamp?: string;
+    details?: any;
+  }): void {
+    const timestamp = event.timestamp || new Date().toISOString();
+    this.emitManagementDashboardUpdate({
+      type: event.type,
+      timestamp,
+      details: {
+        notificationId: event.notificationId,
+        category: event.category,
+        recipientCount: event.recipientCount,
+        title: event.title,
+        ...event.details,
+      },
+    });
+
+    const payload = `event: notification_event\ndata: ${JSON.stringify({ ...event, timestamp })}\n\n`;
+    for (const [, connections] of this.managementConnections.entries()) {
+      for (const res of connections) {
+        try {
+          res.write(payload);
+        } catch (err) {
+          console.error('Failed to write SSE admin notification event to connection:', err);
+        }
+      }
+    }
+  }
+
 
   /**
    * Keep-alive ping to prevent proxy/browser timeout

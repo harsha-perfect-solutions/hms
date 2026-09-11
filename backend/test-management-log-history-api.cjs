@@ -296,12 +296,12 @@ async function runTests() {
     // Test 19: Approval produces audit record with state transition
     // Clean up any lingering conflicting outings for test student first
     const testStudentUser = await prisma.student.findFirst({ where: { role: 'STUDENT' } });
-    await prisma.outingRequest.updateMany({
-      where: {
-        studentId: testStudentUser.id,
-        status: { in: ['PENDING', 'APPROVED', 'OUT'] },
-      },
-      data: { status: 'CANCELLED' },
+    await prisma.student.update({
+      where: { id: testStudentUser.id },
+      data: { monthlyOutingMax: 5 },
+    });
+    await prisma.outingRequest.deleteMany({
+      where: { studentId: testStudentUser.id },
     });
 
     const outingRes = await fetch(`${BASE_URL}/student/outing-requests`, {

@@ -199,17 +199,12 @@ export class DeviceService {
         where: {
           isEnabled: true,
           status: 'ONLINE',
-          lastSeenAt: { gte: fifteenMinutesAgo },
         },
       }),
       prisma.biometricDevice.count({
         where: {
           isEnabled: true,
-          OR: [
-            { status: 'OFFLINE' },
-            { lastSeenAt: { lt: fifteenMinutesAgo } },
-            { lastSeenAt: null },
-          ],
+          status: 'OFFLINE',
         },
       }),
       prisma.biometricDevice.count({ where: { status: 'MAINTENANCE' } }),
@@ -226,17 +221,15 @@ export class DeviceService {
       prisma.biometricDevice.count({ where }),
     ]);
 
-    // Re-evaluate operational status dynamically based on last communication
+    // Format operational status
     const enrichedDevices = devices.map((dev) => {
       let authoritativeStatus = dev.status;
       if (!dev.isEnabled) {
         authoritativeStatus = 'DISABLED';
       } else if (dev.status === 'MAINTENANCE') {
         authoritativeStatus = 'MAINTENANCE';
-      } else if (dev.lastSeenAt && new Date(dev.lastSeenAt) >= fifteenMinutesAgo) {
-        authoritativeStatus = 'ONLINE';
       } else {
-        authoritativeStatus = 'OFFLINE';
+        authoritativeStatus = dev.status;
       }
 
       return {

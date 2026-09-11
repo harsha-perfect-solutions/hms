@@ -404,7 +404,7 @@ async function runTests() {
   await test('Payment Collection: atomic transaction, receipt generation, and duplicate reference protection', async () => {
     // 1. Fetch target student fee item
     const studentRes = await getJson(`/management/fee-collection/students/${sampleStudentId}?academicYearId=${sampleYearId}`, adminToken);
-    let dueItem = studentRes.data.feeItems.find((it) => Number(it.dueAmount) >= 5000) || studentRes.data.feeItems.find((it) => Number(it.dueAmount) > 0);
+    let dueItem = studentRes.data.feeItems.find((it) => Number(it.dueAmount) >= 5000);
     if (!dueItem) {
       await postJson(
         '/management/fee-collection/extra-fee',
@@ -418,7 +418,7 @@ async function runTests() {
         adminToken
       );
       const refreshRes = await getJson(`/management/fee-collection/students/${sampleStudentId}?academicYearId=${sampleYearId}`, adminToken);
-      dueItem = refreshRes.data.feeItems?.find((it) => Number(it.dueAmount) > 0);
+      dueItem = refreshRes.data.feeItems?.find((it) => Number(it.dueAmount) >= 5000);
     }
     assert.ok(dueItem, 'Student must have an unpaid fee item for testing');
     paidFeeItemId = dueItem.id;

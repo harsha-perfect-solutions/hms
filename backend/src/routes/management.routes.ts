@@ -25,6 +25,7 @@ import feeManagementRouter from './fee-management.routes';
 import feeCollectionRouter from './fee-collection.routes';
 import outingLogHistoryRouter from './outing-log-history.routes';
 import deviceRouter from './device.routes';
+import adminNotificationRouter from './admin-notification.routes';
 import { auditService } from '../services/audit.service';
 
 
@@ -46,6 +47,7 @@ router.use('/devices', deviceRouter);
 router.use('/users', userManagementRouter);
 router.use('/fee-management', feeManagementRouter);
 router.use('/fee-collection', feeCollectionRouter);
+router.use('/notifications', adminNotificationRouter);
 
 
 /**

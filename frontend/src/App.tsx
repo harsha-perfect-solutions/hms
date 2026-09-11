@@ -33,6 +33,7 @@ import { ManagementUserManagementPage } from './pages/ManagementUserManagementPa
 import { FeeManagementPage } from './pages/FeeManagementPage';
 import { FeeCollectionPage } from './pages/FeeCollectionPage';
 import { ManagementDevicePage } from './pages/ManagementDevicePage';
+import { ManagementNotificationsPage } from './pages/ManagementNotificationsPage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -197,6 +198,7 @@ const AuthenticatedManagementApp: React.FC<{
   const isUserManagementPage = currentPath === '/management/users';
   const isFeeManagementPage = currentPath === '/management/fee-management';
   const isFeeCollectionPage = currentPath === '/management/fee-collection';
+  const isNotificationsPage = currentPath === '/management/notifications';
 
   return (
     <div className="portal-layout management-layout">
@@ -220,7 +222,9 @@ const AuthenticatedManagementApp: React.FC<{
           isRefreshing={isRefreshing}
           isRealtimeConnected={isRealtimeConnected}
           pageTitle={
-            isDevicePage
+            isNotificationsPage
+              ? 'Notifications'
+              : isDevicePage
               ? 'Device Management & Turnstile Registry'
               : isOutingLogHistoryPage
               ? 'Outing Log History & Gate Transit'
@@ -249,7 +253,9 @@ const AuthenticatedManagementApp: React.FC<{
               : 'Admin Dashboard'
           }
           pageSubtitle={
-            isDevicePage
+            isNotificationsPage
+              ? 'Create, manage, and monitor HMS notifications.'
+              : isDevicePage
               ? 'Authoritative hardware control plane for hostel turnstiles, biometric scanners, and RFID readers.'
               : isOutingLogHistoryPage
               ? 'Authoritative historical record of student outing requests, approvals, and physical gate movement events.'
@@ -281,7 +287,9 @@ const AuthenticatedManagementApp: React.FC<{
 
         {/* Management Content View */}
         <main className="portal-content-body management-content-body">
-          {isDevicePage ? (
+          {isNotificationsPage ? (
+            <ManagementNotificationsPage />
+          ) : isDevicePage ? (
             <ManagementDevicePage onNavigate={onNavigate} />
           ) : isOutingLogHistoryPage ? (
             <ManagementOutingLogHistoryPage onNavigate={onNavigate} />

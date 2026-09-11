@@ -253,11 +253,13 @@ async function testBiometricApi() {
   assert.strictEqual(summaryData.dailySummaries.length, 7);
   console.log('[PASS] 21. Daily attendance summaries returned for 7-day breakdown');
 
-  // TEST 22: Outing correlation: Approved outing transitions to OUT upon biometric EXIT
-  // Ensure no conflicting active outings exist for Student A
-  await prisma.outingRequest.updateMany({
-    where: { studentId: studentAId, status: { in: ['PENDING', 'APPROVED', 'OUT'] } },
-    data: { status: 'CANCELLED' },
+  // Ensure no conflicting active outings or quota exhaust for Student A
+  await prisma.student.update({
+    where: { id: studentAId },
+    data: { monthlyOutingMax: 5 },
+  });
+  await prisma.outingRequest.deleteMany({
+    where: { studentId: studentAId },
   });
 
   const tomorrow = new Date();

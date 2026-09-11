@@ -151,13 +151,24 @@ model Notification {
   title       String
   message     String
   type        String    @default("INFO") // INFO, WARNING, SUCCESS
-  category    String    @default("SYSTEM") // OUTING, LEAVE, COMPLAINT, MESS, SUSPENSION, ROOM, SYSTEM
+  category    String    @default("SYSTEM") // OUTING, LEAVE, COMPLAINT, MESS, SUSPENSION, ROOM, SYSTEM, ANNOUNCEMENT, BIOMETRIC, FEE, DEVICE
+  priority    String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  source      String    @default("SYSTEM") // SYSTEM, ADMIN_PORTAL, AUTOMATED
+  createdBy   String?   // Admin username or actor
   isRead      Boolean   @default(false)
   readAt      DateTime?
   entityId    String?
   link        String?
+  expiresAt   DateTime?
   metadata    String?
   createdAt   DateTime  @default(now())
+
+  @@index([studentId])
+  @@index([category])
+  @@index([isRead])
+  @@index([priority])
+  @@index([source])
+  @@index([createdAt])
 }
 
 model ActivityLog {

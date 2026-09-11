@@ -3933,6 +3933,126 @@ export const managementApiService = {
     if (!res.ok) throw new Error(data.message || 'Failed to fetch device activity.');
     return data;
   },
+
+  // ==========================================================================
+  // STEP 19: ADMIN NOTIFICATIONS
+  // ==========================================================================
+  async getAdminNotifications(query?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    category?: string;
+    priority?: string;
+    status?: string;
+    source?: string;
+    studentId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    fromDate?: string;
+    toDate?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<AdminNotificationListResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const params = new URLSearchParams();
+    if (query?.page) params.append('page', query.page.toString());
+    if (query?.pageSize) params.append('pageSize', query.pageSize.toString());
+    if (query?.search && query.search.trim()) params.append('search', query.search.trim());
+    if (query?.category && query.category !== 'ALL') params.append('category', query.category);
+    if (query?.priority && query.priority !== 'ALL') params.append('priority', query.priority);
+    if (query?.status && query.status !== 'ALL') params.append('status', query.status);
+    if (query?.source && query.source !== 'ALL') params.append('source', query.source);
+    if (query?.studentId) params.append('studentId', query.studentId);
+    const dFrom = query?.dateFrom || query?.fromDate;
+    if (dFrom) params.append('dateFrom', dFrom);
+    const dTo = query?.dateTo || query?.toDate;
+    if (dTo) params.append('dateTo', dTo);
+    if (query?.sortBy) params.append('sortBy', query.sortBy);
+    if (query?.sortOrder) params.append('sortOrder', query.sortOrder);
+
+    const res = await fetch(`/api/management/notifications?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch notification history.');
+    return data;
+  },
+
+  async getAdminNotificationDetail(id: string): Promise<AdminNotificationDetailResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch(`/api/management/notifications/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch notification details.');
+    return data;
+  },
+
+  async sendAdminNotification(payload: AdminSendNotificationPayload): Promise<AdminSendNotificationResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to send notification.');
+    return data;
+  },
+
+  async resolveNotificationRecipients(params: {
+    scope?: string;
+    recipientScope?: string;
+    studentId?: string;
+    studentIds?: string[];
+    recipientIds?: string[];
+    blockName?: string;
+    roomNumber?: string;
+    targetRole?: string;
+    roleName?: string;
+  }): Promise<AdminRecipientResolveResponse> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const p = new URLSearchParams();
+    const resolvedScope = params.scope || params.recipientScope || 'ALL_STUDENTS';
+    p.set('scope', resolvedScope);
+    if (params.studentId) p.set('studentId', params.studentId);
+    const ids = params.studentIds || params.recipientIds;
+    if (ids && ids.length > 0) p.set('studentIds', ids.join(','));
+    if (params.blockName) p.set('blockName', params.blockName);
+    if (params.roomNumber) p.set('roomNumber', params.roomNumber);
+    const resolvedRole = params.targetRole || params.roleName;
+    if (resolvedRole) p.set('targetRole', resolvedRole);
+
+    const res = await fetch(`/api/management/notifications/recipients/resolve?${p.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to resolve recipients.');
+    return data;
+  },
+
+  async getAdminNotificationStats(): Promise<{ success: boolean; stats: AdminNotificationKPIs }> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+
+    const res = await fetch('/api/management/notifications/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to fetch notification statistics.');
+    return data;
+  },
 };
 
 
@@ -5238,4 +5358,97 @@ export interface DeviceActivityResponse {
     totalPages: number;
   };
 }
+
+// ==========================================
+// STEP 19: ADMIN NOTIFICATIONS TYPES & INTERFACES
+// ==========================================
+
+export interface AdminNotificationItem {
+  id: string;
+  studentId: string;
+  title: string;
+  message: string;
+  type: string;
+  category: string;
+  priority: string;
+  source: string;
+  createdBy: string | null;
+  isRead: boolean;
+  readAt: string | null;
+  entityId: string | null;
+  link: string | null;
+  expiresAt: string | null;
+  metadata: any;
+  createdAt: string;
+  student?: {
+    id: string;
+    fullName: string;
+    jntuNo: string;
+    roomNo: string | null;
+    block: string | null;
+    role: string;
+  };
+}
+
+export interface AdminNotificationKPIs {
+  total: number;
+  unread: number;
+  read: number;
+  sentToday: number;
+  system: number;
+  announcements: number;
+}
+
+export interface AdminNotificationListResponse {
+  success: boolean;
+  notifications: AdminNotificationItem[];
+  stats: AdminNotificationKPIs;
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AdminNotificationDetailResponse {
+  success: boolean;
+  notification: AdminNotificationItem;
+}
+
+export interface AdminSendNotificationPayload {
+  title: string;
+  message: string;
+  category: string;
+  priority?: string;
+  recipientScope: 'INDIVIDUAL' | 'MULTIPLE' | 'ALL_STUDENTS' | 'BLOCK' | 'ROOM' | 'ROLE';
+  recipientIds?: string[];
+  blockName?: string;
+  roomNumber?: string;
+  roleName?: string;
+  link?: string;
+  entityId?: string;
+  expiresAt?: string;
+}
+
+export interface AdminRecipientResolveResponse {
+  success: boolean;
+  count: number;
+  sampleRecipients: Array<{
+    id: string;
+    fullName: string;
+    jntuNo: string;
+    roomNo?: string;
+    block?: string;
+  }>;
+}
+
+export interface AdminSendNotificationResponse {
+  success: boolean;
+  message: string;
+  sentCount: number;
+  recipientScope: string;
+}
+
+
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { managementApiService, ManagementUser } from '../services/api';
+import { managementApiService, managementAuthStorage, ManagementUser } from '../services/api';
 
 interface ManagementAuthContextType {
   user: ManagementUser | null;
@@ -16,17 +16,41 @@ export const ManagementAuthProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [user, setUser] = useState<ManagementUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Synchronize user state if token is cleared externally
+  useEffect(() => {
+    const handleLogoutEvent = () => {
+      setUser(null);
+    };
+    window.addEventListener('management_auth_logout', handleLogoutEvent);
+    return () => window.removeEventListener('management_auth_logout', handleLogoutEvent);
+  }, []);
+
   // Verify management session on mount
   useEffect(() => {
     let isMounted = true;
     const checkSession = async () => {
+      const token = managementAuthStorage.getToken();
+      if (!token) {
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       try {
         const authUser = await managementApiService.getMe();
         if (isMounted) {
           setUser(authUser);
+          if (!authUser) {
+            managementAuthStorage.clearToken();
+          }
         }
       } catch {
-        if (isMounted) setUser(null);
+        if (isMounted) {
+          setUser(null);
+          managementAuthStorage.clearToken();
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -69,7 +93,7 @@ export const ManagementAuthProvider: React.FC<{ children: ReactNode }> = ({ chil
 
   const value: ManagementAuthContextType = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !!managementAuthStorage.getToken(),
     isLoading,
     login,
     logout,

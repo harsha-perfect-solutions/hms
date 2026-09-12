@@ -99,7 +99,7 @@ export class DeviceService {
     let resolvedActorId = actor.id;
     if (!resolvedActorId || resolvedActorId === 'system') {
       const admin = await prisma.student.findFirst({
-        where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'HOSTEL_ADMIN'] } },
+        where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS', 'WARDEN'] } },
         select: { id: true },
       });
       if (admin) {

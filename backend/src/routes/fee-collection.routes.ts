@@ -17,9 +17,29 @@ const upload = multer({
 
 router.use(authenticateManagement);
 
-const FINANCIAL_VIEW_ROLES = ['ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'WARDEN'];
-const FINANCIAL_COLLECT_ROLES = ['ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'WARDEN'];
-const FINANCIAL_ADMIN_ROLES = ['ADMIN', 'HOSTEL_ADMIN'];
+const FINANCIAL_VIEW_ROLES = [
+  'ADMIN',
+  'HOSTEL_ADMIN',
+  'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
+  'WARDEN',
+];
+const FINANCIAL_COLLECT_ROLES = [
+  'ADMIN',
+  'HOSTEL_ADMIN',
+  'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
+  'WARDEN',
+];
+const FINANCIAL_ADMIN_ROLES = [
+  'ADMIN',
+  'HOSTEL_ADMIN',
+  'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
+];
 
 // =========================================================================
 // 1. STUDENT FEE LIST & DETAILS

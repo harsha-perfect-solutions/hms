@@ -39,7 +39,14 @@ interface ManagementComplaintsPageProps {
 
 export const ManagementComplaintsPage: React.FC<ManagementComplaintsPageProps> = () => {
   const { user } = useManagementAuth();
-  const isManagementRole = ['WARDEN', 'CHIEF_WARDEN', 'ADMIN', 'HOSTEL_ADMIN'].includes(user?.role || '');
+  const isManagementRole = [
+    'WARDEN',
+    'CHIEF_WARDEN',
+    'CHIEF_WARDEN_BOYS',
+    'CHIEF_WARDEN_GIRLS',
+    'ADMIN',
+    'HOSTEL_ADMIN',
+  ].includes(user?.role || '');
   const isMaintenanceStaff = user?.role === 'MAINTENANCE_STAFF';
 
   // Statistics State

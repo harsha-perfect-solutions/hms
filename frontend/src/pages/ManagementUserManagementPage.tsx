@@ -447,6 +447,8 @@ export const ManagementUserManagementPage: React.FC<ManagementUserManagementPage
       case 'HOSTEL_ADMIN':
         return 'user-role-admin';
       case 'CHIEF_WARDEN':
+      case 'CHIEF_WARDEN_BOYS':
+      case 'CHIEF_WARDEN_GIRLS':
       case 'WARDEN':
         return 'user-role-warden';
       case 'STUDENT':

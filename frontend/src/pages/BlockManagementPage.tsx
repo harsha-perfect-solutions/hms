@@ -460,15 +460,28 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
           <AlertTriangle size={36} className="mgmt-error-icon" />
           <h3 className="mgmt-error-title">Unable to Load Blocks</h3>
           <p className="mgmt-error-msg">{error}</p>
-          <button
-            type="button"
-            onClick={() => fetchBlocks(false)}
-            className="btn-primary"
-            style={{ marginTop: '0.75rem' }}
-          >
-            <RotateCw size={14} style={{ marginRight: 6 }} />
-            Retry
-          </button>
+          {error.includes('Management session') || error.includes('log in') ? (
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = '/management/login';
+              }}
+              className="btn-primary"
+              style={{ marginTop: '0.75rem' }}
+            >
+              Sign In to Management
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fetchBlocks(false)}
+              className="btn-primary"
+              style={{ marginTop: '0.75rem' }}
+            >
+              <RotateCw size={14} style={{ marginRight: 6 }} />
+              Retry
+            </button>
+          )}
         </div>
       )}
 

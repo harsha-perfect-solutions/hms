@@ -245,9 +245,12 @@ export class NotificationService {
         if (!payload.targetRole || !payload.targetRole.trim()) {
           throw new Error('Target role is required for ROLE targeting.');
         }
+        const cleanTargetRole = payload.targetRole.trim().toUpperCase();
         resolvedStudents = await prisma.student.findMany({
           where: {
-            role: payload.targetRole.trim().toUpperCase(),
+            role: cleanTargetRole === 'CHIEF_WARDEN'
+              ? { in: ['CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS'] }
+              : cleanTargetRole,
             isActive: true,
           },
           select: { id: true, name: true, jntuNo: true, role: true },
@@ -523,7 +526,7 @@ export class NotificationService {
     let resolvedActorId = actor.id;
     if (!resolvedActorId || resolvedActorId === 'system') {
       const adminStudent = await prisma.student.findFirst({
-        where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'HOSTEL_ADMIN'] } },
+        where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS', 'WARDEN'] } },
         select: { id: true },
       });
       if (adminStudent) {

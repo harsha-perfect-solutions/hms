@@ -234,7 +234,17 @@ export const requireRoles = (...roles: string[]) =>
       res.status(401).json({ success: false, message: 'Authentication required.' });
       return;
     }
-    if (!roles.includes(req.managementUser.role)) {
+
+    // Expand roles hierarchy:
+    // If CHIEF_WARDEN or WARDEN is specified, both gender-specific Chief Wardens are also accepted.
+    const allowed = new Set(roles);
+    if (allowed.has('CHIEF_WARDEN') || allowed.has('WARDEN')) {
+      allowed.add('CHIEF_WARDEN');
+      allowed.add('CHIEF_WARDEN_BOYS');
+      allowed.add('CHIEF_WARDEN_GIRLS');
+    }
+
+    if (!allowed.has(req.managementUser.role)) {
       res.status(403).json({
         success: false,
         message: `Access denied. This action requires one of: ${roles.join(', ')}.`,
@@ -243,3 +253,4 @@ export const requireRoles = (...roles: string[]) =>
     }
     next();
   };
+

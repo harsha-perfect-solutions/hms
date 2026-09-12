@@ -543,7 +543,9 @@ export const ManagementLogHistoryPage: React.FC<ManagementLogHistoryPageProps> =
               >
                 <option value="ALL">All Roles</option>
                 <option value="ADMIN">ADMIN</option>
-                <option value="CHIEF_WARDEN">CHIEF WARDEN</option>
+                <option value="CHIEF_WARDEN">CHIEF WARDEN (ALL)</option>
+                <option value="CHIEF_WARDEN_BOYS">CHIEF WARDEN (BOYS)</option>
+                <option value="CHIEF_WARDEN_GIRLS">CHIEF WARDEN (GIRLS)</option>
                 <option value="WARDEN">WARDEN</option>
                 <option value="HOSTEL_ADMIN">HOSTEL ADMIN</option>
                 <option value="MAINTENANCE_STAFF">MAINTENANCE STAFF</option>

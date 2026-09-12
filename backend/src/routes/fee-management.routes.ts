@@ -11,9 +11,22 @@ const router = Router();
 // All fee management routes require authentication under management portal
 router.use(authenticateManagement);
 
-// Financial Management Roles: ADMIN, HOSTEL_ADMIN, CHIEF_WARDEN, WARDEN
-const FINANCIAL_VIEW_ROLES = ['ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'WARDEN'];
-const FINANCIAL_ADMIN_ROLES = ['ADMIN', 'HOSTEL_ADMIN'];
+// Financial Management Roles
+const FINANCIAL_VIEW_ROLES = [
+  'ADMIN',
+  'HOSTEL_ADMIN',
+  'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
+  'WARDEN',
+];
+const FINANCIAL_ADMIN_ROLES = [
+  'ADMIN',
+  'HOSTEL_ADMIN',
+  'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
+];
 
 // =========================================================================
 // 1. KPI STATS

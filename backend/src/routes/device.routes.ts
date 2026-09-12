@@ -12,7 +12,14 @@ const router = Router();
 router.use(authenticateManagement);
 
 // Authorized Management Roles
-const AUTHORIZED_ROLES = ['ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'WARDEN'];
+const AUTHORIZED_ROLES = [
+  'ADMIN',
+  'HOSTEL_ADMIN',
+  'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
+  'WARDEN',
+];
 
 /**
  * GET /api/management/devices

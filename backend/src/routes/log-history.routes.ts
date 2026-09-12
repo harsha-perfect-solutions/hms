@@ -64,7 +64,7 @@ router.get('/summary', async (req: AuthenticatedManagementRequest, res: Response
       }),
       prisma.activityLog.count({
         where: {
-          actorRole: { in: ['ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'WARDEN'] },
+          actorRole: { in: ['ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS', 'WARDEN'] },
         },
       }),
     ]);
@@ -129,7 +129,12 @@ router.get('/', async (req: AuthenticatedManagementRequest, res: Response): Prom
 
     // Actor Role filter
     if (typeof actorRole === 'string' && actorRole.trim() && actorRole.toUpperCase() !== 'ALL') {
-      where.actorRole = actorRole.trim().toUpperCase();
+      const roleUpper = actorRole.trim().toUpperCase();
+      if (roleUpper === 'CHIEF_WARDEN') {
+        where.actorRole = { in: ['CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS'] };
+      } else {
+        where.actorRole = roleUpper;
+      }
     }
 
     // Actor ID filter

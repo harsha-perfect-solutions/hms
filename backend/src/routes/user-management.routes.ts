@@ -18,6 +18,8 @@ export const AUTHORIZED_ROLES = [
   'ADMIN',
   'HOSTEL_ADMIN',
   'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
   'WARDEN',
   'STUDENT',
   'MAINTENANCE_STAFF',
@@ -30,6 +32,8 @@ export const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'System Administrator',
   HOSTEL_ADMIN: 'Hostel Administrator',
   CHIEF_WARDEN: 'Chief Warden',
+  CHIEF_WARDEN_BOYS: 'Chief Warden (Boys Hostel)',
+  CHIEF_WARDEN_GIRLS: 'Chief Warden (Girls Hostel)',
   WARDEN: 'Hostel Warden',
   STUDENT: 'Hostel Resident (Student)',
   MAINTENANCE_STAFF: 'Maintenance Technician',
@@ -37,7 +41,13 @@ export const ROLE_LABELS: Record<string, string> = {
 };
 
 // Roles permitted to perform sensitive administrative operations (role modification, staff creation)
-const HIGH_PRIVILEGE_ADMIN_ROLES = ['ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN'];
+const HIGH_PRIVILEGE_ADMIN_ROLES = [
+  'ADMIN',
+  'HOSTEL_ADMIN',
+  'CHIEF_WARDEN',
+  'CHIEF_WARDEN_BOYS',
+  'CHIEF_WARDEN_GIRLS',
+];
 
 /**
  * Sanitizes student/user records to guarantee passwords and hashes are NEVER exposed
@@ -95,7 +105,7 @@ userManagementRouter.get('/summary', async (_req: AuthenticatedManagementRequest
       prisma.student.count({ where: { role: 'WARDEN' } }),
       prisma.student.count({ where: { role: 'ADMIN' } }),
       prisma.student.count({ where: { role: 'HOSTEL_ADMIN' } }),
-      prisma.student.count({ where: { role: 'CHIEF_WARDEN' } }),
+      prisma.student.count({ where: { role: { in: ['CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS'] } } }),
       prisma.student.count({ where: { role: 'MESS_STAFF' } }),
       prisma.student.count({ where: { role: 'MAINTENANCE_STAFF' } }),
     ]);
@@ -144,7 +154,11 @@ userManagementRouter.get('/', async (req: AuthenticatedManagementRequest, res: R
     const where: any = {};
 
     if (roleFilter && roleFilter !== 'ALL') {
-      where.role = roleFilter;
+      if (roleFilter === 'CHIEF_WARDEN') {
+        where.role = { in: ['CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS'] };
+      } else {
+        where.role = roleFilter;
+      }
     }
 
     if (statusFilter === 'ACTIVE') {

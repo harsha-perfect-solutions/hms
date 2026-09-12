@@ -1606,26 +1606,51 @@ export interface ManagementLoginResponse {
 
 const MANAGEMENT_TOKEN_STORAGE_KEY = 'hms_management_auth_token';
 
+let _inMemoryManagementToken: string | null = null;
+
 export const managementAuthStorage = {
   getToken(): string | null {
+    if (_inMemoryManagementToken) return _inMemoryManagementToken;
     try {
-      return localStorage.getItem(MANAGEMENT_TOKEN_STORAGE_KEY);
+      const token =
+        localStorage.getItem(MANAGEMENT_TOKEN_STORAGE_KEY) ||
+        localStorage.getItem('managementToken') ||
+        localStorage.getItem('token') ||
+        sessionStorage.getItem(MANAGEMENT_TOKEN_STORAGE_KEY) ||
+        sessionStorage.getItem('managementToken') ||
+        sessionStorage.getItem('token');
+      if (token) {
+        _inMemoryManagementToken = token;
+        return token;
+      }
     } catch {
       return null;
     }
+    return null;
   },
   setToken(token: string): void {
+    _inMemoryManagementToken = token;
     try {
       localStorage.setItem(MANAGEMENT_TOKEN_STORAGE_KEY, token);
+      localStorage.setItem('managementToken', token);
+      localStorage.setItem('token', token);
+      sessionStorage.setItem(MANAGEMENT_TOKEN_STORAGE_KEY, token);
     } catch (e) {
       console.error('Failed to persist management auth token', e);
     }
   },
   clearToken(): void {
+    _inMemoryManagementToken = null;
     try {
       localStorage.removeItem(MANAGEMENT_TOKEN_STORAGE_KEY);
+      localStorage.removeItem('managementToken');
+      localStorage.removeItem('token');
+      sessionStorage.removeItem(MANAGEMENT_TOKEN_STORAGE_KEY);
     } catch (e) {
       console.error('Failed to remove management auth token', e);
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('management_auth_logout'));
     }
   },
 };

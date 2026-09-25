@@ -14,11 +14,13 @@ import {
   Eye,
   BedDouble,
   FileSpreadsheet,
+  Building2,
 } from 'lucide-react';
 import {
   managementApiService,
   RoomItem,
   CreateRoomDto,
+  Block,
 } from '../services/api';
 
 interface BlockManagementPageProps {
@@ -39,6 +41,8 @@ export const formatRoomType = (roomType?: string | null): string => {
 };
 
 export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [selectedBlockId, setSelectedBlockId] = useState<string>('');
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -99,6 +103,26 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
     }
   };
 
+  // Fetch authoritative blocks from PostgreSQL
+  const fetchBlocks = useCallback(async () => {
+    try {
+      const res = await managementApiService.getBlocks();
+      if (res && res.blocks) {
+        setBlocks(res.blocks);
+        setSelectedBlockId((prev) => {
+          if (prev && res.blocks.some((b) => b.id === prev)) return prev;
+          return res.blocks[0]?.id || '';
+        });
+      }
+    } catch (err: any) {
+      console.error('Failed to load blocks:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBlocks();
+  }, [fetchBlocks]);
+
   // Fetch authoritative rooms & allocations from PostgreSQL
   const fetchRooms = useCallback(async (isBackground = false) => {
     if (!isBackground) {
@@ -114,7 +138,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
       setRooms(response.rooms || []);
     } catch (err: any) {
       console.error('Failed to load rooms from PostgreSQL:', err);
-      showToast('Failed to load hostel floor plan data.', 'error');
+      showToast('Failed to load hostel block data.', 'error');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -124,6 +148,23 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
   useEffect(() => {
     fetchRooms(false);
   }, [fetchRooms]);
+
+  // Active Block
+  const currentBlock = useMemo(() => {
+    return blocks.find((b) => b.id === selectedBlockId) || blocks[0] || null;
+  }, [blocks, selectedBlockId]);
+
+  // Filter rooms belonging to current selected block
+  const currentBlockRooms = useMemo(() => {
+    if (!currentBlock) return rooms;
+    return rooms.filter((r) => {
+      if (r.blockId && r.blockId === currentBlock.id) return true;
+      if (r.block?.id && r.block.id === currentBlock.id) return true;
+      if (r.block?.code && r.block.code.toLowerCase() === currentBlock.code.toLowerCase()) return true;
+      if (r.block?.name && r.block.name.toLowerCase() === currentBlock.name.toLowerCase()) return true;
+      return false;
+    });
+  }, [rooms, currentBlock]);
 
   // Helper to extract occupants robustly from either allocations or activeOccupants
   const getRoomOccupants = useCallback((r: RoomItem) => {
@@ -152,16 +193,16 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
     return [];
   }, []);
 
-  // Overall Statistics
+  // Overall Statistics for current selected block
   const stats = useMemo(() => {
-    const totalRooms = rooms.length;
-    const totalCapacity = rooms.reduce((acc, r) => acc + (r.capacity || 0), 0);
-    const totalOccupants = rooms.reduce((acc, r) => acc + (getRoomOccupants(r).length || r.occupancy || 0), 0);
+    const totalRooms = currentBlockRooms.length;
+    const totalCapacity = currentBlockRooms.reduce((acc, r) => acc + (r.capacity || 0), 0);
+    const totalOccupants = currentBlockRooms.reduce((acc, r) => acc + (getRoomOccupants(r).length || r.occupancy || 0), 0);
     const availableBeds = Math.max(0, totalCapacity - totalOccupants);
     return { totalRooms, totalCapacity, totalOccupants, availableBeds };
-  }, [rooms, getRoomOccupants]);
+  }, [currentBlockRooms, getRoomOccupants]);
 
-  // Floor Definitions (Authoritative Source of Truth: Floor -> Room -> Students)
+  // Floor Definitions for current selected block
   const floorGroupings = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
@@ -178,17 +219,17 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
       return matchesNum || matchesType || matchesStudent;
     };
 
-    const floor1Rooms = rooms
+    const floor1Rooms = currentBlockRooms
       .filter((r) => (r.floor === 1 || (r.floor == null && r.roomNumber.startsWith('1') && r.roomNumber !== '109')) && r.roomNumber !== '208')
       .filter(filterRoom)
       .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true }));
 
-    const floor2Rooms = rooms
+    const floor2Rooms = currentBlockRooms
       .filter((r) => (r.floor === 2 || (r.floor == null && r.roomNumber.startsWith('2') && r.roomNumber !== '208')))
       .filter(filterRoom)
       .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true }));
 
-    const floor3Rooms = rooms
+    const floor3Rooms = currentBlockRooms
       .filter((r) => (r.floor === 3 || (r.floor == null && (r.roomNumber.startsWith('3') || r.roomNumber === '109' || r.roomNumber === '208'))))
       .filter(filterRoom)
       .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true }));
@@ -198,13 +239,13 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
       { floorNum: 2, floorLabel: 'Second Floor', rooms: floor2Rooms },
       { floorNum: 3, floorLabel: 'Third Floor', rooms: floor3Rooms },
     ];
-  }, [rooms, searchTerm, getRoomOccupants]);
+  }, [currentBlockRooms, searchTerm, getRoomOccupants]);
 
   // Handlers for Room Modals
   const handleOpenAddRoom = (floorNum: number = 1) => {
     setEditingRoom(null);
     setRoomFormData({
-      blockId: rooms[0]?.blockId || '',
+      blockId: selectedBlockId || currentBlock?.id || blocks[0]?.id || '',
       roomNumber: '',
       floor: floorNum,
       roomType: '2 Sharing Room',
@@ -253,6 +294,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
       }
       setIsRoomModalOpen(false);
       fetchRooms(false);
+      fetchBlocks();
     } catch (err: any) {
       setRoomFormError(err.message || 'Failed to save room record.');
     } finally {
@@ -270,6 +312,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
       showToast(`Room '${deleteRoomTarget.roomNumber}' removed successfully.`);
       setDeleteRoomTarget(null);
       fetchRooms(false);
+      fetchBlocks();
     } catch (err: any) {
       setDeleteError(err.message || 'Failed to delete room.');
     } finally {
@@ -314,10 +357,10 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
             </div>
             <div>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
-                Hostel Floor Plan
+                Block Management
               </h1>
               <p style={{ fontSize: '0.875rem', color: '#64748B', margin: '0.2rem 0 0 0' }}>
-                Floor-wise room distribution and student allocations from authoritative hostel records.
+                Block-wise room distribution, floor plans, and student allocations from authoritative hostel records.
               </p>
             </div>
           </div>
@@ -326,7 +369,10 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
         <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
           <button
             type="button"
-            onClick={() => fetchRooms(true)}
+            onClick={() => {
+              fetchRooms(true);
+              fetchBlocks();
+            }}
             disabled={isRefreshing}
             style={{
               display: 'flex',
@@ -395,30 +441,101 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
         </div>
       </div>
 
+      {/* Block Selector Tabs */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        marginBottom: '1.5rem',
+        overflowX: 'auto',
+        paddingBottom: '4px',
+      }}>
+        {blocks.map((b) => {
+          const isSelected = (currentBlock?.id === b.id) || (selectedBlockId === b.id);
+          const blockRoomCount = rooms.filter(
+            (r) =>
+              r.blockId === b.id ||
+              r.block?.id === b.id ||
+              (r.block?.code && r.block.code.toLowerCase() === b.code.toLowerCase()) ||
+              (r.block?.name && r.block.name.toLowerCase() === b.name.toLowerCase())
+          ).length;
+
+          return (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => {
+                setSelectedBlockId(b.id);
+                setActiveFloorFilter('ALL');
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.65rem',
+                padding: '0.7rem 1.25rem',
+                borderRadius: '12px',
+                border: isSelected ? '2px solid #151B54' : '1px solid #CBD5E1',
+                background: isSelected ? '#151B54' : '#FFFFFF',
+                color: isSelected ? '#FFFFFF' : '#334155',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: isSelected ? '0 4px 14px rgba(21, 27, 84, 0.2)' : '0 1px 3px rgba(0,0,0,0.04)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Building2 size={18} color={isSelected ? '#93C5FD' : '#64748B'} />
+              <span>{b.name}</span>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  padding: '0.15rem 0.6rem',
+                  borderRadius: '9999px',
+                  background: isSelected ? 'rgba(255,255,255,0.2)' : '#F1F5F9',
+                  color: isSelected ? '#FFFFFF' : '#64748B',
+                }}
+              >
+                {blockRoomCount > 0 ? `${blockRoomCount} Rooms` : 'Empty (0 Rooms)'}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Summary Statistics Bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Hostel Floors</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', marginTop: '0.2rem' }}>3 Floors</div>
-          <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 600 }}>Ground + 3 Plan</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Active Block</span>
+          <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {currentBlock?.name || 'All Blocks'}
+          </div>
+          <span style={{ fontSize: '0.75rem', color: '#3B82F6', fontWeight: 600 }}>Code: {currentBlock?.code || 'N/A'}</span>
         </div>
 
         <div style={{ background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Rooms</span>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#151B54', marginTop: '0.2rem' }}>{stats.totalRooms} Rooms</div>
-          <span style={{ fontSize: '0.75rem', color: '#64748B' }}>19 Authoritative Rooms</span>
+          <span style={{ fontSize: '0.75rem', color: stats.totalRooms > 0 ? '#10B981' : '#94A3B8', fontWeight: 600 }}>
+            {stats.totalRooms > 0 ? 'Configured Rooms' : 'Pending Floor Plan'}
+          </span>
         </div>
 
         <div style={{ background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Bed Capacity</span>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4F46E5', marginTop: '0.2rem' }}>{stats.totalCapacity} Beds</div>
-          <span style={{ fontSize: '0.75rem', color: '#64748B' }}>100% Configured</span>
+          <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
+            {stats.totalCapacity > 0 ? 'Capacity in DB' : '0 Beds Configured'}
+          </span>
         </div>
 
         <div style={{ background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Allocated Residents</span>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#16A34A', marginTop: '0.2rem' }}>{stats.totalOccupants} Students</div>
-          <span style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 700 }}>Full Occupancy</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: stats.totalOccupants > 0 ? '#16A34A' : '#64748B', marginTop: '0.2rem' }}>{stats.totalOccupants} Students</div>
+          <span style={{ fontSize: '0.75rem', color: stats.totalOccupants > 0 ? '#16A34A' : '#94A3B8', fontWeight: 700 }}>
+            {stats.totalOccupants > 0 ? 'Active Residents' : 'No Allocations'}
+          </span>
         </div>
       </div>
 
@@ -468,7 +585,7 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
               color: activeFloorFilter === 'ALL' ? '#FFFFFF' : '#475569',
             }}
           >
-            All Floors ({rooms.length})
+            All Floors ({currentBlockRooms.length})
           </button>
           {floorGroupings.map((fg) => (
             <button
@@ -496,12 +613,66 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
       {isLoading && (
         <div style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>
           <RotateCw size={28} className="spin-anim" style={{ marginBottom: '0.5rem' }} />
-          <div>Loading authoritative hostel floor plan...</div>
+          <div>Loading authoritative hostel records...</div>
+        </div>
+      )}
+
+      {/* Empty Block State */}
+      {!isLoading && currentBlockRooms.length === 0 && (
+        <div style={{
+          background: '#FFFFFF',
+          borderRadius: '18px',
+          border: '1px solid #E2E8F0',
+          padding: '4rem 2rem',
+          textAlign: 'center',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+        }}>
+          <div style={{
+            width: '68px',
+            height: '68px',
+            borderRadius: '50%',
+            background: '#EEF2FF',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#151B54',
+            marginBottom: '1.25rem',
+          }}>
+            <Building2 size={34} />
+          </div>
+          <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0F172A', margin: '0 0 0.5rem 0' }}>
+            {currentBlock?.name || 'Selected Block'} — Empty Block
+          </h3>
+          <p style={{ fontSize: '0.925rem', color: '#64748B', maxWidth: '520px', margin: '0 auto 1.5rem auto', lineHeight: 1.6 }}>
+            No rooms have been configured yet for <strong>{currentBlock?.name}</strong> ({currentBlock?.code}).
+            Floor plan is pending configuration. You can add rooms whenever you are ready.
+          </p>
+          <button
+            type="button"
+            onClick={() => handleOpenAddRoom(1)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: '#151B54',
+              color: '#FFFFFF',
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(21, 27, 84, 0.2)',
+            }}
+          >
+            <Plus size={16} />
+            <span>Add Room to {currentBlock?.name || 'Block'}</span>
+          </button>
         </div>
       )}
 
       {/* Floor Sections Grid (Hierarchy: Floor -> Room -> Students) */}
-      {!isLoading && (
+      {!isLoading && currentBlockRooms.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {floorGroupings
             .filter((fg) => activeFloorFilter === 'ALL' || activeFloorFilter === fg.floorNum)
@@ -863,6 +1034,24 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
                     {roomFormError}
                   </div>
                 )}
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                    Hostel Block *
+                  </label>
+                  <select
+                    value={roomFormData.blockId}
+                    onChange={(e) => setRoomFormData({ ...roomFormData, blockId: e.target.value })}
+                    required
+                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 0.75rem', fontSize: '0.85rem' }}
+                  >
+                    {blocks.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name} ({b.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>

@@ -33,6 +33,7 @@ import { ManagementNotificationsPage } from './pages/ManagementNotificationsPage
 import { ManagementHostelApplicationsPage } from './pages/ManagementHostelApplicationsPage';
 import { HostelApplicationPage } from './pages/HostelApplicationPage';
 import { StudentRegistrationPage } from './pages/StudentRegistrationPage';
+import { TicTacToePage } from './pages/TicTacToePage';
 import { Lock, X } from 'lucide-react';
 
 const ROUTE_MODULE_NAMES: Record<string, string> = {};
@@ -318,6 +319,8 @@ const AuthenticatedManagementApp: React.FC<{
             <RoomManagementPage onNavigate={onNavigate} />
           ) : isBlockPage ? (
             <BlockManagementPage onNavigate={onNavigate} />
+          ) : currentPath === '/management/tic-tac-toe' || currentPath === '/management/tictactoe' ? (
+            <TicTacToePage onNavigate={onNavigate} />
           ) : (
             <ManagementDashboardPage
               onNavigate={onNavigate}
@@ -425,7 +428,9 @@ const AppContent: React.FC = () => {
         if (
           currentPath !== '/login' &&
           currentPath !== '/student/register' &&
-          currentPath !== '/register'
+          currentPath !== '/register' &&
+          currentPath !== '/tic-tac-toe' &&
+          currentPath !== '/tictactoe'
         ) {
           navigateTo('/login');
         }
@@ -520,6 +525,10 @@ const AppContent: React.FC = () => {
         onNavigateToLogin={() => navigateTo('/login')}
       />
     );
+  }
+
+  if (currentPath === '/tic-tac-toe' || currentPath === '/tictactoe') {
+    return <TicTacToePage onNavigate={navigateTo} />;
   }
 
   return (

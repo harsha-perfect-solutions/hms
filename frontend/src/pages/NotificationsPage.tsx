@@ -255,8 +255,6 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
         return 'cat-outing';
       case 'LEAVE':
         return 'cat-leave';
-      case 'COMPLAINT':
-        return 'cat-complaint';
       case 'SYSTEM':
       default:
         return 'cat-system';

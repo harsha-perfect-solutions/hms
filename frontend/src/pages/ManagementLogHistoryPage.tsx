@@ -560,7 +560,10 @@ export const ManagementLogHistoryPage: React.FC<ManagementLogHistoryPageProps> =
         </form>
 
         {/* Audit Log Table */}
-        <div className="log-table-wrapper">
+        <div className="mobile-scroll-hint">
+          <span>← Swipe horizontally to view full table →</span>
+        </div>
+        <div className="log-table-wrapper table-responsive log-table-container">
           {isLoading ? (
             <div className="loading-state p-8 text-center">
               <RefreshCw size={24} className="animate-spin text-primary inline-block" />

@@ -6,7 +6,6 @@ import { DashboardPage } from './pages/DashboardPage';
 import { MyRoomPage } from './pages/MyRoomPage';
 import { MessTokensPage } from './pages/MessTokensPage';
 import { OutingRequestsPage } from './pages/OutingRequestsPage';
-import { ComplaintsPage } from './pages/ComplaintsPage';
 import { LeavesPage } from './pages/LeavesPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { Sidebar } from './components/Sidebar';
@@ -23,7 +22,6 @@ import { RoomManagementPage } from './pages/RoomManagementPage';
 import { MessManagementPage } from './pages/MessManagementPage';
 import { OutingApprovalsPage } from './pages/OutingApprovalsPage';
 import { ManagementLeavesPage } from './pages/ManagementLeavesPage';
-import { ManagementComplaintsPage } from './pages/ManagementComplaintsPage';
 import { GuestBillingManagementPage } from './pages/GuestBillingManagementPage';
 import { ManagementLogHistoryPage } from './pages/ManagementLogHistoryPage';
 import { ManagementOutingLogHistoryPage } from './pages/ManagementOutingLogHistoryPage';
@@ -130,10 +128,6 @@ const AuthenticatedApp: React.FC<{
             <OutingRequestsPage />
           )}
 
-          {currentPath === '/complaints' && (
-            <ComplaintsPage />
-          )}
-
           {currentPath === '/leaves' && (
             <LeavesPage />
           )}
@@ -191,7 +185,6 @@ const AuthenticatedManagementApp: React.FC<{
   const isMessPage = currentPath === '/management/mess';
   const isOutingsPage = currentPath === '/management/outings';
   const isLeavesPage = currentPath === '/management/leaves';
-  const isComplaintsPage = currentPath === '/management/complaints' || currentPath === '/management/maintenance';
   const isGuestBillingPage = currentPath === '/management/guest-billing' || currentPath === '/management/billing';
   const isLogHistoryPage = currentPath === '/management/log-history' || currentPath === '/management/logs';
   const isOutingLogHistoryPage = currentPath === '/management/outing-log-history' || currentPath === '/management/outing-logs';
@@ -252,19 +245,17 @@ const AuthenticatedManagementApp: React.FC<{
                           ? 'System Log History & Audit'
                           : isGuestBillingPage
                             ? 'Guest Visits & Billing Management'
-                            : isComplaintsPage
-                              ? 'Complaints & Maintenance Operations'
-                              : isLeavesPage
-                                ? 'Leaves & Suspension Management'
-                                : isOutingsPage
-                                  ? 'Outing Approvals & Gate Transit'
-                                  : isMessPage
-                                    ? 'Mess Management'
-                                    : isRoomPage
-                                      ? 'Room Management & Allocation'
-                                      : isBlockPage
-                                        ? 'Block Management'
-                                        : 'Admin Dashboard'
+                            : isLeavesPage
+                              ? 'Leaves & Suspension Management'
+                              : isOutingsPage
+                                ? 'Outing Approvals & Gate Transit'
+                                : isMessPage
+                                  ? 'Mess Management'
+                                  : isRoomPage
+                                    ? 'Room Management & Allocation'
+                                    : isBlockPage
+                                      ? 'Block Management'
+                                      : 'Admin Dashboard'
           }
           pageSubtitle={
             isHostelApplicationsPage
@@ -283,19 +274,17 @@ const AuthenticatedManagementApp: React.FC<{
                           ? 'Comprehensive administrative activity logging, operational state change inspection, and multi-factor traceability.'
                           : isGuestBillingPage
                             ? 'Manage guest visit records, track student host check-ins, record itemized bills, and process authoritative payments.'
-                            : isComplaintsPage
-                              ? 'Review maintenance tickets, assign technicians, track repair lifecycles, and confirm ticket resolutions.'
-                              : isLeavesPage
-                                ? 'Review student leave applications, authorize leaves, track campus absence, and manage disciplinary suspensions.'
-                                : isOutingsPage
-                                  ? 'Review and authorize resident movement passes with automated biometric gate correlation.'
-                                  : isMessPage
-                                    ? 'Monitor hostel meal services, verify resident tokens, and review meal statistics.'
-                                    : isRoomPage
-                                      ? 'Configure rooms, track bed occupancy, and assign residential accommodations.'
-                                      : isBlockPage
-                                        ? 'Configure, organize, and monitor hostel residential blocks and zones.'
-                                        : 'A concise operational overview of hostel administration and residential oversight.'
+                            : isLeavesPage
+                              ? 'Review student leave applications, authorize leaves, track campus absence, and manage disciplinary suspensions.'
+                              : isOutingsPage
+                                ? 'Review and authorize resident movement passes with automated biometric gate correlation.'
+                                : isMessPage
+                                  ? 'Monitor hostel meal services, verify resident tokens, and review meal statistics.'
+                                  : isRoomPage
+                                    ? 'Configure rooms, track bed occupancy, and assign residential accommodations.'
+                                    : isBlockPage
+                                      ? 'Configure, organize, and monitor hostel residential blocks and zones.'
+                                      : 'A concise operational overview of hostel administration and residential oversight.'
           }
         />
 
@@ -319,8 +308,6 @@ const AuthenticatedManagementApp: React.FC<{
             <ManagementLogHistoryPage onNavigate={onNavigate} />
           ) : isGuestBillingPage ? (
             <GuestBillingManagementPage onNavigate={onNavigate} />
-          ) : isComplaintsPage ? (
-            <ManagementComplaintsPage onNavigate={onNavigate} />
           ) : isLeavesPage ? (
             <ManagementLeavesPage onNavigate={onNavigate} />
           ) : isOutingsPage ? (

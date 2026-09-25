@@ -19,6 +19,9 @@ import {
   GraduationCap,
   Sparkles,
   Send,
+  User,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   apiService,
@@ -55,6 +58,13 @@ export const LeavesPage: React.FC = () => {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [realtimeNotice, setRealtimeNotice] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  const handleCopyToken = (token: string) => {
+    navigator.clipboard.writeText(token);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
 
   // Form State
   const [leaveType, setLeaveType] = useState<string>('HOME_LEAVE');
@@ -589,7 +599,7 @@ export const LeavesPage: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="leave-status-badge badge-active">
                             <span className="pulse-dot" />
                             Currently On Leave
@@ -597,9 +607,24 @@ export const LeavesPage: React.FC = () => {
                           <span className={`leave-type-pill ${getLeaveTypeClass(data.activeLeave.leaveType)}`}>
                             {getLeaveTypeLabel(data.activeLeave.leaveType)}
                           </span>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            backgroundColor: 'rgba(21, 27, 84, 0.08)',
+                            color: '#151B54',
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '6px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700
+                          }}>
+                            <User size={13} />
+                            <span>{data.student.name}</span>
+                            <span style={{ fontFamily: 'monospace', color: '#0284C7' }}>({data.student.jntuNo})</span>
+                          </span>
                         </div>
-                        <span className="leave-request-id">
-                          {data.activeLeave.requestNumber}
+                        <span className="leave-request-id font-mono">
+                          Token: {data.activeLeave.requestNumber}
                         </span>
                       </div>
 
@@ -607,7 +632,7 @@ export const LeavesPage: React.FC = () => {
                         Active Leave Period in Progress
                       </h2>
                       <p className="text-sm text-indigo-800">
-                        Destination: <strong>{data.activeLeave.destination}</strong> · Expected return by{' '}
+                        Pass Holder: <strong>{data.student.name} ({data.student.jntuNo})</strong> · Room {data.student.roomNumber || '—'} · Destination: <strong>{data.activeLeave.destination}</strong> · Expected return by{' '}
                         <strong>{formatDate(data.activeLeave.endDate)}</strong> ({data.activeLeave.durationDays} days total)
                       </p>
                       {data.activeLeave.approvedBy && (
@@ -780,6 +805,40 @@ export const LeavesPage: React.FC = () => {
                       </div>
 
                       <div className="leave-card-body">
+                        {/* Applicant Identity Badge */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '0.5rem',
+                          padding: '0.4rem 0.65rem',
+                          backgroundColor: '#F8FAFC',
+                          borderRadius: '8px',
+                          border: '1px solid #E2E8F0',
+                          marginBottom: '0.65rem'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                            <User size={14} style={{ color: '#151B54', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {req.student?.name || data?.student.name || 'Resident'}
+                            </span>
+                            <span style={{
+                              backgroundColor: '#EEF2FF',
+                              color: '#151B54',
+                              padding: '0.1rem 0.4rem',
+                              borderRadius: '4px',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              fontFamily: 'monospace'
+                            }}>
+                              {req.student?.jntuNo || data?.student.jntuNo || 'ID'}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, flexShrink: 0 }}>
+                            {req.student?.blockName || data?.student.blockName || 'Hostel'} · Rm {req.student?.roomNumber || data?.student.roomNumber || '—'}
+                          </span>
+                        </div>
+
                         <div>
                           {/* Date Range & Duration */}
                           <div className="leave-dates-box">
@@ -1213,6 +1272,99 @@ export const LeavesPage: React.FC = () => {
             {selectedLeave && (
               <div>
                 <div className="modal-body-scrollable">
+                  {/* Official Digital Leave Gate Pass Slip */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #151B54 0%, #1E293B 100%)',
+                    color: '#FFFFFF',
+                    borderRadius: '12px',
+                    padding: '1.1rem 1.25rem',
+                    marginBottom: '1.25rem',
+                    boxShadow: '0 4px 14px rgba(21, 27, 84, 0.2)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: '0.65rem', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <ShieldCheck size={18} style={{ color: '#38BDF8' }} />
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: '#93C5FD', textTransform: 'uppercase' }}>
+                          Official Hostel Leave Gate Pass
+                        </span>
+                      </div>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '0.15rem 0.55rem',
+                        borderRadius: '4px',
+                        backgroundColor: selectedLeave.status === 'APPROVED' ? '#10B981' : selectedLeave.status === 'PENDING' ? '#F59E0B' : '#EF4444',
+                        color: '#FFFFFF'
+                      }}>
+                        {selectedLeave.effectiveStatus || selectedLeave.status}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem' }}>
+                      <div>
+                        <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Pass Holder / Who Applied
+                        </span>
+                        <span style={{ display: 'block', fontSize: '1rem', fontWeight: 800, color: '#F8FAFC', marginTop: '0.1rem' }}>
+                          {selectedLeave.student?.name || data?.student.name}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
+                          <span style={{
+                            backgroundColor: '#38BDF8',
+                            color: '#0F172A',
+                            padding: '0.1rem 0.45rem',
+                            borderRadius: '4px',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            fontFamily: 'monospace'
+                          }}>
+                            {selectedLeave.student?.jntuNo || data?.student.jntuNo}
+                          </span>
+                          <span style={{ fontSize: '0.74rem', color: '#CBD5E1' }}>
+                            {selectedLeave.student?.blockName || data?.student.blockName || 'Hostel'} · Room {selectedLeave.student?.roomNumber || data?.student.roomNumber || '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Leave Token Number
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                          <span style={{ fontSize: '0.95rem', fontWeight: 800, fontFamily: 'monospace', color: '#38BDF8', letterSpacing: '0.5px' }}>
+                            {selectedLeave.requestNumber || selectedLeave.id}
+                          </span>
+                          {selectedLeave.requestNumber && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyToken(selectedLeave.requestNumber!)}
+                              title="Copy leave token"
+                              style={{
+                                background: 'rgba(255,255,255,0.12)',
+                                border: 'none',
+                                color: copiedToken === selectedLeave.requestNumber ? '#34D399' : '#CBD5E1',
+                                borderRadius: '4px',
+                                padding: '0.2rem 0.4rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                fontSize: '0.68rem'
+                              }}
+                            >
+                              {copiedToken === selectedLeave.requestNumber ? <Check size={12} /> : <Copy size={12} />}
+                              <span>{copiedToken === selectedLeave.requestNumber ? 'Copied' : 'Copy'}</span>
+                            </button>
+                          )}
+                        </div>
+                        <span style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+                          Category: {getLeaveTypeLabel(selectedLeave.leaveType)} · {selectedLeave.durationDays} Days
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Header Reference & Status */}
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                     <div>

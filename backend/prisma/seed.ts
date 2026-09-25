@@ -9,6 +9,45 @@ async function main() {
   const studentPasswordHash = await bcrypt.hash('Password@123', 10);
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // 0. Seed Colleges
+  const initialColleges = [
+    {
+      code: 'ACM-01',
+      name: 'Alliance College of Management',
+      location: 'Main Campus, City Centre',
+      contactEmail: 'contact@alliance.edu.in',
+      isPrimary: true,
+      totalBlocks: 4,
+      totalStudents: 1200,
+    },
+    {
+      code: 'HITS-01',
+      name: 'Harsha Institute of Technology & Science',
+      location: 'Tech Park Campus',
+      contactEmail: 'info@hits.edu.in',
+      isPrimary: false,
+      totalBlocks: 2,
+      totalStudents: 850,
+    },
+    {
+      code: 'CEC-01',
+      name: 'City Engineering College',
+      location: 'North Campus, Sector 4',
+      contactEmail: 'support@cityeng.edu.in',
+      isPrimary: false,
+      totalBlocks: 2,
+      totalStudents: 600,
+    },
+  ];
+
+  for (const c of initialColleges) {
+    await prisma.college.upsert({
+      where: { code: c.code },
+      update: c,
+      create: c,
+    });
+  }
+
   // 1. Primary Student (from reference screenshots): MANI MANASVI GAVARA
   const student1 = await prisma.student.upsert({
     where: { jntuNo: '25331A05H7' },
@@ -55,7 +94,7 @@ async function main() {
   await prisma.notification.deleteMany({ where: { studentId: student1.id } });
   await prisma.activityLog.deleteMany({ where: { studentId: student1.id } });
 
-  // 4 Mess tokens booked for today (Breakfast, Lunch, Snacks, Dinner)
+  // 3 Mess tokens booked for today (Breakfast, Lunch, Dinner)
   const dateTag = todayStr.replace(/-/g, '');
   await prisma.messToken.createMany({
     data: [
@@ -71,13 +110,6 @@ async function main() {
         tokenNumber: `MT-${dateTag}-LUN-102`,
         date: todayStr,
         mealType: 'LUNCH',
-        status: 'BOOKED',
-      },
-      {
-        studentId: student1.id,
-        tokenNumber: `MT-${dateTag}-SNK-103`,
-        date: todayStr,
-        mealType: 'SNACKS',
         status: 'BOOKED',
       },
       {
@@ -398,24 +430,6 @@ async function main() {
     },
   });
 
-  // 5e. Maintenance Staff account
-  await prisma.student.upsert({
-    where: { jntuNo: 'MAINT01' },
-    update: {
-      passwordHash: studentPasswordHash,
-      isActive: true,
-      role: 'MAINTENANCE_STAFF',
-    },
-    create: {
-      jntuNo: 'MAINT01',
-      passwordHash: studentPasswordHash,
-      name: 'Maintenance Technician',
-      email: 'maintenance@college.edu',
-      role: 'MAINTENANCE_STAFF',
-      isActive: true,
-    },
-  });
-
   // 6. Authoritative Hostel Blocks (BH-1, BH-2 for Boys, GH-1 for Girls)
   const initialBlocks = [
     {
@@ -663,19 +677,6 @@ async function main() {
       cutoffMinute: 30,
     },
     {
-      mealType: 'SNACKS',
-      name: 'Evening Snacks',
-      startTime: '05:00 PM',
-      endTime: '06:30 PM',
-      description: 'Tea, coffee & evening refreshments',
-      startHour: 17,
-      startMinute: 0,
-      endHour: 18,
-      endMinute: 30,
-      cutoffHour: 16,
-      cutoffMinute: 0,
-    },
-    {
       mealType: 'DINNER',
       name: 'Dinner',
       startTime: '07:30 PM',
@@ -703,7 +704,7 @@ async function main() {
   console.log(`- Chief Warden Boys: Chief Warden (Boys Hostel) (CW_BOYS)`);
   console.log(`- Chief Warden Girls: Chief Warden (Girls Hostel) (CW_GIRLS)`);
   console.log(`- Blocks: Seeded 3 authoritative blocks (BH-1, BH-2, GH-1)`);
-  console.log(`- Meal Configs: Seeded 4 meal configurations (BREAKFAST, LUNCH, SNACKS, DINNER)`);
+  console.log(`- Meal Configs: Seeded 3 meal configurations (BREAKFAST, LUNCH, DINNER)`);
   console.log(`- Pending Candidate: ${pendingStudent.name} (${pendingStudent.jntuNo})`);
 }
 

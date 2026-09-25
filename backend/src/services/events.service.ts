@@ -1,26 +1,6 @@
 import { Response } from 'express';
 import { EventEmitter } from 'events';
 
-export type ComplaintEventType =
-  | 'COMPLAINT_CREATED'
-  | 'COMPLAINT_UPDATED'
-  | 'COMPLAINT_STATUS_CHANGED'
-  | 'COMPLAINT_ASSIGNED'
-  | 'COMPLAINT_STARTED'
-  | 'COMPLAINT_RESOLVED'
-  | 'COMPLAINT_CLOSED'
-  | 'COMPLAINT_CANCELLED'
-  | 'COMPLAINT_COMMENT_ADDED'
-  | 'COMPLAINT_ATTACHMENT_ADDED'
-  | 'COMPLAINT_STATS_UPDATED';
-
-
-export interface ComplaintDomainEvent {
-  type: ComplaintEventType;
-  complaintId: string;
-  timestamp: string;
-}
-
 export type LeaveEventType =
   | 'LEAVE_CREATED'
   | 'LEAVE_APPROVED'
@@ -302,20 +282,6 @@ class ComplaintEventsService extends EventEmitter {
         console.error(`Failed to write SSE ${domainEventName} to student connection:`, err);
       }
     }
-  }
-
-  /**
-   * Emits a domain event exclusively to the authorized student
-   */
-  public emitToStudent(studentId: string, event: ComplaintDomainEvent): void {
-    this.writeToStudentConnections(studentId, 'complaint_event', event, 'COMPLAINT');
-
-    // Also notify management dashboard
-    this.emitManagementDashboardUpdate({
-      type: event.type,
-      timestamp: event.timestamp || new Date().toISOString(),
-      details: { complaintId: event.complaintId },
-    });
   }
 
   /**

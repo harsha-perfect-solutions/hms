@@ -692,13 +692,21 @@ export class FeeManagementService {
     const amt = Number(params.sanctionedAmount);
     if (isNaN(amt) || amt <= 0) throw new Error('Sanctioned amount must be greater than zero.');
 
+    const cleanStudentId = (params.studentId || '').trim();
     const [student, type, year] = await Promise.all([
-      prisma.student.findUnique({ where: { id: params.studentId } }),
+      prisma.student.findFirst({
+        where: {
+          OR: [
+            { id: cleanStudentId },
+            { jntuNo: { equals: cleanStudentId, mode: 'insensitive' } },
+          ],
+        },
+      }),
       prisma.scholarshipType.findUnique({ where: { id: params.scholarshipTypeId } }),
       prisma.academicYear.findUnique({ where: { id: params.academicYearId } }),
     ]);
 
-    if (!student) throw new Error('Student not found.');
+    if (!student) throw new Error(`Student '${cleanStudentId}' not found. Please provide a valid Student UUID or JNTU Roll Number.`);
     if (!type) throw new Error('Scholarship type not found.');
     if (!year) throw new Error('Academic year not found.');
 
@@ -975,11 +983,19 @@ export class FeeManagementService {
     const reason = params.reason.trim();
     if (!reason) throw new Error('Detention reason detail is required.');
 
+    const cleanStudentId = (params.studentId || '').trim();
     const [student, year] = await Promise.all([
-      prisma.student.findUnique({ where: { id: params.studentId } }),
+      prisma.student.findFirst({
+        where: {
+          OR: [
+            { id: cleanStudentId },
+            { jntuNo: { equals: cleanStudentId, mode: 'insensitive' } },
+          ],
+        },
+      }),
       prisma.academicYear.findUnique({ where: { id: params.academicYearId } }),
     ]);
-    if (!student) throw new Error('Student not found.');
+    if (!student) throw new Error(`Student '${cleanStudentId}' not found. Please provide a valid Student UUID or JNTU Roll Number.`);
     if (!year) throw new Error('Academic year not found.');
 
     // Duplicate check: active detention in this academic year

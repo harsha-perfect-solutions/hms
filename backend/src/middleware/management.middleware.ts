@@ -249,9 +249,15 @@ export const requireRoles = (...roles: string[]) =>
     }
 
     // Expand roles hierarchy:
-    // If CHIEF_WARDEN or WARDEN is specified, both gender-specific Chief Wardens are also accepted.
+    // If CHIEF_WARDEN or WARDEN is specified, gender-specific Wardens and Chief Wardens are also accepted.
     const allowed = new Set(roles);
-    if (allowed.has('CHIEF_WARDEN') || allowed.has('WARDEN')) {
+    if (allowed.has('CHIEF_WARDEN')) {
+      allowed.add('CHIEF_WARDEN_BOYS');
+      allowed.add('CHIEF_WARDEN_GIRLS');
+    }
+    if (allowed.has('WARDEN')) {
+      allowed.add('WARDEN_BOYS');
+      allowed.add('WARDEN_GIRLS');
       allowed.add('CHIEF_WARDEN');
       allowed.add('CHIEF_WARDEN_BOYS');
       allowed.add('CHIEF_WARDEN_GIRLS');

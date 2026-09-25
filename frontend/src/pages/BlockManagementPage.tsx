@@ -10,101 +10,64 @@ import {
   X,
   LayoutGrid,
   Layers,
-  Wrench,
   UserCheck,
-  Info,
-  Users,
-  Phone,
-  Mail,
   Eye,
+  BedDouble,
+  FileSpreadsheet,
 } from 'lucide-react';
 import {
   managementApiService,
-  Block,
-  CreateBlockDto,
-  UpdateBlockDto,
   RoomItem,
+  CreateRoomDto,
 } from '../services/api';
-import { useManagementAuth } from '../context/ManagementAuthContext';
 
 interface BlockManagementPageProps {
   onNavigate?: (path: string) => void;
 }
 
+export const formatRoomType = (roomType?: string | null): string => {
+  if (!roomType) return 'Standard Room';
+  let clean = roomType
+    .replace(/\bNon-AC\s*/gi, '')
+    .replace(/\bAC\s*/gi, '')
+    .trim();
+  const match = clean.match(/^Room\s*\(([^)]+)\)$/i);
+  if (match) {
+    clean = `${match[1]} Room`;
+  }
+  return clean || 'Standard Room';
+};
+
 export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
-  const { user } = useManagementAuth();
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-
-  // Search & Status Filter
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-
-  // Block Modals state
-  const [isFormModalOpen, setIsFormModalOpen] = useState<boolean>(false);
-  const [editingBlock, setEditingBlock] = useState<Block | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  // Form Fields for Block & Floor/Room Builder
-  const [formData, setFormData] = useState<{
-    name: string;
-    code: string;
-    description: string;
-    status: 'ACTIVE' | 'INACTIVE';
-    totalFloors: number;
-    roomsPerFloor: number;
-    roomCapacity: number;
-    roomType: string;
-    autoGenerateRooms: boolean;
-  }>({
-    name: '',
-    code: '',
-    description: '',
-    status: 'ACTIVE',
-    totalFloors: 3,
-    roomsPerFloor: 5,
-    roomCapacity: 2,
-    roomType: 'Non-AC Room (2 Sharing)',
-    autoGenerateRooms: true,
-  });
-
-  // Delete confirmation modal state
-  const [deleteModalBlock, setDeleteModalBlock] = useState<Block | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
-
-  // Toast / notification feedback
-  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // =========================================================================
-  //                     FLOOR PLAN & ROOM EDITOR STATE
-  // =========================================================================
-  const [selectedFloorPlanBlock, setSelectedFloorPlanBlock] = useState<Block | null>(null);
-  const [floorPlanLoading, setFloorPlanLoading] = useState<boolean>(false);
-  const [floorPlanBlockData, setFloorPlanBlockData] = useState<Block | null>(null);
   const [activeFloorFilter, setActiveFloorFilter] = useState<number | 'ALL'>('ALL');
   const [inspectingRoom, setInspectingRoom] = useState<RoomItem | null>(null);
 
-  // Room Modal State (Add / Edit Room inside Floor Plan)
+  // Room Create/Edit Modal State
   const [isRoomModalOpen, setIsRoomModalOpen] = useState<boolean>(false);
   const [editingRoom, setEditingRoom] = useState<RoomItem | null>(null);
   const [roomFormError, setRoomFormError] = useState<string | null>(null);
   const [isSubmittingRoom, setIsSubmittingRoom] = useState<boolean>(false);
-  const [roomFormData, setRoomFormData] = useState<{
-    roomNumber: string;
-    floor: number;
-    roomType: string;
-    capacity: number;
-    status: 'ACTIVE' | 'INACTIVE' | 'UNDER_MAINTENANCE';
-  }>({
+  const [roomFormData, setRoomFormData] = useState<CreateRoomDto>({
+    blockId: '',
     roomNumber: '',
     floor: 1,
-    roomType: 'Non-AC Room (2 Sharing)',
+    roomType: '2 Sharing Room',
     capacity: 2,
     status: 'ACTIVE',
   });
+
+  // Delete Room Modal State
+  const [deleteRoomTarget, setDeleteRoomTarget] = useState<RoomItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Toast feedback
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isExportingExcel, setIsExportingExcel] = useState<boolean>(false);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ type, text });
@@ -113,8 +76,31 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
     }, 4000);
   };
 
-  // Fetch authoritative blocks from PostgreSQL
-  const fetchBlocks = useCallback(async (isBackground = false) => {
+  // Export entire hostel floor plan to Excel (.xlsx)
+  const handleExportExcel = async () => {
+    try {
+      setIsExportingExcel(true);
+      const blob = await managementApiService.exportFloorPlanExcel();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      a.download = `hostel_entire_floor_plan_${todayStr}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showToast('Entire hostel floor plan exported to Excel successfully.');
+    } catch (err: any) {
+      console.error('Failed to export floor plan:', err);
+      showToast(err.message || 'Failed to export hostel floor plan to Excel.', 'error');
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
+  // Fetch authoritative rooms & allocations from PostgreSQL
+  const fetchRooms = useCallback(async (isBackground = false) => {
     if (!isBackground) {
       setIsLoading(true);
     } else {
@@ -122,274 +108,106 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
     }
 
     try {
-      const response = await managementApiService.getBlocks({
+      const response = await managementApiService.getRooms({
         search: searchTerm,
-        status: statusFilter,
       });
-      setBlocks(response.blocks || []);
+      setRooms(response.rooms || []);
     } catch (err: any) {
-      console.error('Failed to load blocks from PostgreSQL:', err);
+      console.error('Failed to load rooms from PostgreSQL:', err);
+      showToast('Failed to load hostel floor plan data.', 'error');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm]);
 
-  // Initial load & filter change
   useEffect(() => {
-    fetchBlocks(false);
-  }, [fetchBlocks]);
+    fetchRooms(false);
+  }, [fetchRooms]);
 
-  // Scoped blocks for the active user role (Wardens see their assigned gender hostel, Admins see all)
-  const roleScopedBlocks = useMemo(() => {
-    if (!blocks || !Array.isArray(blocks)) return [];
-    if (!user?.role || user.role === 'ADMIN' || user.role === 'HOSTEL_ADMIN' || user.role === 'SUPPORT_ADMIN') {
-      return blocks;
+  // Helper to extract occupants robustly from either allocations or activeOccupants
+  const getRoomOccupants = useCallback((r: RoomItem) => {
+    if (r.allocations && r.allocations.length > 0) {
+      return r.allocations
+        .filter((a: any) => a.status === 'ACTIVE' || !a.status)
+        .map((a: any) => ({
+          id: a.id || a.allocationId,
+          name: a.student?.name || a.name || 'Resident',
+          jntuNo: a.student?.jntuNo || a.jntuNo || '',
+          bedNumber: a.bedNumber || 'Bed',
+          department: a.student?.department || a.department || '',
+          phone: a.student?.phoneNumber || a.phone || '',
+        }));
     }
-    return blocks.filter((b) => {
-      if (user.role === 'CHIEF_WARDEN_BOYS' || user.role === 'WARDEN_BOYS') {
-        const isBoys = b.name.toLowerCase().includes('boys') || b.code.toUpperCase().startsWith('BH') || b.code.toUpperCase().startsWith('BB');
-        if (!isBoys) return false;
-      }
-      if (user.role === 'CHIEF_WARDEN_GIRLS' || user.role === 'WARDEN_GIRLS') {
-        const isGirls = b.name.toLowerCase().includes('girls') || b.code.toUpperCase().startsWith('GH') || b.code.toUpperCase().startsWith('GB');
-        if (!isGirls) return false;
-      }
-      return true;
-    });
-  }, [blocks, user]);
-
-  // Summary counts for filter pills (calculated accurately from roleScopedBlocks)
-  const counts = useMemo(() => {
-    const total = roleScopedBlocks.length;
-    const active = roleScopedBlocks.filter((b) => b.status === 'ACTIVE').length;
-    const inactive = roleScopedBlocks.filter((b) => b.status === 'INACTIVE').length;
-    return { total, active, inactive };
-  }, [roleScopedBlocks]);
-
-  // Filtered blocks for display matching search term and status filter
-  const displayBlocks = useMemo(() => {
-    return roleScopedBlocks.filter((b) => {
-      const term = searchTerm.trim().toLowerCase();
-      const matchesSearch =
-        !term ||
-        b.name.toLowerCase().includes(term) ||
-        b.code.toLowerCase().includes(term) ||
-        (b.description && b.description.toLowerCase().includes(term));
-
-      const matchesStatus = statusFilter === 'ALL' || b.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [roleScopedBlocks, searchTerm, statusFilter]);
-
-  // Open Create Modal
-  const handleOpenCreate = () => {
-    setEditingBlock(null);
-    setFormData({
-      name: '',
-      code: '',
-      description: '',
-      status: 'ACTIVE',
-      totalFloors: 3,
-      roomsPerFloor: 5,
-      roomCapacity: 2,
-      roomType: 'Non-AC Room (2 Sharing)',
-      autoGenerateRooms: true,
-    });
-    setFormError(null);
-    setIsFormModalOpen(true);
-  };
-
-  // Open Edit Modal
-  const handleOpenEdit = (block: Block) => {
-    setEditingBlock(block);
-    setFormData({
-      name: block.name,
-      code: block.code,
-      description: block.description || '',
-      status: block.status,
-      totalFloors: 3,
-      roomsPerFloor: 5,
-      roomCapacity: 2,
-      roomType: 'Non-AC Room (2 Sharing)',
-      autoGenerateRooms: false,
-    });
-    setFormError(null);
-    setIsFormModalOpen(true);
-  };
-
-  // Submit Create / Edit form
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-
-    const name = formData.name.trim();
-    const code = formData.code.trim().toUpperCase();
-
-    if (!name || name.length < 2) {
-      setFormError('Block name must be at least 2 characters.');
-      return;
+    if (r.activeOccupants && r.activeOccupants.length > 0) {
+      return r.activeOccupants.map((o: any) => ({
+        id: o.allocationId || o.studentId,
+        name: o.name || 'Resident',
+        jntuNo: o.jntuNo || '',
+        bedNumber: o.bedNumber || 'Bed',
+        department: o.department || '',
+        phone: o.phone || '',
+      }));
     }
-
-    if (!code || code.length < 2) {
-      setFormError('Block code must be at least 2 characters.');
-      return;
-    }
-
-    const existingBlockWithCode = blocks.find(
-      (b) => b.code.toUpperCase() === code && (!editingBlock || b.id !== editingBlock.id)
-    );
-    if (existingBlockWithCode) {
-      setFormError(`A block with code '${code}' already exists in PostgreSQL database (${existingBlockWithCode.name}). Please enter a unique code or edit the existing block.`);
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      if (editingBlock) {
-        const updatePayload: UpdateBlockDto = {
-          name,
-          code,
-          description: formData.description.trim() || null,
-          status: formData.status,
-        };
-        await managementApiService.updateBlock(editingBlock.id, updatePayload);
-
-        // Auto-generate additional floor rooms if enabled on edit
-        if (formData.autoGenerateRooms && formData.totalFloors > 0 && formData.roomsPerFloor > 0) {
-          let roomsGenerated = 0;
-          for (let fl = 1; fl <= formData.totalFloors; fl++) {
-            for (let rIdx = 1; rIdx <= formData.roomsPerFloor; rIdx++) {
-              const roomNumber = `${fl}${String(rIdx).padStart(2, '0')}`;
-              try {
-                await managementApiService.createRoom({
-                  blockId: editingBlock.id,
-                  floor: fl,
-                  roomNumber,
-                  capacity: formData.roomCapacity,
-                  roomType: formData.roomType,
-                  status: 'ACTIVE',
-                });
-                roomsGenerated++;
-              } catch {
-                // Room already exists, skip
-              }
-            }
-          }
-          showToast(`Block '${name}' updated with ${roomsGenerated} rooms generated across ${formData.totalFloors} floors.`, 'success');
-        } else {
-          showToast(`Block '${name}' updated successfully.`, 'success');
-        }
-      } else {
-        const createPayload: CreateBlockDto = {
-          name,
-          code,
-          description: formData.description.trim() || null,
-          status: formData.status,
-        };
-        const res = await managementApiService.createBlock(createPayload);
-        const newBlockId = res.block.id;
-
-        // Auto-generate floor rooms if enabled
-        if (formData.autoGenerateRooms && formData.totalFloors > 0 && formData.roomsPerFloor > 0) {
-          let roomsGenerated = 0;
-          for (let fl = 1; fl <= formData.totalFloors; fl++) {
-            for (let rIdx = 1; rIdx <= formData.roomsPerFloor; rIdx++) {
-              const roomNumber = `${fl}${String(rIdx).padStart(2, '0')}`;
-              try {
-                await managementApiService.createRoom({
-                  blockId: newBlockId,
-                  floor: fl,
-                  roomNumber,
-                  capacity: formData.roomCapacity,
-                  roomType: formData.roomType,
-                  status: 'ACTIVE',
-                });
-                roomsGenerated++;
-              } catch (roomErr) {
-                console.warn('Room auto-generation error:', roomErr);
-              }
-            }
-          }
-          showToast(`Block '${name}' created with ${roomsGenerated} rooms generated across ${formData.totalFloors} floors!`, 'success');
-        } else {
-          showToast(`Block '${name}' created successfully.`, 'success');
-        }
-      }
-
-      setIsFormModalOpen(false);
-      fetchBlocks(true);
-    } catch (err: any) {
-      setFormError(err.message || 'Failed to save block details.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Open Delete Modal
-  const handleOpenDelete = (block: Block) => {
-    setDeleteModalBlock(block);
-    setDeleteError(null);
-  };
-
-  // Confirm Delete Block
-  const handleConfirmDelete = async () => {
-    if (!deleteModalBlock) return;
-
-    setIsDeleting(true);
-    setDeleteError(null);
-
-    try {
-      await managementApiService.deleteBlock(deleteModalBlock.id);
-      showToast(`Block '${deleteModalBlock.name}' deleted successfully.`, 'success');
-      setDeleteModalBlock(null);
-      fetchBlocks(true);
-    } catch (err: any) {
-      console.error('Error deleting block:', err);
-      setDeleteError(err.message || 'Cannot delete block due to assigned students or rooms.');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  // =========================================================================
-  //                  FLOOR PLAN & ROOM EDITOR HANDLERS
-  // =========================================================================
-  const loadFloorPlanData = useCallback(async (blockId: string) => {
-    setFloorPlanLoading(true);
-    try {
-      const res = await managementApiService.getBlock(blockId);
-      if (res.success && res.block) {
-        setFloorPlanBlockData(res.block);
-      }
-    } catch (err: any) {
-      showToast('Failed to load block floor plan details.', 'error');
-    } finally {
-      setFloorPlanLoading(false);
-    }
+    return [];
   }, []);
 
-  const handleOpenFloorPlan = (block: Block) => {
-    setSelectedFloorPlanBlock(block);
-    setActiveFloorFilter('ALL');
-    loadFloorPlanData(block.id);
-  };
+  // Overall Statistics
+  const stats = useMemo(() => {
+    const totalRooms = rooms.length;
+    const totalCapacity = rooms.reduce((acc, r) => acc + (r.capacity || 0), 0);
+    const totalOccupants = rooms.reduce((acc, r) => acc + (getRoomOccupants(r).length || r.occupancy || 0), 0);
+    const availableBeds = Math.max(0, totalCapacity - totalOccupants);
+    return { totalRooms, totalCapacity, totalOccupants, availableBeds };
+  }, [rooms, getRoomOccupants]);
 
-  const handleCloseFloorPlan = () => {
-    setSelectedFloorPlanBlock(null);
-    setFloorPlanBlockData(null);
-  };
+  // Floor Definitions (Authoritative Source of Truth: Floor -> Room -> Students)
+  const floorGroupings = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
 
-  // Open Add Room Modal for Floor Plan
-  const handleOpenAddRoom = (defaultFloor = 1) => {
-    if (!selectedFloorPlanBlock) return;
+    const filterRoom = (r: RoomItem) => {
+      if (!term) return true;
+      const matchesNum = r.roomNumber.toLowerCase().includes(term);
+      const matchesType = r.roomType?.toLowerCase().includes(term);
+      const occupants = getRoomOccupants(r);
+      const matchesStudent = occupants.some(
+        (occ) =>
+          occ.name.toLowerCase().includes(term) ||
+          occ.jntuNo.toLowerCase().includes(term)
+      );
+      return matchesNum || matchesType || matchesStudent;
+    };
+
+    const floor1Rooms = rooms
+      .filter((r) => (r.floor === 1 || (r.floor == null && r.roomNumber.startsWith('1') && r.roomNumber !== '109')) && r.roomNumber !== '208')
+      .filter(filterRoom)
+      .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true }));
+
+    const floor2Rooms = rooms
+      .filter((r) => (r.floor === 2 || (r.floor == null && r.roomNumber.startsWith('2') && r.roomNumber !== '208')))
+      .filter(filterRoom)
+      .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true }));
+
+    const floor3Rooms = rooms
+      .filter((r) => (r.floor === 3 || (r.floor == null && (r.roomNumber.startsWith('3') || r.roomNumber === '109' || r.roomNumber === '208'))))
+      .filter(filterRoom)
+      .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, undefined, { numeric: true }));
+
+    return [
+      { floorNum: 1, floorLabel: 'First Floor', rooms: floor1Rooms },
+      { floorNum: 2, floorLabel: 'Second Floor', rooms: floor2Rooms },
+      { floorNum: 3, floorLabel: 'Third Floor', rooms: floor3Rooms },
+    ];
+  }, [rooms, searchTerm, getRoomOccupants]);
+
+  // Handlers for Room Modals
+  const handleOpenAddRoom = (floorNum: number = 1) => {
     setEditingRoom(null);
     setRoomFormData({
+      blockId: rooms[0]?.blockId || '',
       roomNumber: '',
-      floor: defaultFloor,
-      roomType: 'Non-AC Room (2 Sharing)',
+      floor: floorNum,
+      roomType: '2 Sharing Room',
       capacity: 2,
       status: 'ACTIVE',
     });
@@ -397,149 +215,88 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
     setIsRoomModalOpen(true);
   };
 
-  // Open Edit Room Modal for Floor Plan
   const handleOpenEditRoom = (room: RoomItem) => {
     setEditingRoom(room);
     setRoomFormData({
+      blockId: room.blockId,
       roomNumber: room.roomNumber,
       floor: room.floor || 1,
-      roomType: room.roomType || 'Non-AC Room (2 Sharing)',
+      roomType: formatRoomType(room.roomType) || '2 Sharing Room',
       capacity: room.capacity || 2,
-      status: room.status,
+      status: (room.status as any) || 'ACTIVE',
     });
     setRoomFormError(null);
     setIsRoomModalOpen(true);
   };
 
-  // Toggle Maintenance Status for a Room directly
-  const handleToggleMaintenance = async (room: RoomItem) => {
-    if (!selectedFloorPlanBlock) return;
-    const newStatus = room.status === 'UNDER_MAINTENANCE' ? 'ACTIVE' : 'UNDER_MAINTENANCE';
-    try {
-      await managementApiService.updateRoom(room.id, { status: newStatus });
-      showToast(`Room ${room.roomNumber} status set to ${newStatus}.`, 'success');
-      loadFloorPlanData(selectedFloorPlanBlock.id);
-      fetchBlocks(true);
-    } catch (err: any) {
-      showToast(err.message || 'Failed to update room status.', 'error');
-    }
-  };
-
-  // Delete Room from Floor Plan
-  const handleDeleteRoom = async (room: RoomItem) => {
-    if (!selectedFloorPlanBlock) return;
-    if (room.activeOccupants && room.activeOccupants.length > 0) {
-      showToast(`Cannot delete Room ${room.roomNumber} because it currently has ${room.activeOccupants.length} allocated resident(s).`, 'error');
-      return;
-    }
-
-    if (!window.confirm(`Are you sure you want to delete Room ${room.roomNumber} from ${selectedFloorPlanBlock.name}?`)) {
-      return;
-    }
-
-    try {
-      await managementApiService.deleteRoom(room.id);
-      showToast(`Room ${room.roomNumber} deleted successfully.`, 'success');
-      loadFloorPlanData(selectedFloorPlanBlock.id);
-      fetchBlocks(true);
-    } catch (err: any) {
-      showToast(err.message || 'Failed to delete room.', 'error');
-    }
-  };
-
-  // Submit Room Form (Add / Edit)
-  const handleSaveRoom = async (e: React.FormEvent) => {
+  const handleSubmitRoomForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFloorPlanBlock) return;
     setRoomFormError(null);
 
-    const rmNum = roomFormData.roomNumber.trim();
-    if (!rmNum) {
-      setRoomFormError('Please enter a valid room number (e.g. 101, 119).');
+    if (!roomFormData.roomNumber.trim()) {
+      setRoomFormError('Room number is required.');
+      return;
+    }
+    if (roomFormData.capacity <= 0 || roomFormData.capacity > 20) {
+      setRoomFormError('Capacity must be between 1 and 20.');
       return;
     }
 
     setIsSubmittingRoom(true);
     try {
       if (editingRoom) {
-        await managementApiService.updateRoom(editingRoom.id, {
-          roomNumber: rmNum,
-          floor: Number(roomFormData.floor),
-          roomType: roomFormData.roomType,
-          capacity: Number(roomFormData.capacity),
-          status: roomFormData.status,
-        });
-        showToast(`Room ${rmNum} updated successfully.`, 'success');
+        await managementApiService.updateRoom(editingRoom.id, roomFormData);
+        showToast(`Room '${roomFormData.roomNumber}' updated successfully.`);
       } else {
-        await managementApiService.createRoom({
-          blockId: selectedFloorPlanBlock.id,
-          roomNumber: rmNum,
-          floor: Number(roomFormData.floor),
-          roomType: roomFormData.roomType,
-          capacity: Number(roomFormData.capacity),
-          status: roomFormData.status,
-        });
-        showToast(`Room ${rmNum} created in ${selectedFloorPlanBlock.name}.`, 'success');
+        await managementApiService.createRoom(roomFormData);
+        showToast(`Room '${roomFormData.roomNumber}' added successfully.`);
       }
-
       setIsRoomModalOpen(false);
-      loadFloorPlanData(selectedFloorPlanBlock.id);
-      fetchBlocks(true);
+      fetchRooms(false);
     } catch (err: any) {
-      setRoomFormError(err.message || 'Failed to save room details.');
+      setRoomFormError(err.message || 'Failed to save room record.');
     } finally {
       setIsSubmittingRoom(false);
     }
   };
 
-  // Helper for decorative block watermark
-  const getDecorativeLetter = (block: Block) => {
-    const code = block.code.toUpperCase();
-    if (code.startsWith('BH')) return 'BH';
-    if (code.startsWith('GH')) return 'GH';
-    return code.substring(0, 2);
+  const handleConfirmDeleteRoom = async () => {
+    if (!deleteRoomTarget) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await managementApiService.deleteRoom(deleteRoomTarget.id);
+      showToast(`Room '${deleteRoomTarget.roomNumber}' removed successfully.`);
+      setDeleteRoomTarget(null);
+      fetchRooms(false);
+    } catch (err: any) {
+      setDeleteError(err.message || 'Failed to delete room.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  // Group rooms by floor for Floor Plan view
-  const floorGroupings = useMemo(() => {
-    if (!floorPlanBlockData || !floorPlanBlockData.rooms) return [];
-
-    const map = new Map<number, RoomItem[]>();
-    for (const r of floorPlanBlockData.rooms) {
-      const fl = r.floor || 1;
-      if (!map.has(fl)) map.set(fl, []);
-      map.get(fl)!.push(r);
-    }
-
-    const sortedFloors = Array.from(map.keys()).sort((a, b) => a - b);
-    return sortedFloors.map((fl) => ({
-      floorNum: fl,
-      floorLabel: fl === 0 ? 'Ground Floor' : `Floor ${fl}`,
-      rooms: map.get(fl) || [],
-    }));
-  }, [floorPlanBlockData]);
-
   return (
-    <div className="campusstay-management-page" style={{ padding: '1.5rem', background: '#F8FAFC', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div className="block-mgmt-page" style={{ padding: 'clamp(1rem, 2.5vw, 2rem)', maxWidth: '1440px', margin: '0 auto' }}>
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className={`mgmt-toast ${toastMessage.type}`}
+          className={`toast-alert ${toastMessage.type === 'success' ? 'toast-success' : 'toast-error'}`}
           role="status"
           style={{
             position: 'fixed',
-            bottom: '1.5rem',
-            right: '1.5rem',
+            bottom: '24px',
+            right: '24px',
             zIndex: 9999,
-            background: toastMessage.type === 'success' ? '#065F46' : '#991B1B',
-            color: '#FFFFFF',
-            padding: '0.85rem 1.25rem',
-            borderRadius: '12px',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.9rem',
+            gap: '8px',
+            padding: '12px 18px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+            background: toastMessage.type === 'success' ? '#10B981' : '#EF4444',
+            color: '#FFFFFF',
             fontWeight: 600,
           }}
         >
@@ -548,92 +305,130 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
         </div>
       )}
 
-      {/* Page Header */}
-      <div className="block-header-wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      {/* Top Header Section */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
         <div>
-          <h1 className="block-header-title" style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
-            Hostel Block & Floor Plan Management
-          </h1>
-          <p className="block-header-subtitle" style={{ fontSize: '0.875rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
-            Manage BH-1, BH-2, GH-1 residential blocks, interactive floor plans, rooms, bed capacities, and maintenance status.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ background: '#EEF2FF', padding: '0.65rem', borderRadius: '12px', color: '#151B54', display: 'flex' }}>
+              <LayoutGrid size={24} />
+            </div>
+            <div>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+                Hostel Floor Plan
+              </h1>
+              <p style={{ fontSize: '0.875rem', color: '#64748B', margin: '0.2rem 0 0 0' }}>
+                Floor-wise room distribution and student allocations from authoritative hostel records.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="block-header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
           <button
             type="button"
-            onClick={() => fetchBlocks(true)}
+            onClick={() => fetchRooms(true)}
             disabled={isRefreshing}
             style={{
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              borderRadius: '10px',
-              padding: '0.6rem 1rem',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: '#334155',
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.35rem',
+              gap: '0.4rem',
+              padding: '0.6rem 1rem',
+              borderRadius: '8px',
+              border: '1px solid #CBD5E1',
+              background: '#FFFFFF',
+              color: '#334155',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
             }}
           >
             <RotateCw size={15} className={isRefreshing ? 'spin-anim' : ''} />
-            <span>Refresh</span>
+            <span>Sync</span>
           </button>
 
           <button
             type="button"
-            onClick={handleOpenCreate}
+            onClick={handleExportExcel}
+            disabled={isExportingExcel}
             style={{
-              background: 'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
               padding: '0.6rem 1.1rem',
+              borderRadius: '8px',
+              border: '1px solid #10B981',
+              background: '#ECFDF5',
+              color: '#065F46',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              cursor: isExportingExcel ? 'not-allowed' : 'pointer',
+              transition: 'all 0.15s ease',
+              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.12)',
+            }}
+            title="Export entire hostel floor plan and student allocations to Excel (.xlsx)"
+          >
+            <FileSpreadsheet size={16} color="#059669" className={isExportingExcel ? 'spin-anim' : ''} />
+            <span>{isExportingExcel ? 'Exporting...' : 'Export Excel'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleOpenAddRoom(activeFloorFilter === 'ALL' ? 1 : activeFloorFilter)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.6rem 1.15rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: '#151B54',
+              color: '#FFFFFF',
               fontSize: '0.85rem',
               fontWeight: 700,
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+              boxShadow: '0 4px 12px rgba(21, 27, 84, 0.25)',
             }}
           >
             <Plus size={16} />
-            <span>+ Add New Block</span>
+            <span>Add Room</span>
           </button>
         </div>
       </div>
 
-      {/* Scope Info Banner for Wardens */}
-      {blocks.length > roleScopedBlocks.length && (
-        <div style={{
-          background: '#EFF6FF',
-          border: '1px solid #BFDBFE',
-          color: '#1E40AF',
-          borderRadius: '12px',
-          padding: '0.85rem 1.25rem',
-          marginBottom: '1.25rem',
-          fontSize: '0.875rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.65rem',
-        }}>
-          <Info size={20} color="#2563EB" style={{ flexShrink: 0 }} />
-          <div>
-            <strong>Scoped Role Access ({user?.role}):</strong> Displaying {roleScopedBlocks.length} assigned block(s) out of {blocks.length} total blocks stored in PostgreSQL database. To view or manage all blocks (BH-1, BH-2, GH-1), log in as <strong>Main Admin (ADMIN_MAIN)</strong>.
-          </div>
+      {/* Summary Statistics Bar */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div style={{ background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Hostel Floors</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', marginTop: '0.2rem' }}>3 Floors</div>
+          <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 600 }}>Ground + 3 Plan</span>
         </div>
-      )}
 
-      {/* Search & Filter Bar */}
+        <div style={{ background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Rooms</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#151B54', marginTop: '0.2rem' }}>{stats.totalRooms} Rooms</div>
+          <span style={{ fontSize: '0.75rem', color: '#64748B' }}>19 Authoritative Rooms</span>
+        </div>
+
+        <div style={{ background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Bed Capacity</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4F46E5', marginTop: '0.2rem' }}>{stats.totalCapacity} Beds</div>
+          <span style={{ fontSize: '0.75rem', color: '#64748B' }}>100% Configured</span>
+        </div>
+
+        <div style={{ background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Allocated Residents</span>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#16A34A', marginTop: '0.2rem' }}>{stats.totalOccupants} Students</div>
+          <span style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: 700 }}>Full Occupancy</span>
+        </div>
+      </div>
+
+      {/* Search & Floor Filter Toolbar */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: '280px' }}>
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
           <input
             type="text"
-            placeholder="Search blocks by name (BH-1, BH-2, GH-1), code, or description..."
+            placeholder="Search room number (101, 201, 301) or resident student name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -646,541 +441,393 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
               background: '#FFFFFF',
             }}
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {(['ALL', 'ACTIVE', 'INACTIVE'] as const).map((st) => (
+        {/* Floor Filter Tabs */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setActiveFloorFilter('ALL')}
+            style={{
+              padding: '0.55rem 1rem',
+              borderRadius: '8px',
+              fontSize: '0.825rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              border: activeFloorFilter === 'ALL' ? 'none' : '1px solid #CBD5E1',
+              background: activeFloorFilter === 'ALL' ? '#151B54' : '#FFFFFF',
+              color: activeFloorFilter === 'ALL' ? '#FFFFFF' : '#475569',
+            }}
+          >
+            All Floors ({rooms.length})
+          </button>
+          {floorGroupings.map((fg) => (
             <button
-              key={st}
+              key={fg.floorNum}
               type="button"
-              onClick={() => setStatusFilter(st)}
+              onClick={() => setActiveFloorFilter(fg.floorNum)}
               style={{
-                padding: '0.5rem 1rem',
+                padding: '0.55rem 1rem',
                 borderRadius: '8px',
-                fontSize: '0.8rem',
+                fontSize: '0.825rem',
                 fontWeight: 700,
                 cursor: 'pointer',
-                border: statusFilter === st ? 'none' : '1px solid #CBD5E1',
-                background: statusFilter === st ? '#1E1B4B' : '#FFFFFF',
-                color: statusFilter === st ? '#FFFFFF' : '#475569',
+                border: activeFloorFilter === fg.floorNum ? 'none' : '1px solid #CBD5E1',
+                background: activeFloorFilter === fg.floorNum ? '#151B54' : '#FFFFFF',
+                color: activeFloorFilter === fg.floorNum ? '#FFFFFF' : '#475569',
               }}
             >
-              {st === 'ALL' ? `All (${counts.total})` : st === 'ACTIVE' ? `Active (${counts.active})` : `Inactive (${counts.inactive})`}
+              {fg.floorLabel} ({fg.rooms.length})
             </button>
           ))}
         </div>
       </div>
 
       {/* Loading Skeleton */}
-      {isLoading && blocks.length === 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
-          {[1, 2, 3].map((n) => (
-            <div key={n} style={{ height: '220px', background: '#E2E8F0', borderRadius: '16px' }} />
-          ))}
+      {isLoading && (
+        <div style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>
+          <RotateCw size={28} className="spin-anim" style={{ marginBottom: '0.5rem' }} />
+          <div>Loading authoritative hostel floor plan...</div>
         </div>
       )}
 
-      {/* Block Cards Grid */}
-      {!isLoading && displayBlocks.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
-          {displayBlocks.map((block) => {
-            const isActive = block.status === 'ACTIVE';
-            const isBoys =
-              block.name.toLowerCase().includes('boys') ||
-              block.code.toUpperCase().startsWith('BH') ||
-              block.code.toUpperCase().startsWith('BB');
-
-            const totalCapacity = block.totalCapacity ?? 0;
-            const occupied = block.occupied ?? 0;
-            const vacant = block.vacant ?? Math.max(0, totalCapacity - occupied - (block.maintenance ?? 0));
-            const maintenance = block.maintenance ?? 0;
-            const vacancyRate = block.vacancyRate ?? (totalCapacity > 0 ? `${Math.round((vacant / totalCapacity) * 100)}%` : '0%');
-            const decorativeLetter = getDecorativeLetter(block);
-
-            return (
-              <div
-                key={block.id}
-                style={{
-                  background: '#FFFFFF',
-                  borderRadius: '16px',
-                  padding: '1.5rem',
-                  border: '1px solid #E2E8F0',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                }}
-              >
-                {/* Decorative Watermark */}
-                <span
-                  style={{
-                    position: 'absolute',
-                    right: '-10px',
-                    bottom: '-15px',
-                    fontSize: '6rem',
-                    fontWeight: 900,
-                    color: '#F1F5F9',
-                    userSelect: 'none',
-                    pointerEvents: 'none',
-                    letterSpacing: '-0.05em',
-                  }}
-                >
-                  {decorativeLetter}
-                </span>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                          {block.name}
-                        </h3>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: '20px', background: isBoys ? '#EFF6FF' : '#FCE7F3', color: isBoys ? '#1D4ED8' : '#DB2777' }}>
-                          {isBoys ? 'Boys Hostel' : 'Girls Hostel'}
-                        </span>
-                      </div>
-                      <p style={{ fontSize: '0.8rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
-                        Code: <strong>{block.code}</strong> — {block.description || 'Hostel Residential Wing'}
-                      </p>
+      {/* Floor Sections Grid (Hierarchy: Floor -> Room -> Students) */}
+      {!isLoading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {floorGroupings
+            .filter((fg) => activeFloorFilter === 'ALL' || activeFloorFilter === fg.floorNum)
+            .map((fg) => (
+              <section key={fg.floorNum} aria-labelledby={`floor-heading-${fg.floorNum}`} style={{ background: '#FFFFFF', borderRadius: '18px', padding: '1.5rem', border: '1px solid #E2E8F0', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
+                {/* Floor Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: '2px solid #F1F5F9' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <div style={{ background: '#EEF2FF', padding: '0.45rem', borderRadius: '8px', color: '#4F46E5', display: 'flex' }}>
+                      <Layers size={18} />
                     </div>
-
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '12px', background: isActive ? '#DCFCE7' : '#F1F5F9', color: isActive ? '#15803D' : '#64748B' }}>
-                      {isActive ? 'Active' : 'Inactive'}
+                    <div>
+                      <h2 id={`floor-heading-${fg.floorNum}`} style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                        {fg.floorLabel}
+                      </h2>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, background: '#EFF6FF', color: '#1E40AF', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
+                      {fg.rooms.length} Rooms Configured
                     </span>
                   </div>
 
-                  {/* Metrics List */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', background: '#F8FAFC', padding: '0.85rem', borderRadius: '12px', marginBottom: '1.25rem', fontSize: '0.825rem' }}>
-                    <div>
-                      <span style={{ color: '#64748B', display: 'block', fontSize: '0.75rem' }}>Total Capacity</span>
-                      <strong style={{ fontSize: '1rem', color: '#0F172A' }}>{totalCapacity} Beds</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: '#64748B', display: 'block', fontSize: '0.75rem' }}>Occupied</span>
-                      <strong style={{ fontSize: '1rem', color: '#16A34A' }}>{occupied} Beds</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: '#64748B', display: 'block', fontSize: '0.75rem' }}>Vacant (Rate)</span>
-                      <strong style={{ fontSize: '1rem', color: '#2563EB' }}>{vacant} Beds ({vacancyRate})</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: '#64748B', display: 'block', fontSize: '0.75rem' }}>Maintenance</span>
-                      <strong style={{ fontSize: '1rem', color: '#D97706' }}>{maintenance} Beds</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Footer Action Buttons */}
-                <div style={{ display: 'flex', gap: '0.5rem', paddingTop: '0.75rem', borderTop: '1px solid #F1F5F9', zIndex: 2 }}>
                   <button
                     type="button"
-                    onClick={() => handleOpenFloorPlan(block)}
+                    onClick={() => handleOpenAddRoom(fg.floorNum)}
                     style={{
-                      flex: 2,
-                      background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)',
-                      color: '#4338CA',
-                      border: '1px solid #C7D2FE',
-                      borderRadius: '8px',
-                      padding: '0.55rem 0.75rem',
-                      fontSize: '0.8rem',
+                      background: '#F8FAFC',
+                      color: '#475569',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '6px',
+                      padding: '0.4rem 0.75rem',
+                      fontSize: '0.775rem',
                       fontWeight: 700,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.35rem',
+                      gap: '0.3rem',
                     }}
                   >
-                    <LayoutGrid size={14} />
-                    <span>Floor Plan & Rooms</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(block)}
-                    style={{
-                      flex: 1,
-                      background: '#FFFFFF',
-                      color: '#334155',
-                      border: '1px solid #CBD5E1',
-                      borderRadius: '8px',
-                      padding: '0.55rem 0.75rem',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.25rem',
-                    }}
-                  >
-                    <Edit2 size={13} />
-                    <span>Edit</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOpenDelete(block)}
-                    style={{
-                      background: '#FEF2F2',
-                      color: '#DC2626',
-                      border: '1px solid #FCA5A5',
-                      borderRadius: '8px',
-                      padding: '0.55rem 0.65rem',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                    title="Delete Block"
-                  >
-                    <Trash2 size={13} />
+                    <Plus size={13} /> Add Room
                   </button>
                 </div>
-              </div>
-            );
-          })}
+
+                {/* Rooms Grid for this Floor */}
+                {fg.rooms.length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8' }}>
+                    No rooms matched the search query on {fg.floorLabel}.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                    {fg.rooms.map((r) => {
+                      const occupants = getRoomOccupants(r);
+                      const activeCount = occupants.length;
+                      const isFull = activeCount >= (r.capacity || 2);
+
+                      return (
+                        <div
+                          key={r.id}
+                          style={{
+                            background: isFull ? '#FAFCFF' : '#FFFFFF',
+                            border: isFull ? '1.5px solid #C7D2FE' : '1px solid #E2E8F0',
+                            borderRadius: '14px',
+                            padding: '1.15rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                          }}
+                        >
+                          <div>
+                            {/* Card Top Row: Room Number & Status Pill */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.01em' }}>
+                                Room {r.roomNumber}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: '0.725rem',
+                                  fontWeight: 800,
+                                  padding: '0.2rem 0.6rem',
+                                  borderRadius: '9999px',
+                                  background: isFull ? '#DCFCE7' : '#EFF6FF',
+                                  color: isFull ? '#15803D' : '#1D4ED8',
+                                }}
+                              >
+                                {isFull ? `Full (${activeCount}/${r.capacity})` : `Occupied (${activeCount}/${r.capacity})`}
+                              </span>
+                            </div>
+
+                            {/* Room Type Description */}
+                            <div style={{ fontSize: '0.775rem', color: '#64748B', marginBottom: '0.75rem' }}>
+                              {formatRoomType(r.roomType)} • Capacity: {r.capacity} Beds
+                            </div>
+
+                            {/* Occupant Students List */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.85rem' }}>
+                              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                Allocated Students:
+                              </span>
+                              {occupants.length > 0 ? (
+                                occupants.map((occ: any, idx: number) => (
+                                  <div
+                                    key={occ.id || idx}
+                                    style={{
+                                      fontSize: '0.8rem',
+                                      color: '#1E293B',
+                                      background: '#F1F5F9',
+                                      padding: '0.35rem 0.6rem',
+                                      borderRadius: '6px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      gap: '0.35rem',
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden' }}>
+                                      <UserCheck size={13} color="#16A34A" style={{ flexShrink: 0 }} />
+                                      <span style={{ fontWeight: 700, textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                        {occ.name}
+                                      </span>
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', color: '#64748B', fontFamily: 'monospace' }}>
+                                      {occ.bedNumber || `Bed-${idx + 1}`}
+                                    </span>
+                                  </div>
+                                ))
+                              ) : (
+                                <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontStyle: 'italic' }}>
+                                  No occupants allocated
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Card Actions Bottom Row */}
+                          <div style={{ display: 'flex', gap: '0.4rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.75rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => setInspectingRoom(r)}
+                              style={{
+                                flex: 2,
+                                background: '#EEF2FF',
+                                color: '#4338CA',
+                                border: '1px solid #C7D2FE',
+                                borderRadius: '6px',
+                                padding: '0.4rem 0.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.25rem',
+                              }}
+                              title="Inspect full resident details"
+                            >
+                              <Eye size={13} /> View Details ({activeCount})
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditRoom(r)}
+                              style={{
+                                flex: 1,
+                                background: '#FFFFFF',
+                                color: '#475569',
+                                border: '1px solid #CBD5E1',
+                                borderRadius: '6px',
+                                padding: '0.4rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                              title="Edit Room Configuration"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setDeleteRoomTarget(r)}
+                              style={{
+                                background: '#FEF2F2',
+                                color: '#DC2626',
+                                border: '1px solid #FCA5A5',
+                                borderRadius: '6px',
+                                padding: '0.4rem 0.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                              title="Delete Room"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            ))}
         </div>
       )}
 
       {/* =========================================================================
-          INTERACTIVE FLOOR PLAN & ROOM LAYOUT EDITOR MODAL
+          MODAL: INSPECT ROOM RESIDENTS
           ========================================================================= */}
-      {selectedFloorPlanBlock && (
+      {inspectingRoom && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '20px', width: '100%', maxWidth: '1100px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            
-            {/* Modal Header */}
-            <div style={{ padding: '1.25rem 1.5rem', background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)', color: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                  <LayoutGrid size={22} color="#818CF8" />
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, letterSpacing: '-0.01em' }}>
-                    {selectedFloorPlanBlock.name} — Interactive Floor Plan Editor
-                  </h2>
+          <div style={{ background: '#FFFFFF', borderRadius: '18px', width: '100%', maxWidth: '640px', maxHeight: '85vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', background: '#151B54', color: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <BedDouble size={22} color="#818CF8" />
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
+                    Room {inspectingRoom.roomNumber} Resident Details
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
+                    Floor {inspectingRoom.floor || 1} • {inspectingRoom.roomType || 'Standard'} • Capacity: {inspectingRoom.capacity} Beds
+                  </span>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '0.25rem 0 0 2rem' }}>
-                  Block Code: <strong>{selectedFloorPlanBlock.code}</strong> | View and edit rooms, capacities, and maintenance status floor by floor.
-                </p>
               </div>
-
-              <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => handleOpenAddRoom(activeFloorFilter === 'ALL' ? 1 : activeFloorFilter)}
-                  style={{
-                    background: '#4F46E5',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '0.55rem 0.95rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                  }}
-                >
-                  <Plus size={15} /> Add Room
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCloseFloorPlan}
-                  style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '0.25rem' }}
-                >
-                  <X size={22} />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, background: '#F8FAFC' }}>
-              {floorPlanLoading ? (
-                <div style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>
-                  <RotateCw size={24} className="spin-anim" style={{ marginBottom: '0.5rem' }} />
-                  <div>Loading block rooms and floor plan...</div>
-                </div>
-              ) : (
-                <>
-                  {/* Summary Bar */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
-                    <div style={{ background: '#FFFFFF', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Total Configured Rooms</span>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0F172A' }}>
-                        {floorPlanBlockData?.rooms?.length || 0}
-                      </div>
-                    </div>
-                    <div style={{ background: '#FFFFFF', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Total Bed Capacity</span>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#4F46E5' }}>
-                        {floorPlanBlockData?.totalCapacity || 0} Beds
-                      </div>
-                    </div>
-                    <div style={{ background: '#FFFFFF', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Allocated Residents</span>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#16A34A' }}>
-                        {floorPlanBlockData?.occupied || 0} Residents
-                      </div>
-                    </div>
-                    <div style={{ background: '#FFFFFF', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Under Maintenance</span>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#D97706' }}>
-                        {floorPlanBlockData?.maintenance || 0} Beds
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Floor Filter Tabs */}
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid #CBD5E1', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveFloorFilter('ALL')}
-                      style={{
-                        padding: '0.45rem 0.95rem',
-                        borderRadius: '8px',
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        background: activeFloorFilter === 'ALL' ? '#4F46E5' : '#FFFFFF',
-                        color: activeFloorFilter === 'ALL' ? '#FFFFFF' : '#475569',
-                        border: activeFloorFilter === 'ALL' ? 'none' : '1px solid #CBD5E1',
-                      }}
-                    >
-                      All Floors ({floorPlanBlockData?.rooms?.length || 0} Rooms)
-                    </button>
-                    {floorGroupings.map((fg) => (
-                      <button
-                        key={fg.floorNum}
-                        type="button"
-                        onClick={() => setActiveFloorFilter(fg.floorNum)}
-                        style={{
-                          padding: '0.45rem 0.95rem',
-                          borderRadius: '8px',
-                          fontSize: '0.8rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: activeFloorFilter === fg.floorNum ? '#4F46E5' : '#FFFFFF',
-                          color: activeFloorFilter === fg.floorNum ? '#FFFFFF' : '#475569',
-                          border: activeFloorFilter === fg.floorNum ? 'none' : '1px solid #CBD5E1',
-                        }}
-                      >
-                        {fg.floorLabel} ({fg.rooms.length} Rooms)
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Floor Plan Section Breakdown */}
-                  {floorGroupings
-                    .filter((fg) => activeFloorFilter === 'ALL' || activeFloorFilter === fg.floorNum)
-                    .map((fg) => (
-                      <div key={fg.floorNum} style={{ marginBottom: '1.5rem', background: '#FFFFFF', borderRadius: '16px', padding: '1.25rem', border: '1px solid #E2E8F0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid #F1F5F9' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Layers size={18} color="#4F46E5" />
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                              {fg.floorLabel}
-                            </h3>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', background: '#F1F5F9', padding: '0.2rem 0.5rem', borderRadius: '12px' }}>
-                              {fg.rooms.length} Rooms Configured
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleOpenAddRoom(fg.floorNum)}
-                            style={{
-                              background: '#EEF2FF',
-                              color: '#4F46E5',
-                              border: '1px solid #C7D2FE',
-                              borderRadius: '6px',
-                              padding: '0.35rem 0.65rem',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                            }}
-                          >
-                            <Plus size={13} /> Add Room to {fg.floorLabel}
-                          </button>
-                        </div>
-
-                        {/* Room Cards Grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
-                          {fg.rooms.map((r) => {
-                            const isMaintenance = r.status === 'UNDER_MAINTENANCE';
-                            const isInactive = r.status === 'INACTIVE';
-                            const activeCount = r.allocations?.length || 0;
-                            const isFull = activeCount >= (r.capacity || 2);
-
-                            return (
-                              <div
-                                key={r.id}
-                                style={{
-                                  background: isMaintenance ? '#FFFBEB' : isInactive ? '#F8FAFC' : '#FFFFFF',
-                                  border: isMaintenance ? '1px solid #FCD34D' : isInactive ? '1px solid #E2E8F0' : isFull ? '1px solid #BBF7D0' : '1px solid #CBD5E1',
-                                  borderRadius: '12px',
-                                  padding: '1rem',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  justifyContent: 'space-between',
-                                }}
-                              >
-                                <div>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A' }}>
-                                      Room {r.roomNumber}
-                                    </span>
-                                    <span
-                                      style={{
-                                        fontSize: '0.7rem',
-                                        fontWeight: 800,
-                                        padding: '0.2rem 0.5rem',
-                                        borderRadius: '12px',
-                                        background: isMaintenance ? '#FEF3C7' : isFull ? '#DCFCE7' : '#EFF6FF',
-                                        color: isMaintenance ? '#B45309' : isFull ? '#15803D' : '#1D4ED8',
-                                      }}
-                                    >
-                                      {isMaintenance ? 'Maintenance' : isFull ? `Full (${activeCount}/${r.capacity})` : `Occupied (${activeCount}/${r.capacity})`}
-                                    </span>
-                                  </div>
-
-                                  <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '0.65rem' }}>
-                                    {r.roomType || 'Non-AC Room (2 Sharing)'}
-                                  </div>
-
-                                  {/* Occupant Badges */}
-                                  {r.allocations && r.allocations.length > 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '0.75rem' }}>
-                                      {r.allocations.map((al: any) => (
-                                        <div key={al.id} style={{ fontSize: '0.75rem', color: '#1E293B', background: '#F1F5F9', padding: '0.35rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                          <UserCheck size={12} color="#16A34A" />
-                                          <span style={{ fontWeight: 600 }}>{al.student?.name}</span>
-                                          <span style={{ color: '#64748B', fontSize: '0.7rem' }}>({al.student?.jntuNo})</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontStyle: 'italic', marginBottom: '0.75rem' }}>
-                                      No active occupants allocated
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Room Action Buttons */}
-                                <div style={{ display: 'flex', gap: '0.35rem', borderTop: '1px solid #E2E8F0', paddingTop: '0.6rem' }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => setInspectingRoom(r)}
-                                    style={{
-                                      flex: 1.5,
-                                      background: '#EEF2FF',
-                                      color: '#4338CA',
-                                      border: '1px solid #C7D2FE',
-                                      borderRadius: '6px',
-                                      padding: '0.3rem 0.5rem',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '0.25rem',
-                                    }}
-                                    title="View who is in this room"
-                                  >
-                                    <Eye size={12} /> Inspect ({activeCount})
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEditRoom(r)}
-                                    style={{
-                                      flex: 1,
-                                      background: '#FFFFFF',
-                                      color: '#334155',
-                                      border: '1px solid #CBD5E1',
-                                      borderRadius: '6px',
-                                      padding: '0.3rem 0.5rem',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '0.2rem',
-                                    }}
-                                  >
-                                    <Edit2 size={12} /> Edit
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleMaintenance(r)}
-                                    style={{
-                                      background: isMaintenance ? '#DCFCE7' : '#FEF3C7',
-                                      color: isMaintenance ? '#15803D' : '#B45309',
-                                      border: 'none',
-                                      borderRadius: '6px',
-                                      padding: '0.3rem 0.5rem',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                    }}
-                                    title={isMaintenance ? 'Mark as Active' : 'Mark as Maintenance'}
-                                  >
-                                    <Wrench size={12} />
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteRoom(r)}
-                                    style={{
-                                      background: '#FEF2F2',
-                                      color: '#DC2626',
-                                      border: 'none',
-                                      borderRadius: '6px',
-                                      padding: '0.3rem 0.5rem',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                    }}
-                                    title="Delete Room"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                </>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div style={{ padding: '1rem 1.5rem', background: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="button"
-                onClick={handleCloseFloorPlan}
+                onClick={() => setInspectingRoom(null)}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '0.25rem' }}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {(() => {
+              const inspectingOccupants = getRoomOccupants(inspectingRoom);
+              const isFull = inspectingOccupants.length >= (inspectingRoom.capacity || 2);
+
+              return (
+                <div style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+                      Current Occupancy: {inspectingOccupants.length} / {inspectingRoom.capacity} Beds
+                    </span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, background: isFull ? '#DCFCE7' : '#EFF6FF', color: isFull ? '#15803D' : '#1D4ED8', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
+                      {isFull ? 'FULL OCCUPANCY' : 'AVAILABLE'}
+                    </span>
+                  </div>
+
+                  {inspectingOccupants.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {inspectingOccupants.map((occ: any, idx: number) => (
+                        <div
+                          key={occ.id || idx}
+                          style={{
+                            padding: '1rem',
+                            background: '#FFFFFF',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#EEF2FF', color: '#151B54', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>
+                              {idx + 1}
+                            </div>
+                            <div>
+                              <strong style={{ fontSize: '0.95rem', color: '#0F172A', display: 'block' }}>
+                                {occ.name}
+                              </strong>
+                              <span style={{ fontSize: '0.75rem', color: '#64748B', fontFamily: 'monospace' }}>
+                                Roll No: {occ.jntuNo || 'N/A'}
+                              </span>
+                              {occ.department && (
+                                <div style={{ fontSize: '0.7rem', color: '#94A3B8' }}>
+                                  Dept: {occ.department}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, background: '#F1F5F9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: '6px' }}>
+                              {occ.bedNumber || `Bed-${idx + 1}`}
+                            </span>
+                            <div style={{ fontSize: '0.7rem', color: '#10B981', fontWeight: 700, marginTop: '4px' }}>
+                              ACTIVE RESIDENT
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8' }}>
+                      No active students currently allocated to this room.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', background: '#F8FAFC' }}>
+              <button
+                type="button"
+                onClick={() => setInspectingRoom(null)}
                 style={{
-                  background: '#1E1B4B',
+                  background: '#151B54',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '8px',
-                  padding: '0.6rem 1.25rem',
+                  padding: '0.55rem 1.25rem',
                   fontSize: '0.85rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                 }}
               >
-                Close Floor Plan
+                Close
               </button>
             </div>
           </div>
@@ -1188,479 +835,172 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
       )}
 
       {/* =========================================================================
-          "WHO IS IN THIS ROOM" OCCUPANT INSPECTION MODAL
-          ========================================================================= */}
-      {inspectingRoom && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10050, background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }} onClick={() => setInspectingRoom(null)}>
-          <div style={{ background: '#FFFFFF', borderRadius: '20px', width: '100%', maxWidth: '680px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3)' }} onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div style={{ padding: '1.25rem 1.5rem', background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)', color: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Users size={20} color="#818CF8" />
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, letterSpacing: '-0.01em' }}>
-                    Room {inspectingRoom.roomNumber} Occupants — {selectedFloorPlanBlock?.name || inspectingRoom.block?.name || 'Hostel Block'}
-                  </h3>
-                </div>
-                <p style={{ fontSize: '0.8rem', color: '#94A3B8', margin: '0.25rem 0 0 1.75rem' }}>
-                  Floor {inspectingRoom.floor || 1} • {inspectingRoom.roomType || 'Non-AC Room'} • Capacity: {inspectingRoom.allocations?.length || 0} / {inspectingRoom.capacity} Occupied
-                </p>
-              </div>
-              <button type="button" onClick={() => setInspectingRoom(null)} style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '0.25rem' }}>
-                <X size={22} />
-              </button>
-            </div>
-
-            {/* Body: Occupants List by Bed */}
-            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, background: '#F8FAFC' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#334155', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Resident Bed Allocations ({inspectingRoom.allocations?.length || 0} / {inspectingRoom.capacity})
-                </h4>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '12px', background: (inspectingRoom.allocations?.length || 0) >= inspectingRoom.capacity ? '#DCFCE7' : '#FEF3C7', color: (inspectingRoom.allocations?.length || 0) >= inspectingRoom.capacity ? '#15803D' : '#B45309' }}>
-                  {(inspectingRoom.allocations?.length || 0) >= inspectingRoom.capacity ? 'Fully Occupied' : `${inspectingRoom.capacity - (inspectingRoom.allocations?.length || 0)} Bed(s) Available`}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {Array.from({ length: inspectingRoom.capacity || 2 }).map((_, idx) => {
-                  const bedTag = `Bed-${idx + 1}`;
-                  const alloc = inspectingRoom.allocations?.find((a: any) => a.bedNumber === bedTag || a.bedNumber === `Bed ${idx + 1}`) || inspectingRoom.allocations?.[idx];
-                  const student = alloc?.student;
-
-                  return (
-                    <div key={idx} style={{ background: '#FFFFFF', borderRadius: '12px', padding: '1.15rem', border: student ? '1px solid #CBD5E1' : '2px dashed #CBD5E1', display: 'flex', gap: '1rem', alignItems: 'center', boxShadow: student ? '0 2px 8px rgba(0,0,0,0.04)' : 'none' }}>
-                      <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: student ? '#1E1B4B' : '#E2E8F0', color: student ? '#FFFFFF' : '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0 }}>
-                        {student ? student.name.slice(0, 2).toUpperCase() : `B${idx + 1}`}
-                      </div>
-
-                      {student ? (
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            <div>
-                              <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                                {student.name}
-                              </h4>
-                              <span style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600 }}>
-                                Roll No / JNTU No: <strong style={{ color: '#1E1B4B' }}>{student.jntuNo}</strong> • {student.department || 'CSE'}
-                              </span>
-                            </div>
-                            <span style={{ fontSize: '0.725rem', fontWeight: 700, padding: '0.2rem 0.65rem', borderRadius: '12px', background: '#DCFCE7', color: '#15803D' }}>
-                              {bedTag} • Active Resident
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.65rem', borderTop: '1px solid #F1F5F9', fontSize: '0.8rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#334155' }}>
-                              <Phone size={13} color="#2563EB" />
-                              <a href={`tel:${student.phone}`} style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>
-                                {student.phone || 'No phone recorded'}
-                              </a>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#334155' }}>
-                              <Mail size={13} color="#64748B" />
-                              <span>{student.email || 'No email recorded'}</span>
-                            </div>
-                            {student.parentName && (
-                              <div style={{ gridColumn: 'span 2', fontSize: '0.78rem', color: '#475569', background: '#F8FAFC', padding: '0.35rem 0.6rem', borderRadius: '6px' }}>
-                                <strong>Parent/Guardian:</strong> {student.parentName} ({student.parentPhone || 'Verified contact'})
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#64748B', margin: 0 }}>
-                              {bedTag} — Vacant Bed
-                            </h4>
-                            <p style={{ fontSize: '0.78rem', color: '#94A3B8', margin: '0.15rem 0 0 0' }}>
-                              This bed is available for new resident allocation.
-                            </p>
-                          </div>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', background: '#ECFDF5', padding: '0.3rem 0.65rem', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
-                            Available Vacancy
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{ padding: '1rem 1.5rem', background: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setInspectingRoom(null)} style={{ background: '#1E1B4B', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '0.6rem 1.25rem', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>
-                Close Inspection
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          ADD / EDIT ROOM MODAL (INSIDE FLOOR PLAN EDITOR)
+          MODAL: ADD / EDIT ROOM
           ========================================================================= */}
       {isRoomModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '16px', width: '100%', maxWidth: '480px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                {editingRoom ? `Edit Room ${editingRoom.roomNumber}` : `Add New Room to ${selectedFloorPlanBlock?.name}`}
-              </h3>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: '18px', width: '100%', maxWidth: '480px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', background: '#151B54', color: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <BedDouble size={20} color="#818CF8" />
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                  {editingRoom ? `Edit Room ${editingRoom.roomNumber}` : 'Add New Room'}
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsRoomModalOpen(false)}
-                style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
               >
                 <X size={20} />
               </button>
             </div>
 
-            {roomFormError && (
-              <div style={{ padding: '0.75rem 1rem', background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B', borderRadius: '10px', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                {roomFormError}
-              </div>
-            )}
+            <form onSubmit={handleSubmitRoomForm}>
+              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {roomFormError && (
+                  <div style={{ padding: '8px 12px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '6px', color: '#B91C1C', fontSize: '0.825rem' }}>
+                    {roomFormError}
+                  </div>
+                )}
 
-            <form onSubmit={handleSaveRoom}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                    Room Number *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 101, 119, 201"
-                    value={roomFormData.roomNumber}
-                    onChange={(e) => setRoomFormData({ ...roomFormData, roomNumber: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Room Number *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 101"
+                      value={roomFormData.roomNumber}
+                      onChange={(e) => setRoomFormData({ ...roomFormData, roomNumber: e.target.value })}
+                      required
+                      style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 0.75rem', fontSize: '0.85rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Floor (1, 2, 3) *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={roomFormData.floor}
+                      onChange={(e) => setRoomFormData({ ...roomFormData, floor: Number(e.target.value) })}
+                      required
+                      style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 0.75rem', fontSize: '0.85rem' }}
+                    />
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                      Floor Number *
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Bed Capacity *
                     </label>
-                    <select
-                      value={roomFormData.floor}
-                      onChange={(e) => setRoomFormData({ ...roomFormData, floor: Number(e.target.value) })}
-                      style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
-                    >
-                      <option value={0}>Ground Floor</option>
-                      <option value={1}>Floor 1</option>
-                      <option value={2}>Floor 2</option>
-                      <option value={3}>Floor 3</option>
-                      <option value={4}>Floor 4</option>
-                    </select>
+                    <input
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={roomFormData.capacity}
+                      onChange={(e) => setRoomFormData({ ...roomFormData, capacity: Number(e.target.value) })}
+                      required
+                      style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 0.75rem', fontSize: '0.85rem' }}
+                    />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                      Bed Capacity *
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                      Status
                     </label>
                     <select
-                      value={roomFormData.capacity}
-                      onChange={(e) => setRoomFormData({ ...roomFormData, capacity: Number(e.target.value) })}
-                      style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
+                      value={roomFormData.status}
+                      onChange={(e) => setRoomFormData({ ...roomFormData, status: e.target.value as any })}
+                      style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 0.75rem', fontSize: '0.85rem' }}
                     >
-                      <option value={1}>1 Bed (Single)</option>
-                      <option value={2}>2 Beds (Double Sharing)</option>
-                      <option value={3}>3 Beds (Triple Sharing)</option>
-                      <option value={4}>4 Beds (Four Sharing)</option>
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                      <option value="UNDER_MAINTENANCE">Maintenance</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                    Room Type & Specification
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px', color: '#334155' }}>
+                    Room Type Description
                   </label>
-                  <select
-                    value={roomFormData.roomType}
+                  <input
+                    type="text"
+                    placeholder="e.g. 4 Sharing Room"
+                    value={roomFormData.roomType || ''}
                     onChange={(e) => setRoomFormData({ ...roomFormData, roomType: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
-                  >
-                    <option value="Non-AC Room (2 Sharing)">Non-AC Room (2 Sharing)</option>
-                    <option value="AC Room (2 Sharing)">AC Room (2 Sharing)</option>
-                    <option value="Non-AC Room (3 Sharing)">Non-AC Room (3 Sharing)</option>
-                    <option value="AC Room (3 Sharing)">AC Room (3 Sharing)</option>
-                    <option value="Deluxe Single AC Room">Deluxe Single AC Room</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                    Operational Status
-                  </label>
-                  <select
-                    value={roomFormData.status}
-                    onChange={(e) => setRoomFormData({ ...roomFormData, status: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
-                  >
-                    <option value="ACTIVE">Active / Operational</option>
-                    <option value="UNDER_MAINTENANCE">Under Maintenance</option>
-                    <option value="INACTIVE">Inactive / Decommissioned</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsRoomModalOpen(false)}
-                    style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '0.6rem 1rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmittingRoom}
-                    style={{ background: '#4F46E5', border: 'none', borderRadius: '8px', padding: '0.6rem 1.25rem', fontSize: '0.85rem', fontWeight: 700, color: '#FFFFFF', cursor: 'pointer' }}
-                  >
-                    {isSubmittingRoom ? 'Saving...' : editingRoom ? 'Update Room' : 'Create Room'}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          CREATE / EDIT BLOCK MODAL
-          ========================================================================= */}
-      {isFormModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                {editingBlock ? `Edit Block ${editingBlock.name}` : 'Add New Residential Block'}
-              </h3>
-              <button type="button" onClick={() => setIsFormModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer' }}>
-                <X size={20} />
-              </button>
-            </div>
-
-            {formError && (
-              <div style={{ padding: '0.75rem 1rem', background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B', borderRadius: '10px', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                {formError}
-              </div>
-            )}
-
-            <form onSubmit={handleFormSubmit}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                    Block Name * (e.g. BH-1, BH-2, GH-1)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. BH-1, BH-2, GH-1"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 0.75rem', fontSize: '0.85rem' }}
                   />
                 </div>
-
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                    Block Code * (Unique identifier)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. BH-1, BH-2, GH-1"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Residential wing description, location, or notes..."
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.35rem' }}>
-                    Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                  </select>
-                </div>
-
-                {/* Floor & Room Architecture Setup Card */}
-                <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '12px', padding: '1rem', marginTop: '0.25rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <Layers size={16} color="#4F46E5" />
-                    <h4 style={{ margin: 0, fontSize: '0.875rem', fontWeight: 800, color: '#0F172A' }}>
-                      Floor &amp; Room Architecture Setup
-                    </h4>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
-                        Total Floors
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={formData.totalFloors}
-                        onChange={(e) => setFormData({ ...formData, totalFloors: parseInt(e.target.value, 10) || 1 })}
-                        style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
-                        Rooms Per Floor
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={30}
-                        value={formData.roomsPerFloor}
-                        onChange={(e) => setFormData({ ...formData, roomsPerFloor: parseInt(e.target.value, 10) || 1 })}
-                        style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
-                        Bed Capacity / Room
-                      </label>
-                      <select
-                        value={formData.roomCapacity}
-                        onChange={(e) => setFormData({ ...formData, roomCapacity: parseInt(e.target.value, 10) || 2 })}
-                        style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
-                      >
-                        <option value={1}>1 Bed (Single Room)</option>
-                        <option value={2}>2 Beds (2 Sharing)</option>
-                        <option value={3}>3 Beds (3 Sharing)</option>
-                        <option value={4}>4 Beds (4 Sharing)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
-                        Room Classification
-                      </label>
-                      <select
-                        value={formData.roomType}
-                        onChange={(e) => setFormData({ ...formData, roomType: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
-                      >
-                        <option value="Non-AC Room (2 Sharing)">Non-AC Room (2 Sharing)</option>
-                        <option value="AC Deluxe Room">AC Deluxe Room</option>
-                        <option value="Standard 3-Sharing">Standard 3-Sharing</option>
-                        <option value="Single AC Executive">Single AC Executive</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.85rem' }}>
-                    <input
-                      type="checkbox"
-                      id="auto-gen-rooms"
-                      checked={formData.autoGenerateRooms}
-                      onChange={(e) => setFormData({ ...formData, autoGenerateRooms: e.target.checked })}
-                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                    />
-                    <label htmlFor="auto-gen-rooms" style={{ fontSize: '0.8rem', color: '#1E293B', fontWeight: 600, cursor: 'pointer' }}>
-                      {editingBlock ? 'Generate floor rooms batch for this block' : `Auto-generate ${formData.totalFloors * formData.roomsPerFloor} rooms (e.g. 101-10${formData.roomsPerFloor}, 201-20${formData.roomsPerFloor}...)`}
-                    </label>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsFormModalOpen(false)}
-                    style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '0.6rem 1rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    style={{ background: '#4F46E5', border: 'none', borderRadius: '8px', padding: '0.6rem 1.25rem', fontSize: '0.85rem', fontWeight: 700, color: '#FFFFFF', cursor: 'pointer' }}
-                  >
-                    {isSubmitting ? 'Saving Block & Generating Rooms...' : editingBlock ? 'Update Block' : 'Create Block & Generate Rooms'}
-                  </button>
-                </div>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* =========================================================================
-          DELETE BLOCK CONFIRMATION MODAL
-          ========================================================================= */}
-      {deleteModalBlock && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div style={{ background: '#FFFFFF', borderRadius: '16px', width: '100%', maxWidth: '440px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <AlertTriangle size={24} color="#DC2626" />
-              <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                  Delete Hostel Block?
-                </h3>
-                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
-                  Target: <strong>{deleteModalBlock.name}</strong> ({deleteModalBlock.code})
-                </p>
-              </div>
-            </div>
-
-            {deleteError ? (
-              <div style={{ padding: '0.85rem', background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B', borderRadius: '10px', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                <strong>Cannot Delete Block:</strong> {deleteError}
-              </div>
-            ) : (
-              <p style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '1.25rem' }}>
-                Are you sure you want to delete this hostel block? Relational safety checks will prevent deletion if students or rooms are assigned.
-              </p>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-              <button
-                type="button"
-                onClick={() => setDeleteModalBlock(null)}
-                style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '8px', padding: '0.55rem 1rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
-              >
-                {deleteError ? 'Close' : 'Cancel'}
-              </button>
-
-              {!deleteError && (
+              <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: '#F8FAFC' }}>
                 <button
                   type="button"
-                  onClick={handleConfirmDelete}
-                  disabled={isDeleting}
-                  style={{ background: '#DC2626', border: 'none', borderRadius: '8px', padding: '0.55rem 1rem', fontSize: '0.85rem', fontWeight: 700, color: '#FFFFFF', cursor: 'pointer' }}
+                  onClick={() => setIsRoomModalOpen(false)}
+                  disabled={isSubmittingRoom}
+                  style={{ padding: '0.55rem 1rem', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#FFFFFF', color: '#475569', fontSize: '0.825rem', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  {isDeleting ? 'Deleting...' : 'Delete Block'}
+                  Cancel
                 </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingRoom}
+                  style={{ padding: '0.55rem 1.25rem', borderRadius: '8px', border: 'none', background: '#151B54', color: '#FFFFFF', fontSize: '0.825rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {isSubmittingRoom ? 'Saving...' : editingRoom ? 'Update Room' : 'Add Room'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: DELETE ROOM CONFIRMATION
+          ========================================================================= */}
+      {deleteRoomTarget && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: '18px', width: '100%', maxWidth: '420px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#DC2626' }}>
+                <AlertTriangle size={24} />
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Confirm Room Deletion</h3>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#334155' }}>
+                Are you sure you want to delete <strong>Room {deleteRoomTarget.roomNumber}</strong>?
+              </p>
+              {deleteError && (
+                <div style={{ padding: '8px 12px', background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '6px', color: '#B91C1C', fontSize: '0.8rem' }}>
+                  {deleteError}
+                </div>
               )}
+            </div>
+
+            <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: '#F8FAFC' }}>
+              <button
+                type="button"
+                onClick={() => setDeleteRoomTarget(null)}
+                disabled={isDeleting}
+                style={{ padding: '0.5rem 0.9rem', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#FFFFFF', color: '#475569', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteRoom}
+                disabled={isDeleting}
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', background: '#DC2626', color: '#FFFFFF', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
             </div>
           </div>
         </div>
@@ -1668,3 +1008,5 @@ export const BlockManagementPage: React.FC<BlockManagementPageProps> = () => {
     </div>
   );
 };
+
+export default BlockManagementPage;

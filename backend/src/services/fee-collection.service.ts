@@ -278,20 +278,32 @@ export class FeeCollectionService {
     };
   }
 
-  public async getStudentFeeDetails(studentId: string, academicYearId: string) {
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
+  public async getStudentFeeDetails(studentId: string, academicYearId?: string) {
+    const cleanStudentId = (studentId || '').trim();
+    const student = await prisma.student.findFirst({
+      where: {
+        OR: [
+          { id: cleanStudentId },
+          { jntuNo: { equals: cleanStudentId, mode: 'insensitive' } },
+        ],
+      },
     });
-    if (!student) throw new Error('Student not found.');
+    if (!student) throw new Error(`Student '${cleanStudentId}' not found.`);
 
-    const year = await prisma.academicYear.findUnique({
-      where: { id: academicYearId },
-    });
+    let year = academicYearId && academicYearId !== 'ALL'
+      ? await prisma.academicYear.findUnique({ where: { id: academicYearId } })
+      : await prisma.academicYear.findFirst({ where: { isCurrent: true } });
+    if (!year) {
+      year = await prisma.academicYear.findFirst({ orderBy: { startDate: 'desc' } });
+    }
     if (!year) throw new Error('Academic year not found.');
+
+    const resolvedStudentId = student.id;
+    const resolvedYearId = year.id;
 
     const [feeItems, payments, detentions, scholarships] = await Promise.all([
       prisma.feeItem.findMany({
-        where: { studentId, academicYearId },
+        where: { studentId: resolvedStudentId, academicYearId: resolvedYearId },
         orderBy: [{ createdAt: 'asc' }],
       }),
       prisma.feePayment.findMany({
@@ -382,8 +394,16 @@ export class FeeCollectionService {
     }
 
     // 2. Validate Student & Academic Year
+    const cleanStudentId = (params.studentId || '').trim();
     const [student, academicYear] = await Promise.all([
-      prisma.student.findUnique({ where: { id: params.studentId } }),
+      prisma.student.findFirst({
+        where: {
+          OR: [
+            { id: cleanStudentId },
+            { jntuNo: { equals: cleanStudentId, mode: 'insensitive' } },
+          ],
+        },
+      }),
       prisma.academicYear.findUnique({ where: { id: params.academicYearId } }),
     ]);
     if (!student) throw new Error('Student record not found.');
@@ -1040,15 +1060,26 @@ export class FeeCollectionService {
     actorId: string;
     actorRole: string;
   }) {
-    const { studentIds, targetAcademicYearId, promotionType, actorId, actorRole } = params;
-    if (!studentIds || studentIds.length === 0) {
-      throw new Error('At least one student must be selected for promotion.');
-    }
+    const { targetAcademicYearId, promotionType, actorId, actorRole } = params;
+    let studentIds = params.studentIds;
 
     const targetYear = await prisma.academicYear.findUnique({
       where: { id: targetAcademicYearId },
     });
     if (!targetYear) throw new Error('Target academic year does not exist.');
+
+    // If 'ALL' or empty array, promote all active students
+    if (!studentIds || studentIds.length === 0 || (studentIds.length === 1 && studentIds[0] === 'ALL')) {
+      const activeStudents = await prisma.student.findMany({
+        where: { role: 'STUDENT', isActive: true },
+        select: { id: true },
+      });
+      studentIds = activeStudents.map((s) => s.id);
+    }
+
+    if (studentIds.length === 0) {
+      throw new Error('No eligible students found for promotion.');
+    }
 
     return prisma.$transaction(async (tx) => {
       const promoted: string[] = [];
@@ -1291,8 +1322,17 @@ export class FeeCollectionService {
         continue;
       }
 
-      // Check student in database
-      const student = await prisma.student.findUnique({ where: { jntuNo } });
+      // Check student in database (case-insensitive JNTU or UUID)
+      const cleanJntu = jntuNo.toUpperCase().trim();
+      const student = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { jntuNo: cleanJntu },
+            { jntuNo: { equals: cleanJntu, mode: 'insensitive' } },
+            { id: cleanJntu },
+          ],
+        },
+      });
       if (!student) {
         errors.push({ row: rowNum, error: `Student with JNTU '${jntuNo}' not found.` });
         continue;

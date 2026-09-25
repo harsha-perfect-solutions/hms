@@ -35,6 +35,7 @@ import {
   Block,
   PendingAllocationItem,
 } from '../services/api';
+import { formatRoomType } from './BlockManagementPage';
 
 interface RoomManagementPageProps {
   onNavigate?: (path: string) => void;
@@ -126,7 +127,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
     blockId: '',
     roomNumber: '',
     floor: 1,
-    roomType: 'Non-AC Room (2 Sharing)',
+    roomType: '2 Sharing Room',
     capacity: 2,
     status: 'ACTIVE',
   });
@@ -575,7 +576,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
       blockId: activeBlocks.length > 0 ? activeBlocks[0].id : '',
       roomNumber: '',
       floor: 1,
-      roomType: 'Non-AC Room (2 Sharing)',
+      roomType: '2 Sharing Room',
       capacity: 2,
       status: 'ACTIVE',
     });
@@ -589,7 +590,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
       blockId: room.blockId,
       roomNumber: room.roomNumber,
       floor: room.floor || 1,
-      roomType: room.roomType || 'Non-AC Room (2 Sharing)',
+      roomType: formatRoomType(room.roomType) || '2 Sharing Room',
       capacity: room.capacity,
       status: room.status,
     });
@@ -1598,7 +1599,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                       <div style={{ fontSize: '0.82rem', color: '#0F172A' }}>
                         <span style={{ color: '#64748B' }}>Preferred Room Spec:</span>{' '}
-                        <strong style={{ color: '#151B54' }}>{assignStudentTarget.preferences.roomPreference || 'Non-AC Room (2 Sharing)'}</strong>
+                        <strong style={{ color: '#151B54' }}>{formatRoomType(assignStudentTarget.preferences.roomPreference) || '2 Sharing Room'}</strong>
                         {assignStudentTarget.preferences.blockPreference && (
                           <span style={{ color: '#475569', marginLeft: '6px' }}>
                             ({assignStudentTarget.preferences.blockPreference} • {assignStudentTarget.preferences.floorPreference || 'Any Floor'})
@@ -2291,9 +2292,9 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
                   style={{ width: '100%', height: '38px' }}
                 >
                   <option value="ALL">All Room Types</option>
-                  <option value="Non-AC Room (2 Sharing)">Non-AC Room (2 Sharing)</option>
-                  <option value="Non-AC Room (3 Sharing)">Non-AC Room (3 Sharing)</option>
-                  <option value="AC Room (2 Sharing)">AC Room (2 Sharing)</option>
+                  <option value="2 Sharing Room">2 Sharing Room</option>
+                  <option value="3 Sharing Room">3 Sharing Room</option>
+                  <option value="4 Sharing Room">4 Sharing Room</option>
                 </select>
               </div>
             </div>
@@ -2464,7 +2465,7 @@ export const RoomManagementPage: React.FC<RoomManagementPageProps> = () => {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Non-AC Room (2 Sharing)"
+                    placeholder="e.g. 2 Sharing Room"
                     value={roomFormData.roomType || ''}
                     onChange={(e) => setRoomFormData({ ...roomFormData, roomType: e.target.value })}
                     className="mgmt-input"

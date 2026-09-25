@@ -94,7 +94,7 @@ export const ManagementUserManagementPage: React.FC<ManagementUserManagementPage
     blockName: '',
     roomNumber: '',
     bedNumber: '',
-    roomType: 'Non-AC Room (2 Sharing)',
+    roomType: '2 Sharing Room',
     monthlyOutingMax: 5,
   });
   const [addFormError, setAddFormError] = useState<string | null>(null);
@@ -385,7 +385,7 @@ export const ManagementUserManagementPage: React.FC<ManagementUserManagementPage
           blockName: '',
           roomNumber: '',
           bedNumber: '',
-          roomType: 'Non-AC Room (2 Sharing)',
+          roomType: '2 Sharing Room',
           monthlyOutingMax: 5,
         });
         fetchUsers();

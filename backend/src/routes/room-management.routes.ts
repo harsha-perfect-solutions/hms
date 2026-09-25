@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import * as XLSX from 'xlsx';
 import { prisma } from '../services/prisma.service';
 import {
   authenticateManagement,
@@ -12,6 +13,17 @@ const roomAllocationRouter = Router();
 // All room management routes require authoritative management access
 roomManagementRouter.use(authenticateManagement);
 roomAllocationRouter.use(authenticateManagement);
+
+export const formatRoomTypeClean = (roomType?: string | null): string => {
+  if (!roomType) return 'Standard Room';
+  let clean = roomType
+    .replace(/\bNon-AC\s*/gi, '')
+    .replace(/\bAC\s*/gi, '')
+    .trim();
+  const m = clean.match(/^Room\s*\(([^)]+)\)$/i);
+  if (m) return `${m[1]} Room`;
+  return clean || 'Standard Room';
+};
 
 // =========================================================================
 //                          ROOM MANAGEMENT ROUTES
@@ -126,13 +138,26 @@ roomManagementRouter.get('/', async (req: AuthenticatedManagementRequest, res: R
         block: room.block,
         roomNumber: room.roomNumber,
         floor: room.floor,
-        roomType: room.roomType,
+        roomType: formatRoomTypeClean(room.roomType),
         capacity: room.capacity,
         status: room.status,
         occupancy: activeCount,
         availableBeds,
         occupancyStatus,
         activeOccupants,
+        allocations: room.allocations.map((alloc) => ({
+          id: alloc.id,
+          bedNumber: alloc.bedNumber,
+          status: alloc.status,
+          allocatedAt: alloc.allocatedAt,
+          student: {
+            id: alloc.student.id,
+            name: alloc.student.name,
+            jntuNo: alloc.student.jntuNo,
+            email: alloc.student.email,
+            isActive: alloc.student.isActive,
+          },
+        })),
         createdAt: room.createdAt,
         updatedAt: room.updatedAt,
       };
@@ -182,6 +207,245 @@ roomManagementRouter.get('/', async (req: AuthenticatedManagementRequest, res: R
 });
 
 /**
+ * GET /api/management/rooms/export-excel
+ * Exports the entire hostel floor plan to an authoritative multi-sheet Excel spreadsheet
+ */
+roomManagementRouter.get('/export-excel', async (req: AuthenticatedManagementRequest, res: Response): Promise<void> => {
+  try {
+    const rooms = await prisma.room.findMany({
+      include: {
+        block: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+        allocations: {
+          where: { status: 'ACTIVE' },
+          include: {
+            student: {
+              select: {
+                id: true,
+                name: true,
+                jntuNo: true,
+                email: true,
+                role: true,
+                allocationStatus: true,
+                blockName: true,
+                floorName: true,
+                roomNumber: true,
+                bedNumber: true,
+                roomType: true,
+                collegeCode: true,
+                isActive: true,
+              },
+            },
+          },
+          orderBy: { bedNumber: 'asc' },
+        },
+      },
+      orderBy: [
+        { floor: 'asc' },
+        { roomNumber: 'asc' },
+      ],
+    });
+
+    const getFloorLabel = (floor: number | null, roomNum: string): string => {
+      if (floor === 1 || (floor == null && roomNum.startsWith('1') && roomNum !== '109')) return 'First Floor';
+      if (floor === 2 || (floor == null && roomNum.startsWith('2') && roomNum !== '208')) return 'Second Floor';
+      if (floor === 3 || (floor == null && (roomNum.startsWith('3') || roomNum === '109' || roomNum === '208'))) return 'Third Floor';
+      return floor ? `Floor ${floor}` : 'First Floor';
+    };
+
+    const formatRoomTypeClean = (roomType?: string | null): string => {
+      if (!roomType) return 'Standard Room';
+      let clean = roomType
+        .replace(/\bNon-AC\s*/gi, '')
+        .replace(/\bAC\s*/gi, '')
+        .trim();
+      const m = clean.match(/^Room\s*\(([^)]+)\)$/i);
+      if (m) return `${m[1]} Room`;
+      return clean || 'Standard Room';
+    };
+
+    // Sheet 1: Floor Plan Summary
+    const summaryRows = rooms.map((r, idx) => {
+      const activeAllocations = r.allocations || [];
+      const occupantsCount = activeAllocations.length;
+      const availableBeds = Math.max(0, r.capacity - occupantsCount);
+      const occupancyStatus =
+        occupantsCount >= r.capacity
+          ? `Full (${occupantsCount}/${r.capacity})`
+          : occupantsCount > 0
+          ? `Partially Occupied (${occupantsCount}/${r.capacity})`
+          : `Vacant (0/${r.capacity})`;
+
+      const residentNames = activeAllocations
+        .map((a, i) => `${a.student.name} (${a.bedNumber || `Bed-${i + 1}`})`)
+        .join(', ');
+
+      const residentRolls = activeAllocations
+        .map((a) => a.student.jntuNo)
+        .join(', ');
+
+      return {
+        'S.No': idx + 1,
+        'Floor': getFloorLabel(r.floor, r.roomNumber),
+        'Floor Number': r.floor ?? 1,
+        'Room Number': r.roomNumber,
+        'Room Type': formatRoomTypeClean(r.roomType),
+        'Bed Capacity': r.capacity,
+        'Allocated Beds': occupantsCount,
+        'Available Beds': availableBeds,
+        'Occupancy Status': occupancyStatus,
+        'Allocated Residents': residentNames || 'None (Vacant)',
+        'Roll / JNTU Numbers': residentRolls || '—',
+        'Block': r.block?.name || 'Alliance Hostel',
+      };
+    });
+
+    // Sheet 2: All Allocated Students (Bed-by-Bed Directory)
+    let studentIndex = 1;
+    const studentRows: any[] = [];
+    rooms.forEach((r) => {
+      const floorName = getFloorLabel(r.floor, r.roomNumber);
+      (r.allocations || []).forEach((a) => {
+        studentRows.push({
+          'S.No': studentIndex++,
+          'Floor': floorName,
+          'Room Number': r.roomNumber,
+          'Bed Number': a.bedNumber || 'Bed',
+          'Student Name': a.student.name,
+          'Roll / JNTU No': a.student.jntuNo,
+          'Email': a.student.email,
+          'Room Type': formatRoomTypeClean(r.roomType),
+          'Allocation Status': a.status,
+          'Allocated Date': a.allocatedAt ? new Date(a.allocatedAt).toLocaleDateString('en-IN') : '—',
+          'Block': r.block?.name || 'Alliance Hostel',
+        });
+      });
+    });
+
+    // Helper for Floor-Specific Sheets
+    const createFloorRows = (floorNum: number) => {
+      let fIndex = 1;
+      const rows: any[] = [];
+      const floorRooms = rooms.filter((r) => {
+        if (floorNum === 1) return (r.floor === 1 || (r.floor == null && r.roomNumber.startsWith('1') && r.roomNumber !== '109')) && r.roomNumber !== '208';
+        if (floorNum === 2) return (r.floor === 2 || (r.floor == null && r.roomNumber.startsWith('2') && r.roomNumber !== '208'));
+        if (floorNum === 3) return (r.floor === 3 || (r.floor == null && (r.roomNumber.startsWith('3') || r.roomNumber === '109' || r.roomNumber === '208')));
+        return r.floor === floorNum;
+      });
+
+      floorRooms.forEach((r) => {
+        if (!r.allocations || r.allocations.length === 0) {
+          rows.push({
+            'S.No': fIndex++,
+            'Room Number': r.roomNumber,
+            'Room Type': formatRoomTypeClean(r.roomType),
+            'Bed Number': '—',
+            'Resident Name': 'Vacant',
+            'Roll / JNTU No': '—',
+            'Email': '—',
+            'Capacity': r.capacity,
+            'Status': 'Vacant',
+          });
+        } else {
+          r.allocations.forEach((a) => {
+            rows.push({
+              'S.No': fIndex++,
+              'Room Number': r.roomNumber,
+              'Room Type': formatRoomTypeClean(r.roomType),
+              'Bed Number': a.bedNumber || 'Bed',
+              'Resident Name': a.student.name,
+              'Roll / JNTU No': a.student.jntuNo,
+              'Email': a.student.email,
+              'Capacity': r.capacity,
+              'Status': 'Allocated',
+            });
+          });
+        }
+      });
+      return rows;
+    };
+
+    const workbook = XLSX.utils.book_new();
+
+    // 1. Summary Sheet
+    const summarySheet = XLSX.utils.json_to_sheet(summaryRows);
+    summarySheet['!cols'] = [
+      { wch: 6 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 28 },
+      { wch: 14 },
+      { wch: 15 },
+      { wch: 14 },
+      { wch: 22 },
+      { wch: 55 },
+      { wch: 35 },
+      { wch: 18 },
+    ];
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Floor Plan Overview');
+
+    // 2. All Students Sheet
+    const studentSheet = XLSX.utils.json_to_sheet(studentRows);
+    studentSheet['!cols'] = [
+      { wch: 6 },
+      { wch: 15 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 26 },
+      { wch: 18 },
+      { wch: 32 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 16 },
+      { wch: 18 },
+    ];
+    XLSX.utils.book_append_sheet(workbook, studentSheet, 'Student Allocations');
+
+    // 3. Floor Sheets
+    const f1Rows = createFloorRows(1);
+    if (f1Rows.length > 0) {
+      const f1Sheet = XLSX.utils.json_to_sheet(f1Rows);
+      f1Sheet['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 28 }, { wch: 12 }, { wch: 26 }, { wch: 18 }, { wch: 32 }, { wch: 10 }, { wch: 14 }];
+      XLSX.utils.book_append_sheet(workbook, f1Sheet, 'First Floor');
+    }
+
+    const f2Rows = createFloorRows(2);
+    if (f2Rows.length > 0) {
+      const f2Sheet = XLSX.utils.json_to_sheet(f2Rows);
+      f2Sheet['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 28 }, { wch: 12 }, { wch: 26 }, { wch: 18 }, { wch: 32 }, { wch: 10 }, { wch: 14 }];
+      XLSX.utils.book_append_sheet(workbook, f2Sheet, 'Second Floor');
+    }
+
+    const f3Rows = createFloorRows(3);
+    if (f3Rows.length > 0) {
+      const f3Sheet = XLSX.utils.json_to_sheet(f3Rows);
+      f3Sheet['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 28 }, { wch: 12 }, { wch: 26 }, { wch: 18 }, { wch: 32 }, { wch: 10 }, { wch: 14 }];
+      XLSX.utils.book_append_sheet(workbook, f3Sheet, 'Third Floor');
+    }
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const filename = `hostel_entire_floor_plan_${todayStr}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error exporting floor plan to Excel:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to export floor plan to Excel. Please try again.',
+    });
+  }
+});
+
+/**
  * GET /api/management/rooms/:id
  * Retrieves a single room with full allocation history
  */
@@ -201,6 +465,7 @@ roomManagementRouter.get('/:id', async (req: AuthenticatedManagementRequest, res
                 name: true,
                 jntuNo: true,
                 email: true,
+                isActive: true,
               },
             },
           },
@@ -246,13 +511,26 @@ roomManagementRouter.get('/:id', async (req: AuthenticatedManagementRequest, res
         block: room.block,
         roomNumber: room.roomNumber,
         floor: room.floor,
-        roomType: room.roomType,
+        roomType: formatRoomTypeClean(room.roomType),
         capacity: room.capacity,
         status: room.status,
         occupancy: activeCount,
         availableBeds,
         occupancyStatus,
         activeOccupants,
+        allocations: room.allocations.filter((a) => a.status === 'ACTIVE').map((alloc) => ({
+          id: alloc.id,
+          bedNumber: alloc.bedNumber,
+          status: alloc.status,
+          allocatedAt: alloc.allocatedAt,
+          student: {
+            id: alloc.student.id,
+            name: alloc.student.name,
+            jntuNo: alloc.student.jntuNo,
+            email: alloc.student.email,
+            isActive: alloc.student.isActive,
+          },
+        })),
         history: room.allocations,
         createdAt: room.createdAt,
         updatedAt: room.updatedAt,
@@ -369,7 +647,7 @@ roomManagementRouter.post('/', async (req: AuthenticatedManagementRequest, res: 
           blockId: block.id,
           roomNumber: normalizedRoomNumber,
           floor: parsedFloor,
-          roomType: typeof roomType === 'string' && roomType.trim() ? roomType.trim() : 'Non-AC Room (2 Sharing)',
+          roomType: typeof roomType === 'string' && roomType.trim() ? formatRoomTypeClean(roomType.trim()) : '2 Sharing Room',
           capacity: parsedCapacity,
           status: normalizedStatus,
         },
@@ -520,7 +798,7 @@ roomManagementRouter.put('/:id', async (req: AuthenticatedManagementRequest, res
           blockId: targetBlockId,
           roomNumber: roomNumber !== undefined ? roomNumber.trim() : undefined,
           floor: floor !== undefined ? Number(floor) : undefined,
-          roomType: roomType !== undefined ? roomType.trim() : undefined,
+          roomType: roomType !== undefined ? formatRoomTypeClean(roomType.trim()) : undefined,
           capacity: capacity !== undefined ? Number(capacity) : undefined,
           status: status !== undefined ? status.trim().toUpperCase() : undefined,
         },
@@ -838,7 +1116,7 @@ roomAllocationRouter.get('/pending', async (req: AuthenticatedManagementRequest,
           address: app?.address || 'Not Specified',
         },
         preferences: {
-          roomPreference: app?.preferredRoomType || student.roomType || 'Non-AC Room (2 Sharing)',
+          roomPreference: formatRoomTypeClean(app?.preferredRoomType || student.roomType || '2 Sharing Room'),
           sharingPreference: `${student.roomCapacity || 2} Sharing`,
           blockPreference: app?.preferredBlock || student.blockName || 'Boys Hostel Block A',
           floorPreference: app?.preferredFloor ? `Floor ${app.preferredFloor}` : (student.floorName || 'Floor 1'),

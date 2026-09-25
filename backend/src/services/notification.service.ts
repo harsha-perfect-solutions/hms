@@ -250,6 +250,8 @@ export class NotificationService {
           where: {
             role: cleanTargetRole === 'CHIEF_WARDEN'
               ? { in: ['CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS'] }
+              : cleanTargetRole === 'WARDEN'
+              ? { in: ['WARDEN', 'WARDEN_BOYS', 'WARDEN_GIRLS'] }
               : cleanTargetRole,
             isActive: true,
           },
@@ -527,7 +529,7 @@ export class NotificationService {
     let resolvedActorId = actor.id;
     if (!resolvedActorId || resolvedActorId === 'system') {
       const adminStudent = await prisma.student.findFirst({
-        where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'HOSTEL_ADMIN', 'CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS', 'WARDEN'] } },
+        where: { role: { in: ['ADMIN', 'SUPER_ADMIN', 'SUPPORT_ADMIN', 'HOSTEL_ADMIN', 'COLLEGE_DIRECTOR', 'CHIEF_WARDEN', 'CHIEF_WARDEN_BOYS', 'CHIEF_WARDEN_GIRLS', 'WARDEN', 'WARDEN_BOYS', 'WARDEN_GIRLS'] } },
         select: { id: true },
       });
       if (adminStudent) {

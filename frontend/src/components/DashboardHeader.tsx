@@ -98,6 +98,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 <div className="dropdown-user-name">{user?.name}</div>
                 <div className="dropdown-user-email">{user?.email || user?.jntuNo}</div>
                 <div className="dropdown-user-badge">Role: {user?.role || 'STUDENT'}</div>
+                {user?.roomNumber && (
+                  <div style={{ marginTop: '0.5rem', padding: '0.4rem 0.6rem', background: '#F0FDF4', borderRadius: '6px', border: '1px solid #BBF7D0', fontSize: '0.75rem', color: '#166534', fontWeight: 600 }}>
+                    Room {user.roomNumber} ({user.bedNumber || 'Bed-1'}) • {user.blockName || 'Alliance Hostel'}
+                  </div>
+                )}
               </div>
 
               <div className="dropdown-divider" />

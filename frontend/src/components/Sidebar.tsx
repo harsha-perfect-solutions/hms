@@ -4,7 +4,6 @@ import {
   Bed,
   UtensilsCrossed,
   Footprints,
-  AlertCircle,
   FileText,
   Bell,
   LogOut,
@@ -12,6 +11,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { APP_BRANDING } from '../config/branding';
+import { useAuth } from '../context/AuthContext';
 
 export interface NavItem {
   id: string;
@@ -26,7 +26,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'hostel-application', label: 'Hostel Application', path: '/hostel-application', icon: Building2 },
   { id: 'mess', label: 'Mess Tokens', path: '/mess-tokens', icon: UtensilsCrossed },
   { id: 'outings', label: 'Outing Requests', path: '/outing-requests', icon: Footprints },
-  { id: 'complaints', label: 'Complaints', path: '/complaints', icon: AlertCircle },
   { id: 'leaves', label: 'Leaves & Suspension', path: '/leaves', icon: FileText },
   { id: 'notifications', label: 'Notifications', path: '/notifications', icon: Bell },
 ];
@@ -46,6 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   onLogout,
 }) => {
+  const { user } = useAuth();
   // Lock body scroll on mobile when drawer is open
   useEffect(() => {
     if (isOpen) {
@@ -122,8 +122,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
 
-        {/* Sidebar Footer with Logout */}
+        {/* Sidebar Footer with Room Details & Logout */}
         <div className="sidebar-footer">
+          {user?.roomNumber && (
+            <div
+              onClick={() => handleItemClick('/my-room')}
+              role="button"
+              tabIndex={0}
+              style={{
+                marginBottom: '0.75rem',
+                padding: '0.65rem 0.85rem',
+                background: 'rgba(255, 255, 255, 0.07)',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'background 0.2s',
+              }}
+              title="Click to view full room details"
+            >
+              <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#94A3B8', fontWeight: 700 }}>
+                My Room
+              </div>
+              <div style={{ fontSize: '0.875rem', fontWeight: 800, color: '#38BDF8', marginTop: '0.15rem' }}>
+                Room {user.roomNumber} • {user.bedNumber || 'Bed-1'}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#CBD5E1', marginTop: '0.1rem' }}>
+                {user.blockName || 'Alliance Hostel'} · {user.floorName || 'Floor 1'}
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={onLogout}

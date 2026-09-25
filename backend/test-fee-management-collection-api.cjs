@@ -178,6 +178,9 @@ async function runTests() {
       adminToken
     );
     assert.strictEqual(dupRes.status, 400, 'Must reject duplicate academic year code');
+
+    // Cleanup temporary test academic year so it never pollutes the database
+    await prisma.academicYear.delete({ where: { id: createRes.data.academicYear.id } }).catch(() => {});
   });
 
   // 6. Bank Accounts CRUD & Validation
@@ -229,6 +232,9 @@ async function runTests() {
     );
     assert.strictEqual(toggleRes.status, 200);
     assert.strictEqual(toggleRes.data.bankAccount.status, 'INACTIVE');
+
+    // Cleanup temporary test bank account
+    await prisma.bankAccount.delete({ where: { id: createdAccId } }).catch(() => {});
   });
 
   // 7. Fee Structures CRUD
@@ -276,6 +282,9 @@ async function runTests() {
     );
     assert.strictEqual(toggleRes.status, 200);
     assert.strictEqual(toggleRes.data.feeStructure.status, 'INACTIVE');
+
+    // Cleanup temporary test fee structure so duplicates never accumulate
+    await prisma.feeStructure.delete({ where: { id: structId } }).catch(() => {});
   });
 
   // 8. Scholarships Workflow & Transactional Application
@@ -338,6 +347,9 @@ async function runTests() {
     assert.strictEqual(applyRes.status, 200);
     assert.ok(applyRes.data.appliedAmount > 0);
     assert.ok(['APPLIED', 'CLOSED'].includes(applyRes.data.scholarship.status));
+
+    // Cleanup temporary test scholarship
+    await prisma.studentScholarship.delete({ where: { id: scholarshipId } }).catch(() => {});
   });
 
   // 9. Detentions: Academic Standing Workflow
@@ -380,6 +392,9 @@ async function runTests() {
     );
     assert.strictEqual(revokeRes.status, 200);
     assert.strictEqual(revokeRes.data.detention.status, 'REVOKED');
+
+    // Cleanup temporary test detention
+    await prisma.detention.delete({ where: { id: detentionId } }).catch(() => {});
   });
 
   // 10. Fee Collection: List Students with Authoritative Breakdown
@@ -584,6 +599,11 @@ async function runTests() {
     assert.strictEqual(res.data.success, true);
     assert.strictEqual(res.data.feeItem.isExtraFee, true);
     assert.ok(Number(res.data.feeItem.totalFee) > 0);
+
+    // Cleanup temporary extra fee item
+    if (res.data?.feeItem?.id) {
+      await prisma.feeItem.delete({ where: { id: res.data.feeItem.id } }).catch(() => {});
+    }
   });
 
   // 15. Promotion Workflow

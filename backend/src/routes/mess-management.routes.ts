@@ -14,7 +14,7 @@ const router = Router();
 // Enforce authoritative management authentication on all mess management endpoints
 router.use(authenticateManagement);
 
-export const VALID_MEALS = ['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER'] as const;
+export const VALID_MEALS = ['BREAKFAST', 'LUNCH', 'DINNER'] as const;
 export type MealType = (typeof VALID_MEALS)[number];
 
 export const VALID_STATUSES = ['BOOKED', 'CONSUMED', 'CANCELLED', 'SKIPPED'] as const;
@@ -65,18 +65,6 @@ export const MEAL_CONFIGS: MealTimingConfig[] = [
     endMinute: 30,
     description: 'Complete nutritional multi-course lunch meal',
     cutoffHour: 10,
-    cutoffMinute: 0,
-  },
-  {
-    type: 'SNACKS',
-    name: 'Evening Snacks',
-    timing: '04:30 PM - 06:00 PM',
-    startHour: 16,
-    startMinute: 30,
-    endHour: 18,
-    endMinute: 0,
-    description: 'Evening tea, coffee, and fresh evening snacks',
-    cutoffHour: 15,
     cutoffMinute: 0,
   },
   {

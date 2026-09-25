@@ -10,11 +10,12 @@ const router = Router();
 const VALID_PASS_TYPES = ['LOCAL_OUTING', 'EMERGENCY', 'NIGHT_OUT'] as const;
 type PassType = (typeof VALID_PASS_TYPES)[number];
 
-function generateRequestNumber(outDate: Date, passType: string): string {
+function generateRequestNumber(jntuNo: string, outDate: Date, passType: string): string {
+  const cleanJntu = (jntuNo || 'STU').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   const dateStr = outDate.toISOString().split('T')[0].replace(/-/g, '');
   const typeTag = passType.substring(0, 3).toUpperCase();
   const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `OUT-${dateStr}-${typeTag}-${randomSuffix}`;
+  return `OUT-${cleanJntu}-${dateStr}-${typeTag}-${randomSuffix}`;
 }
 
 /**
@@ -49,10 +50,22 @@ router.get('/outing-requests', authenticateStudent, async (req: AuthenticatedReq
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // 2. Fetch all outing requests for this student
+    // 2. Fetch all outing requests for this student (with student details)
     const requests = await prisma.outingRequest.findMany({
       where: { studentId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            jntuNo: true,
+            blockName: true,
+            roomNumber: true,
+            bedNumber: true,
+          },
+        },
+      },
     });
 
     // 3. Compute counts and status
@@ -278,8 +291,8 @@ router.post('/outing-requests', authenticateStudent, async (req: AuthenticatedRe
       return;
     }
 
-    // 6. Generate request number and create request
-    const requestNumber = generateRequestNumber(parsedOutDate, normalizedPassType);
+    // 6. Generate request number containing student JNTU number and create request
+    const requestNumber = generateRequestNumber(req.student.jntuNo, parsedOutDate, normalizedPassType);
 
     const [newRequest] = await prisma.$transaction([
       prisma.outingRequest.create({
@@ -294,6 +307,18 @@ router.post('/outing-requests', authenticateStudent, async (req: AuthenticatedRe
           outDate: parsedOutDate,
           returnDate: parsedReturnDate,
           status: 'PENDING',
+        },
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              jntuNo: true,
+              blockName: true,
+              roomNumber: true,
+              bedNumber: true,
+            },
+          },
         },
       }),
       prisma.activityLog.create({

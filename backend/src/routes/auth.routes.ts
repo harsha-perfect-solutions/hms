@@ -74,7 +74,11 @@ router.get('/register-blocks', async (_req, res): Promise<void> => {
 
         const roomTypesSummary: Record<string, { availableCount: number; totalRooms: number }> = {};
         activeRooms.forEach((r) => {
-          const typeKey = r.roomType || 'Standard';
+          const rawType = r.roomType || 'Standard Room';
+          let cleanType = rawType.replace(/\bNon-AC\s*/gi, '').replace(/\bAC\s*/gi, '').trim();
+          const m = cleanType.match(/^Room\s*\(([^)]+)\)$/i);
+          if (m) cleanType = `${m[1]} Room`;
+          const typeKey = cleanType || 'Standard Room';
           const occupancy = r.allocations ? r.allocations.length : 0;
           const availableBeds = Math.max(0, r.capacity - occupancy);
           if (!roomTypesSummary[typeKey]) {
@@ -118,7 +122,8 @@ router.get('/register-blocks', async (_req, res): Promise<void> => {
  */
 router.post('/login', loginRateLimiter, async (req, res): Promise<void> => {
   try {
-    const { jntuNo, password } = req.body;
+    const jntuNo = req.body.jntuNo || req.body.identifier || req.body.username || req.body.email;
+    const { password } = req.body;
     const result = await AuthService.login(jntuNo, password);
 
     res.status(200).json({

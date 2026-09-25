@@ -14,11 +14,15 @@ router.use(authenticateManagement);
 // Authorized Management Roles
 const AUTHORIZED_ROLES = [
   'ADMIN',
+  'SUPPORT_ADMIN',
   'HOSTEL_ADMIN',
+  'COLLEGE_DIRECTOR',
   'CHIEF_WARDEN',
   'CHIEF_WARDEN_BOYS',
   'CHIEF_WARDEN_GIRLS',
   'WARDEN',
+  'WARDEN_BOYS',
+  'WARDEN_GIRLS',
 ];
 
 /**

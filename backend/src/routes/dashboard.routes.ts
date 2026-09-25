@@ -104,6 +104,39 @@ router.get('/dashboard', authenticateStudent, async (req: AuthenticatedRequest, 
       },
     });
 
+    // 6.5 Query authoritative active RoomAllocation for this student
+    const activeAllocation = await prisma.roomAllocation.findFirst({
+      where: {
+        studentId,
+        status: 'ACTIVE',
+      },
+      include: {
+        room: {
+          include: {
+            block: true,
+          },
+        },
+      },
+    });
+
+    const roomDetails = activeAllocation
+      ? {
+          status: 'ALLOCATED',
+          block: activeAllocation.room.block.name,
+          roomNumber: activeAllocation.room.roomNumber,
+          floor: String(activeAllocation.room.floor || 1),
+          bedNumber: activeAllocation.bedNumber || student.bedNumber || 'Bed-1',
+          roomType: activeAllocation.room.roomType || student.roomType || 'Standard Room',
+        }
+      : {
+          status: student.allocationStatus || (student.roomNumber ? 'ALLOCATED' : 'NOT_ALLOCATED'),
+          block: student.blockName,
+          roomNumber: student.roomNumber,
+          floor: student.floorName,
+          bedNumber: student.bedNumber,
+          roomType: student.roomType,
+        };
+
     // Response structure
     const dashboardData = {
       success: true,
@@ -114,14 +147,7 @@ router.get('/dashboard', authenticateStudent, async (req: AuthenticatedRequest, 
         email: student.email,
         role: student.role,
       },
-      room: {
-        status: student.allocationStatus, // ALLOCATED, NOT_ALLOCATED, PENDING
-        block: student.blockName,
-        roomNumber: student.roomNumber,
-        floor: student.floorName,
-        bedNumber: student.bedNumber,
-        roomType: student.roomType,
-      },
+      room: roomDetails,
       outings: {
         active: activeOutingsCount,
         usedThisMonth: usedOutingsThisMonth,

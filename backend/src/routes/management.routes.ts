@@ -17,7 +17,6 @@ import { roomManagementRouter, roomAllocationRouter } from './room-management.ro
 import messManagementRouter from './mess-management.routes';
 import outingManagementRouter from './outing-management.routes';
 import { leaveManagementRouter, suspensionManagementRouter } from './leave-management.routes';
-import complaintManagementRouter from './complaint-management.routes';
 import guestBillingRouter from './guest-billing.routes';
 import logHistoryRouter from './log-history.routes';
 import userManagementRouter from './user-management.routes';
@@ -41,7 +40,6 @@ router.use('/mess', messManagementRouter);
 router.use('/outings', outingManagementRouter);
 router.use('/leaves', leaveManagementRouter);
 router.use('/suspensions', suspensionManagementRouter);
-router.use('/complaints', complaintManagementRouter);
 router.use('/guest-billing', guestBillingRouter);
 router.use('/log-history', logHistoryRouter);
 router.use('/outing-log-history', outingLogHistoryRouter);

@@ -16,7 +16,6 @@ const getStoredToken = (): string | null => {
 };
 
 export type StudentEventDomain =
-  | 'complaint'
   | 'leave'
   | 'notification'
   | 'biometric'
@@ -38,7 +37,6 @@ class StudentRealtimeClient {
   constructor() {
     // Initialize subscriber sets for each domain
     const domains: StudentEventDomain[] = [
-      'complaint',
       'leave',
       'notification',
       'biometric',
@@ -103,7 +101,6 @@ class StudentRealtimeClient {
       });
 
       // Domain-specific event listeners
-      this.setupDomainListener('complaint_event', 'complaint');
       this.setupDomainListener('leave_event', 'leave');
       this.setupDomainListener('notification_event', 'notification');
       this.setupDomainListener('biometric_event', 'biometric');

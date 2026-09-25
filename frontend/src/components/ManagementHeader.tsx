@@ -46,7 +46,7 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isMultiCollegeUser = user?.role === 'SUPPORT_ADMIN' || user?.role === 'ADMIN' || user?.role === 'COLLEGE_DIRECTOR';
+  const isMultiCollegeUser = user?.role === 'SUPPORT_ADMIN';
 
   useEffect(() => {
     if (!isMultiCollegeUser) return;

@@ -1011,7 +1011,6 @@ export const MessManagementPage: React.FC<MessManagementPageProps> = () => {
                   >
                     <option value="BREAKFAST">🍳 Breakfast</option>
                     <option value="LUNCH">🍲 Lunch</option>
-                    <option value="SNACKS">☕ Snacks</option>
                     <option value="DINNER">🍛 Dinner</option>
                   </select>
                 </div>
@@ -1738,7 +1737,6 @@ export const MessManagementPage: React.FC<MessManagementPageProps> = () => {
                   <option value="ALL">All Meals</option>
                   <option value="BREAKFAST">Breakfast</option>
                   <option value="LUNCH">Lunch</option>
-                  <option value="SNACKS">Snacks</option>
                   <option value="DINNER">Dinner</option>
                 </select>
               </div>
@@ -2925,7 +2923,6 @@ export const MessManagementPage: React.FC<MessManagementPageProps> = () => {
                   <option value="ALL">All Meals</option>
                   <option value="BREAKFAST">Breakfast</option>
                   <option value="LUNCH">Lunch</option>
-                  <option value="SNACKS">Snacks</option>
                   <option value="DINNER">Dinner</option>
                 </select>
               </div>

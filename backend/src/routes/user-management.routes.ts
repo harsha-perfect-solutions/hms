@@ -267,7 +267,6 @@ userManagementRouter.get('/:id', async (req: AuthenticatedManagementRequest, res
         _count: {
           select: {
             sessions: true,
-            complaints: true,
             outings: true,
             leaves: true,
           },

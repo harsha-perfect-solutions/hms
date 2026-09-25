@@ -272,9 +272,17 @@ export const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ onNavigate
           feeKind: structureForm.feeKind,
         });
         showToast('Fee structure updated successfully.');
-      } else {
+        const targetYearId = (structureForm.academicYearId && structureForm.academicYearId !== 'ALL')
+          ? structureForm.academicYearId
+          : (selectedYearId !== 'ALL' ? selectedYearId : (academicYears.find(y => y.isCurrent)?.id || academicYears[0]?.id));
+
+        if (!targetYearId) {
+          showToast('Please select a valid academic year.', 'error');
+          return;
+        }
+
         await managementApiService.createFeeStructure({
-          academicYearId: structureForm.academicYearId || selectedYearId,
+          academicYearId: targetYearId,
           module: structureForm.module,
           category: structureForm.category,
           feeKind: structureForm.feeKind,
@@ -710,7 +718,7 @@ export const FeeManagementPage: React.FC<FeeManagementPageProps> = ({ onNavigate
               onClick={() => {
                 setEditingStructure(null);
                 setStructureForm({
-                  academicYearId: selectedYearId !== 'ALL' ? selectedYearId : academicYears[0]?.id || '',
+                  academicYearId: (selectedYearId && selectedYearId !== 'ALL') ? selectedYearId : (academicYears.find((y) => y.isCurrent)?.id || academicYears[0]?.id || ''),
                   module: 'HOSTEL',
                   category: 'REGULAR',
                   feeKind: 'MESS_FEE',

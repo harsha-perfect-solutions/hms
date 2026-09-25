@@ -24,6 +24,7 @@ import {
   BankAccountItem,
   FeePaymentItem,
 } from '../services/api';
+import { useManagementAuth } from '../context/ManagementAuthContext';
 import '../styles/FeeModules.css';
 
 interface FeeCollectionPageProps {
@@ -31,6 +32,9 @@ interface FeeCollectionPageProps {
 }
 
 export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
+  const { user } = useManagementAuth();
+  const currentAdminName = user?.name || user?.jntuNo || 'ADMIN';
+
   // Academic Years
   const [academicYears, setAcademicYears] = useState<AcademicYearItem[]>([]);
   const [selectedYearId, setSelectedYearId] = useState<string>('');
@@ -39,6 +43,10 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
   const [students, setStudents] = useState<StudentFeeItemSummary[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [expandedStudents, setExpandedStudents] = useState<Record<string, boolean>>({});
+
+  // Table Row Selection for Bulk Operations
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [isExportingExcel, setIsExportingExcel] = useState<boolean>(false);
 
   // Pagination & Filtering
   const [search, setSearch] = useState<string>('');
@@ -186,6 +194,12 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
     }
   }, [selectedYearId, search, moduleFilter, paymentStatusFilter, dueStatusFilter, pagination.page, pagination.limit]);
 
+  // Reset pagination to page 1 whenever search or filters change
+  useEffect(() => {
+    setPagination((prev) => (prev.page === 1 ? prev : { ...prev, page: 1 }));
+    setSelectedStudentIds([]);
+  }, [search, moduleFilter, paymentStatusFilter, dueStatusFilter, selectedYearId]);
+
   useEffect(() => {
     loadAcademicYears();
     loadBankAccounts();
@@ -233,9 +247,15 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
     setUpiReference('');
     setChequeNumber('');
     setChequeBankName('');
-    setChequeReceivedBy('ADMIN01');
+    setChequeReceivedBy(currentAdminName);
     setSbiCollectReference('');
-    setSbiVerifiedBy('ADMIN01');
+    setSbiVerifiedBy(currentAdminName);
+
+    const activeBank = bankAccounts.find((b) => b.status === 'ACTIVE') || bankAccounts[0];
+    if (activeBank && (!selectedBankAccountId || !bankAccounts.some((b) => b.id === selectedBankAccountId))) {
+      setSelectedBankAccountId(activeBank.id);
+    }
+
     setShowPaymentModal(true);
   };
 
@@ -353,15 +373,16 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
   const handlePromoteStudents = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const studentIds = students.map((s) => s.student.id);
+      const studentIds = selectedStudentIds.length > 0 ? selectedStudentIds : ['ALL'];
       const res = await managementApiService.promoteStudents({
         studentIds,
         currentAcademicYearId: selectedYearId,
         targetAcademicYearId: targetAcademicYearId || selectedYearId,
         promotionType,
       });
-      showToast(res.message || 'Promotion completed.');
+      showToast(res.message || 'Promotion completed successfully.');
       setShowPromoteModal(false);
+      setSelectedStudentIds([]);
       loadStudentFees();
     } catch (err: any) {
       showToast(err.message || 'Promotion failed.', 'error');
@@ -404,18 +425,49 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
         showToast('Amount must be greater than zero.', 'error');
         return;
       }
-      const allItemIds = students.flatMap((s) => s.items.map((it) => it.id));
+      const targetStudents = selectedStudentIds.length > 0
+        ? students.filter((s) => selectedStudentIds.includes(s.student.id))
+        : students;
+      const targetItemIds = targetStudents.flatMap((s) => s.items.map((it) => it.id));
+      if (targetItemIds.length === 0) {
+        showToast('No fee items available to adjust.', 'error');
+        return;
+      }
       const res = await managementApiService.bulkFeeAdjustment({
-        feeItemIds: allItemIds,
+        feeItemIds: targetItemIds,
         adjustmentType: bulkAdjustForm.adjustmentType as any,
         amount: amt,
         reason: bulkAdjustForm.reason,
       });
       showToast(res.message || 'Bulk adjustment applied.');
       setShowBulkAdjustModal(false);
+      setSelectedStudentIds([]);
       loadStudentFees();
     } catch (err: any) {
       showToast(err.message || 'Bulk adjustment failed', 'error');
+    }
+  };
+
+  // Excel Export Handler (Authenticated Blob Download)
+  const handleExportExcel = async () => {
+    try {
+      setIsExportingExcel(true);
+      const blob = await managementApiService.exportFeeExcel(selectedYearId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const curYear = academicYears.find((y) => y.id === selectedYearId);
+      const yearLabel = curYear ? curYear.code.replace(/\s+/g, '_') : 'all_years';
+      a.download = `fee_collection_${yearLabel}_${Date.now()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showToast('Fee collection Excel spreadsheet exported successfully.');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to export fee collection Excel.', 'error');
+    } finally {
+      setIsExportingExcel(false);
     }
   };
 
@@ -599,13 +651,12 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
           <button
             type="button"
             className="fee-btn-secondary"
-            onClick={() => {
-              window.open(`/api/management/fee-collection/export-excel?academicYearId=${selectedYearId}`, '_blank');
-            }}
+            onClick={handleExportExcel}
+            disabled={isExportingExcel}
             title="Download Excel spreadsheet"
           >
-            <Download size={14} />
-            Export Excel
+            <Download size={14} className={isExportingExcel ? 'animate-spin' : ''} />
+            {isExportingExcel ? 'Exporting...' : 'Export Excel'}
           </button>
 
           <button
@@ -631,6 +682,20 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
           <table className="fee-data-table">
             <thead>
               <tr>
+                <th style={{ width: '36px', textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={students.length > 0 && selectedStudentIds.length === students.length}
+                    onChange={() => {
+                      if (selectedStudentIds.length === students.length) {
+                        setSelectedStudentIds([]);
+                      } else {
+                        setSelectedStudentIds(students.map((s) => s.student.id));
+                      }
+                    }}
+                    title="Select all students on page"
+                  />
+                </th>
                 <th style={{ width: '40px' }}></th>
                 <th>Student</th>
                 <th>Academic Year</th>
@@ -647,17 +712,31 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
             <tbody>
               {students.length === 0 ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                  <td colSpan={12} style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
                     {isLoading ? 'Loading authoritative student fees from database...' : 'No student records found.'}
                   </td>
                 </tr>
               ) : (
                 students.map((st) => {
                   const isExpanded = !!expandedStudents[st.student.id];
+                  const isSelected = selectedStudentIds.includes(st.student.id);
 
                   return (
                     <React.Fragment key={st.student.id}>
-                      <tr style={{ backgroundColor: isExpanded ? '#f8fafc' : undefined }}>
+                      <tr style={{ backgroundColor: isSelected ? '#f0fdf4' : isExpanded ? '#f8fafc' : undefined }}>
+                        <td style={{ textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {
+                              setSelectedStudentIds((prev) =>
+                                prev.includes(st.student.id)
+                                  ? prev.filter((id) => id !== st.student.id)
+                                  : [...prev, st.student.id]
+                              );
+                            }}
+                          />
+                        </td>
                         <td>
                           <button
                             type="button"
@@ -911,49 +990,56 @@ export const FeeCollectionPage: React.FC<FeeCollectionPageProps> = () => {
                 )}
 
                 {/* Full vs Partial Toggle */}
-                <div className="fee-form-group">
-                  <label>Payment Mode</label>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        name="payType"
-                        checked={paymentType === 'FULL'}
-                        onChange={() => {
-                          setPaymentType('FULL');
-                          setPaymentAmount((paymentTargetItem ? paymentTargetItem.dueAmount : paymentTargetStudent.dueAmount).toString());
-                        }}
-                      />
-                      <span>Pay Full Due (₹{(paymentTargetItem ? paymentTargetItem.dueAmount : paymentTargetStudent.dueAmount).toLocaleString('en-IN')})</span>
-                    </label>
+                {(() => {
+                  const maxDue = paymentTargetItem ? paymentTargetItem.dueAmount : (paymentTargetStudent?.dueAmount ?? 0);
+                  return (
+                    <>
+                      <div className="fee-form-group">
+                        <label>Payment Mode</label>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="payType"
+                              checked={paymentType === 'FULL'}
+                              onChange={() => {
+                                setPaymentType('FULL');
+                                setPaymentAmount(maxDue.toString());
+                              }}
+                            />
+                            <span>Pay Full Due (₹{maxDue.toLocaleString('en-IN')})</span>
+                          </label>
 
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        name="payType"
-                        checked={paymentType === 'PARTIAL'}
-                        onChange={() => setPaymentType('PARTIAL')}
-                      />
-                      <span>Pay Partial Amount</span>
-                    </label>
-                  </div>
-                </div>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="payType"
+                              checked={paymentType === 'PARTIAL'}
+                              onChange={() => setPaymentType('PARTIAL')}
+                            />
+                            <span>Pay Partial Amount</span>
+                          </label>
+                        </div>
+                      </div>
 
-                {/* Amount Input */}
-                <div className="fee-form-group">
-                  <label>Amount to Collect (INR)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="1"
-                    max={paymentTargetItem ? paymentTargetItem.dueAmount : paymentTargetStudent.dueAmount}
-                    className="fee-form-input"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    disabled={paymentType === 'FULL'}
-                    required
-                  />
-                </div>
+                      {/* Amount Input */}
+                      <div className="fee-form-group">
+                        <label>Amount to Collect (INR)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          max={maxDue}
+                          className="fee-form-input"
+                          value={paymentAmount}
+                          onChange={(e) => setPaymentAmount(e.target.value)}
+                          disabled={paymentType === 'FULL'}
+                          required
+                        />
+                      </div>
+                    </>
+                  );
+                })()}
 
                 {/* Payment Method Selector */}
                 <div className="fee-form-group">

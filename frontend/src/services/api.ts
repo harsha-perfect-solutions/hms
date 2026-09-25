@@ -6,6 +6,7 @@ export interface StudentUser {
   name: string;
   email: string;
   role: string;
+  allocationStatus?: string | null;
   blockName?: string | null;
   floorName?: string | null;
   roomNumber?: string | null;
@@ -258,6 +259,14 @@ export interface OutingRequestItem {
   status: 'PENDING' | 'APPROVED' | 'OUT' | 'RETURNED' | 'REJECTED' | 'CANCELLED';
   createdAt: string;
   updatedAt: string;
+  student?: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    blockName?: string | null;
+    roomNumber?: string | null;
+    bedNumber?: string | null;
+  };
 }
 
 export interface OutingSummary {
@@ -305,101 +314,6 @@ export interface CancelOutingResponse {
   request: OutingRequestItem;
 }
 
-export interface ComplaintCommentItem {
-  id: string;
-  author: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface ComplaintAttachment {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  createdAt: string;
-  downloadUrl: string;
-}
-
-export interface ComplaintTimelineItem {
-  step: string;
-  label: string;
-  description: string;
-  timestamp?: string | null;
-  completed: boolean;
-}
-
-export interface ComplaintItem {
-  id: string;
-  studentId: string;
-  ticketNumber: string;
-  category: string;
-  title: string;
-  description: string;
-  location?: string | null;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'CANCELLED';
-  assignedTo?: string | null;
-  resolutionNotes?: string | null;
-  resolvedAt?: string | null;
-  comments?: string | null;
-  commentsList?: ComplaintCommentItem[];
-  attachments?: ComplaintAttachment[];
-  timeline?: ComplaintTimelineItem[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-
-export interface ComplaintSummary {
-  total: number;
-  open: number;
-  inProgress: number;
-  resolved: number;
-  cancelled: number;
-}
-
-export interface ComplaintsData {
-  success: boolean;
-  student: {
-    id: string;
-    name: string;
-    jntuNo: string;
-    allocationStatus: string;
-    blockName?: string | null;
-    roomNumber?: string | null;
-  };
-  summary: ComplaintSummary;
-  complaints: ComplaintItem[];
-}
-
-export interface CreateComplaintPayload {
-  category: string;
-  title: string;
-  description: string;
-  location?: string;
-  priority?: string;
-}
-
-export interface CreateComplaintResponse {
-  success: boolean;
-  message: string;
-  complaint: ComplaintItem;
-}
-
-export interface AddCommentResponse {
-  success: boolean;
-  message: string;
-  comment: ComplaintCommentItem;
-  complaint: ComplaintItem;
-}
-
-export interface CancelComplaintResponse {
-  success: boolean;
-  message: string;
-  complaint: ComplaintItem;
-}
-
 export interface LeaveTimelineStep {
   step: string;
   title: string;
@@ -430,6 +344,14 @@ export interface LeaveRequestItem {
   updatedAt: string;
   canCancel?: boolean;
   timeline?: LeaveTimelineStep[];
+  student?: {
+    id: string;
+    name: string;
+    jntuNo: string;
+    roomNumber?: string | null;
+    blockName?: string | null;
+    bedNumber?: string | null;
+  };
 }
 
 export interface SuspensionInfo {
@@ -945,180 +867,6 @@ export const apiService = {
   },
 
   /**
-   * Fetch authenticated student's complaints data
-   */
-  async getComplaintsData(): Promise<ComplaintsData> {
-    const token = authStorage.getToken();
-    if (!token) {
-      throw new Error('Authentication session missing.');
-    }
-
-    const response = await fetch('/api/student/complaints', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        authStorage.clearToken();
-      }
-      throw new Error(data.message || 'Unable to load complaints.');
-    }
-
-    return data;
-  },
-
-  /**
-   * Submit a new maintenance complaint
-   */
-  async createComplaint(payload: CreateComplaintPayload): Promise<CreateComplaintResponse> {
-    const token = authStorage.getToken();
-    if (!token) {
-      throw new Error('Authentication session missing.');
-    }
-
-    const response = await fetch('/api/student/complaints', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to submit complaint.');
-    }
-
-    return data;
-  },
-
-  /**
-   * Add a follow-up note/comment to an active complaint
-   */
-  async addComplaintComment(id: string, comment: string): Promise<AddCommentResponse> {
-    const token = authStorage.getToken();
-    if (!token) {
-      throw new Error('Authentication session missing.');
-    }
-
-    const response = await fetch(`/api/student/complaints/${id}/comment`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ comment }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to add note.');
-    }
-
-    return data;
-  },
-
-  /**
-   * Cancel an eligible open complaint
-   */
-  async cancelComplaint(id: string): Promise<CancelComplaintResponse> {
-    const token = authStorage.getToken();
-    if (!token) {
-      throw new Error('Authentication session missing.');
-    }
-
-    const response = await fetch(`/api/student/complaints/${id}/cancel`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Unable to cancel complaint.');
-    }
-
-    return data;
-  },
-
-  /**
-   * Fetch complete authoritative complaint details including attachments and timeline
-   * Phase 2 & 3
-   */
-  async getComplaintDetail(id: string): Promise<{ success: boolean; complaint: ComplaintItem }> {
-    const token = authStorage.getToken();
-    if (!token) {
-      throw new Error('Authentication session missing.');
-    }
-
-    const response = await fetch(`/api/student/complaints/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        authStorage.clearToken();
-      }
-      throw new Error(data.message || 'Unable to load complaint details.');
-    }
-
-    return data;
-  },
-
-  /**
-   * Upload an attachment to an existing complaint
-   * Phase 5 & 6
-   */
-  async uploadComplaintAttachment(
-    complaintId: string,
-    file: File
-  ): Promise<{ success: boolean; message: string; attachment: ComplaintAttachment }> {
-    const token = authStorage.getToken();
-    if (!token) {
-      throw new Error('Authentication session missing.');
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(`/api/student/complaints/${complaintId}/attachments`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to upload attachment.');
-    }
-
-    return data;
-  },
-
-  /**
-   * Subscribe to real-time complaint updates via unified Student SSE
-   */
-  subscribeToComplaintEvents(onEvent: (event: { type: string; complaintId: string; timestamp: string }) => void): () => void {
-    return studentRealtimeClient.subscribe('complaint', onEvent);
-  },
-
-  /**
    * Fetch all leaves, active suspension, and summary stats
    */
   async getLeaves(): Promise<LeavesData> {
@@ -1578,9 +1326,6 @@ export interface RequestMetrics {
   outOutings: number;
   pendingLeaves: number;
   activeLeaves: number;
-  openComplaints: number;
-  inProgressComplaints: number;
-  resolvedComplaints: number;
   activeSuspensions: number;
   actionableTotal: number;
 }
@@ -1979,6 +1724,24 @@ export const managementApiService = {
       throw new Error(data.message || 'Failed to retrieve rooms.');
     }
     return data;
+  },
+
+  async exportFloorPlanExcel(): Promise<Blob> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing. Please log in.');
+
+    const res = await fetch('/api/management/rooms/export-excel', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      let errorMsg = 'Failed to export hostel floor plan to Excel.';
+      try {
+        const errJson = await res.json();
+        if (errJson.message) errorMsg = errJson.message;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+    return await res.blob();
   },
 
   async getRoom(id: string): Promise<{ success: boolean; room: RoomItem }> {
@@ -2978,183 +2741,6 @@ export const managementApiService = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Failed to lift suspension.');
     return data;
-  },
-
-  // Complaint & Maintenance Management
-  async getComplaintStats(): Promise<{ success: boolean; data: ComplaintStats }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch('/api/management/complaints/stats', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to load complaint stats.');
-    return data;
-  },
-
-  async getComplaints(params?: ComplaintQueryParams): Promise<ComplaintsListResponse> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const searchParams = new URLSearchParams();
-    if (params?.status) searchParams.set('status', params.status);
-    if (params?.priority) searchParams.set('priority', params.priority);
-    if (params?.category) searchParams.set('category', params.category);
-    if (params?.assigned) searchParams.set('assigned', params.assigned);
-    if (params?.search) searchParams.set('search', params.search);
-    if (params?.block) searchParams.set('block', params.block);
-    if (params?.blockId) searchParams.set('blockId', params.blockId);
-    if (params?.date) searchParams.set('date', params.date);
-    if (params?.page) searchParams.set('page', params.page.toString());
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    const query = searchParams.toString();
-    const res = await fetch(`/api/management/complaints${query ? `?${query}` : ''}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to load complaints.');
-    return data;
-  },
-
-  async getComplaint(id: string): Promise<{ success: boolean; data: ManagementComplaintItem }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch(`/api/management/complaints/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to load complaint details.');
-    return data;
-  },
-
-  async getMaintenanceStaff(): Promise<{ success: boolean; data: MaintenanceStaffMember[] }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch('/api/management/complaints/maintenance-staff', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to load maintenance staff.');
-    return data;
-  },
-
-  async assignComplaint(id: string, staffId: string): Promise<{ success: boolean; message: string; data: any }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch(`/api/management/complaints/${id}/assign`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ staffId }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to assign complaint.');
-    return data;
-  },
-
-  async startComplaint(id: string): Promise<{ success: boolean; message: string; data: any }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch(`/api/management/complaints/${id}/start`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({}),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to start complaint.');
-    return data;
-  },
-
-  async resolveComplaint(id: string, resolutionNotes: string): Promise<{ success: boolean; message: string; data: any }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch(`/api/management/complaints/${id}/resolve`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ resolutionNotes }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to resolve complaint.');
-    return data;
-  },
-
-  async closeComplaint(id: string): Promise<{ success: boolean; message: string; data: any }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch(`/api/management/complaints/${id}/close`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({}),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to close complaint.');
-    return data;
-  },
-
-  async updateComplaintStatus(
-    id: string,
-    payload: { status: string; staffId?: string; resolutionNotes?: string }
-  ): Promise<{ success: boolean; message: string; data: any }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch(`/api/management/complaints/${id}/status`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to update complaint status.');
-    return data;
-  },
-
-  async addComplaintComment(
-    id: string,
-    comment: string
-  ): Promise<{ success: boolean; message: string; data: any }> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch(`/api/management/complaints/${id}/comment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ comment }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to add comment.');
-    return data;
-  },
-
-  async downloadComplaintAttachment(complaintId: string, attachmentId: string, fileName: string): Promise<void> {
-    const token = managementAuthStorage.getToken();
-    if (!token) throw new Error('Management session missing.');
-    const res = await fetch(`/api/management/complaints/${complaintId}/attachments/${attachmentId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error('Failed to download attachment');
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
   },
 
   // Guest Billing Management
@@ -4263,6 +3849,24 @@ export const managementApiService = {
     return data;
   },
 
+  async exportFeeExcel(academicYearId?: string): Promise<Blob> {
+    const token = managementAuthStorage.getToken();
+    if (!token) throw new Error('Management session missing.');
+    const q = academicYearId ? `?academicYearId=${encodeURIComponent(academicYearId)}` : '';
+    const res = await fetch(`/api/management/fee-collection/export-excel${q}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      let errorMsg = 'Failed to export Excel.';
+      try {
+        const errJson = await res.json();
+        if (errJson.message) errorMsg = errJson.message;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+    return await res.blob();
+  },
+
   async importFeeExcel(file: File): Promise<{
     success: boolean;
     totalRows: number;
@@ -5246,95 +4850,6 @@ export interface CreateSuspensionPayload {
   startDate: string;
   endDate: string;
   remarks?: string;
-}
-
-// Complaints & Maintenance Management Types
-export interface ComplaintStats {
-  total: number;
-  open: number;
-  assigned: number;
-  inProgress: number;
-  resolved: number;
-  closed: number;
-  highPriority: number;
-  unassigned: number;
-}
-
-export interface ComplaintStudent {
-  id: string;
-  name: string;
-  jntuNo: string;
-  email?: string;
-  blockName?: string | null;
-  roomNumber?: string | null;
-  bedNumber?: string | null;
-  roomType?: string | null;
-  avatar?: string;
-}
-
-export interface ComplaintAttachmentItem {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  createdAt: string;
-  downloadUrl: string;
-}
-
-export interface ManagementComplaintItem {
-  id: string;
-  ticketNumber?: string | null;
-  category: string;
-  title: string;
-  description: string;
-  location?: string | null;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | string;
-  status: 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'CANCELLED' | 'REJECTED' | string;
-  assignedTo?: string | null;
-  assignedToId?: string | null;
-  assignedAt?: string | null;
-  assignedBy?: string | null;
-  resolutionNotes?: string | null;
-  resolvedBy?: string | null;
-  resolvedAt?: string | null;
-  closedAt?: string | null;
-  closedBy?: string | null;
-  student: ComplaintStudent | null;
-  attachments: ComplaintAttachmentItem[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface MaintenanceStaffMember {
-  id: string;
-  name: string;
-  jntuNo: string;
-  email: string;
-  role: string;
-}
-
-export interface ComplaintQueryParams {
-  status?: string;
-  priority?: string;
-  category?: string;
-  assigned?: string;
-  search?: string;
-  block?: string;
-  blockId?: string;
-  date?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface ComplaintsListResponse {
-  success: boolean;
-  data: ManagementComplaintItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
 }
 
 // Guest Billing Management Interfaces

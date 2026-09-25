@@ -27,16 +27,13 @@ export interface RequestMetrics {
   outOutings: number;
   pendingLeaves: number;
   activeLeaves: number;
-  openComplaints: number;
-  inProgressComplaints: number;
-  resolvedComplaints: number;
   activeSuspensions: number;
   actionableTotal: number;
 }
 
 export interface AttentionItem {
   id: string;
-  category: 'OUTING' | 'LEAVE' | 'COMPLAINT' | 'SUSPENSION';
+  category: 'OUTING' | 'LEAVE' | 'SUSPENSION';
   title: string;
   count: number;
   urgency: 'HIGH' | 'MEDIUM' | 'LOW';
@@ -319,22 +316,24 @@ export class ManagementService {
       approvedOutings,
       outOutings,
       pendingLeaves,
-      openComplaints,
-      inProgressComplaints,
-      resolvedComplaints,
+      activeLeaves,
       activeSuspensions,
     ] = await Promise.all([
       prisma.outingRequest.count({ where: { status: 'PENDING' } }),
       prisma.outingRequest.count({ where: { status: 'APPROVED' } }),
       prisma.outingRequest.count({ where: { status: 'OUT' } }),
       prisma.leaveRequest.count({ where: { status: 'PENDING' } }),
-      prisma.complaint.count({ where: { status: 'OPEN' } }),
-      prisma.complaint.count({ where: { status: 'IN_PROGRESS' } }),
-      prisma.complaint.count({ where: { status: 'RESOLVED' } }),
+      prisma.leaveRequest.count({
+        where: {
+          status: 'APPROVED',
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+      }),
       prisma.suspension.count({ where: { status: 'ACTIVE' } }),
     ]);
 
-    const actionableTotal = pendingOutings + pendingLeaves + openComplaints;
+    const actionableTotal = pendingOutings + pendingLeaves;
 
     // 8. Actionable Attention Items
     const attention: AttentionItem[] = [];
@@ -361,19 +360,6 @@ export class ManagementService {
         urgency: 'HIGH',
         description: `${pendingLeaves} temporary leave application${pendingLeaves > 1 ? 's' : ''} requiring parent verification and sign-off.`,
         targetModule: '/management/leaves',
-        isAvailable: false,
-      });
-    }
-
-    if (openComplaints > 0) {
-      attention.push({
-        id: 'complaints-open',
-        category: 'COMPLAINT',
-        title: 'Unresolved Complaints',
-        count: openComplaints,
-        urgency: openComplaints > 5 ? 'HIGH' : 'MEDIUM',
-        description: `${openComplaints} reported hostel facility ticket${openComplaints > 1 ? 's' : ''} awaiting technician assignment or resolution.`,
-        targetModule: '/management/maintenance',
         isAvailable: false,
       });
     }
@@ -478,9 +464,6 @@ export class ManagementService {
         outOutings,
         pendingLeaves,
         activeLeaves: onLeave,
-        openComplaints,
-        inProgressComplaints,
-        resolvedComplaints,
         activeSuspensions,
         actionableTotal,
       },

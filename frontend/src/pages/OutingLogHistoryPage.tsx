@@ -286,9 +286,26 @@ export const OutingLogHistoryPage: React.FC<OutingLogHistoryPageProps> = () => {
         </div>
       </div>
 
+      {/* Mobile horizontal scroll indicator */}
+      <div className="mobile-scroll-hint">
+        <span>← Swipe horizontally to view full table →</span>
+      </div>
+
       {/* Table matching screenshots */}
-      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+      <div
+        className="table-responsive log-table-container"
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '12px',
+          border: '1px solid #E2E8F0',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          width: '100%',
+          maxWidth: '100%',
+        }}
+      >
+        <table style={{ width: '100%', minWidth: '540px', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ backgroundColor: '#1E1B4B', color: '#FFFFFF', fontSize: '0.78rem', letterSpacing: '0.05em' }}>
               <th style={{ padding: '1rem', fontWeight: 600 }}>STUDENT</th>

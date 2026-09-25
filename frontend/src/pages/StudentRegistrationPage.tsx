@@ -53,7 +53,7 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
 
   // Step 4: Hostel Preferences
   const [preferredBlock, setPreferredBlock] = useState('');
-  const [preferredRoomType, setPreferredRoomType] = useState('Non-AC Room (2 Sharing)');
+  const [preferredRoomType, setPreferredRoomType] = useState('2 Sharing Room');
   const [preferredFloor, setPreferredFloor] = useState('1');
   const [stayDuration, setStayDuration] = useState('Full Academic Year');
   const [foodPreference, setFoodPreference] = useState('VEG');
@@ -143,7 +143,12 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
 
   const selectedRoomTypeAvailability = React.useMemo(() => {
     if (!selectedBlockData || !selectedBlockData.roomTypesSummary) return null;
-    const summary = selectedBlockData.roomTypesSummary[preferredRoomType];
+    const summary = selectedBlockData.roomTypesSummary[preferredRoomType] ||
+      Object.entries(selectedBlockData.roomTypesSummary).find(([k]) => {
+        const cleanK = k.replace(/\bNon-AC\s*/gi, '').replace(/\bAC\s*/gi, '').trim();
+        const cleanP = preferredRoomType.replace(/\bNon-AC\s*/gi, '').replace(/\bAC\s*/gi, '').trim();
+        return cleanK === cleanP || cleanK.includes(cleanP) || cleanP.includes(cleanK);
+      })?.[1];
     if (!summary) {
       return {
         availableCount: 0,
@@ -1304,10 +1309,9 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
                       onChange={(e) => setPreferredRoomType(e.target.value)}
                     >
                       <option value="" disabled>-- Select Room Type --</option>
-                      <option value="Non-AC Room (2 Sharing)">Non-AC Room (2 Sharing)</option>
-                      <option value="Non-AC Room (3 Sharing)">Non-AC Room (3 Sharing)</option>
-                      <option value="AC Room (2 Sharing)">AC Room (2 Sharing)</option>
-                      <option value="AC Room (3 Sharing)">AC Room (3 Sharing)</option>
+                      <option value="2 Sharing Room">2 Sharing Room</option>
+                      <option value="3 Sharing Room">3 Sharing Room</option>
+                      <option value="4 Sharing Room">4 Sharing Room</option>
                     </select>
 
                     {/* Live Availability Notice */}

@@ -1,0 +1,769 @@
+/* ==========================================================================
+   CAMPUSLY / HMS MOBILE RESPONSIVE OVERHAUL STYLESHEET
+   Target Viewports: 390x844 (iPhone 12/13/14/15) & 375x667 (iPhone SE)
+   Strictly scoped to <= 768px to guarantee 100% desktop preservation.
+   ========================================================================== */
+
+.mobile-scroll-hint {
+  display: none;
+}
+
+@media screen and (max-width: 768px) {
+  /* ------------------------------------------------------------------------
+     1. GLOBAL ROOT OVERFLOW CONTAINMENT
+     ------------------------------------------------------------------------ */
+  html,
+  body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    -webkit-text-size-adjust: 100% !important;
+  }
+
+  #root {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .portal-layout,
+  .portal-layout.management-layout {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .portal-main-area,
+  .portal-main-area.management-main-area {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .portal-content-body {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0.75rem 0.6rem !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Universal Table Containers: Enable smooth horizontal touch scrolling */
+  .table-responsive,
+  .fee-table-responsive,
+  .fee-table-container,
+  .fee-table-wrapper,
+  .admin-notif-table-wrapper,
+  .user-table-wrapper,
+  .user-table-responsive,
+  .log-table-container,
+  .log-table-wrapper,
+  .olh-table-wrapper,
+  .outing-table-wrapper,
+  .leaves-table-wrapper,
+  .mess-roster-table-card,
+  .mess-report-table-wrapper,
+  .history-table-container,
+  .table-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+    margin-bottom: 1rem !important;
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior-x: contain !important;
+  }
+
+  /* Force multi-column data tables to maintain readable column widths so horizontal scrolling is active */
+  .table-responsive > table,
+  .fee-table-responsive > table,
+  .fee-table-container > table,
+  .fee-table-wrapper > table,
+  .admin-notif-table-wrapper > table,
+  .user-table-wrapper > table,
+  .user-table-responsive > table,
+  .log-table-container > table,
+  .log-table-wrapper > table,
+  .olh-table-wrapper > table,
+  .outing-table-wrapper > table,
+  .leaves-table-wrapper > table,
+  .mess-roster-table-card > table,
+  .mess-report-table-wrapper > table,
+  .history-table-container > table,
+  .table-container > table,
+  table.log-data-table,
+  table.fee-data-table,
+  table.user-data-table,
+  table.admin-notif-table,
+  table.leaves-table,
+  table.outing-table,
+  table.mess-roster-table,
+  table.mess-report-table,
+  table.mess-history-table {
+    min-width: 540px !important;
+    width: 100% !important;
+  }
+
+  .outing-log-page {
+    padding: 0.75rem 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-scroll-hint {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: #6366F1 !important;
+    margin-bottom: 0.5rem !important;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  }
+
+  /* Visible horizontal scrollbars on mobile for table containers */
+  .table-responsive::-webkit-scrollbar,
+  .log-table-container::-webkit-scrollbar,
+  .fee-table-responsive::-webkit-scrollbar,
+  .user-table-responsive::-webkit-scrollbar {
+    height: 5px !important;
+    display: block !important;
+  }
+
+  .table-responsive::-webkit-scrollbar-track,
+  .log-table-container::-webkit-scrollbar-track,
+  .fee-table-responsive::-webkit-scrollbar-track,
+  .user-table-responsive::-webkit-scrollbar-track {
+    background: #F1F5F9 !important;
+    border-radius: 4px !important;
+  }
+
+  .table-responsive::-webkit-scrollbar-thumb,
+  .log-table-container::-webkit-scrollbar-thumb,
+  .fee-table-responsive::-webkit-scrollbar-thumb,
+  .user-table-responsive::-webkit-scrollbar-thumb {
+    background: #94A3B8 !important;
+    border-radius: 4px !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     2. GLOBAL MODAL DIALOGS & OVERLAYS
+     ------------------------------------------------------------------------ */
+  .modal-overlay,
+  .user-modal-overlay,
+  .admin-modal-overlay,
+  .fee-modal-overlay,
+  .fixed.inset-0 {
+    padding: 8px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
+  }
+
+  .user-modal-container,
+  .user-modal-container.small,
+  .admin-modal-container,
+  .fee-modal-dialog,
+  .room-modal-container,
+  .block-modal-container,
+  .modal-container,
+  .modal-dialog {
+    width: calc(100% - 20px) !important;
+    max-width: calc(100% - 20px) !important;
+    max-height: 86vh !important;
+    margin: 8px auto !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    border-radius: 12px !important;
+  }
+
+  .user-modal-body,
+  .admin-modal-body,
+  .fee-modal-body,
+  .modal-body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 1rem 0.85rem !important;
+    box-sizing: border-box !important;
+    max-height: calc(86vh - 130px) !important;
+  }
+
+  /* Touch-friendly close buttons inside visible screen bounds */
+  .user-modal-close-btn,
+  .btn-modal-close,
+  .modal-close-btn,
+  .fee-modal-close-btn,
+  .fee-modal-header .close-btn,
+  button[aria-label="Close modal"] {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Stacked modal footers on mobile */
+  .user-modal-footer,
+  .admin-modal-footer,
+  .fee-modal-footer,
+  .modal-footer {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 1rem !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+
+  .user-modal-footer button,
+  .admin-modal-footer button,
+  .fee-modal-footer button,
+  .modal-footer button {
+    width: 100% !important;
+    min-height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     3. AUTHENTICATION (/login)
+     ------------------------------------------------------------------------ */
+  .campusstay-login-wrapper {
+    flex-direction: column !important;
+    min-height: 100vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .campusstay-illustration-panel {
+    display: none !important;
+  }
+
+  .campusstay-form-panel {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 1.5rem 1.15rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .campusstay-form-panel > div {
+    max-width: 100% !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     4. GLOBAL HEADERS (ManagementHeader & DashboardHeader)
+     ------------------------------------------------------------------------ */
+  .main-header,
+  .main-header.management-header {
+    padding: 0 0.75rem !important;
+    height: 60px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: space-between !important;
+  }
+
+  .header-left-section {
+    gap: 0.5rem !important;
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
+  }
+
+  .header-page-title {
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    max-width: 170px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .header-page-subtitle,
+  .desktop-header-title .header-page-subtitle {
+    display: none !important;
+  }
+
+  .header-right-section {
+    gap: 0.35rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Hide verbose desktop header controls */
+  .college-dropdown-wrapper,
+  .desktop-header-control.college-dropdown-wrapper,
+  .realtime-text,
+  .sync-btn-label,
+  .profile-text-desktop {
+    display: none !important;
+  }
+
+  .realtime-badge {
+    padding: 0.35rem !important;
+    min-width: 28px !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .sync-btn.desktop-header-control {
+    padding: 0.35rem 0.5rem !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .profile-trigger-btn,
+  .profile-trigger-btn.management-profile-trigger {
+    padding: 0.2rem !important;
+    gap: 0.2rem !important;
+  }
+
+  .profile-chevron {
+    margin-left: 0 !important;
+  }
+
+  .avatar-circle,
+  .management-avatar-circle {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     5. FEE MANAGEMENT & FEE COLLECTION
+     ------------------------------------------------------------------------ */
+  .fee-module-container {
+    padding: 0.75rem 0.6rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .fee-header-section {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .fee-header-actions {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .fee-header-actions button,
+  .fee-header-actions a {
+    flex: 1 1 calc(50% - 0.25rem) !important;
+    min-width: 130px !important;
+    justify-content: center !important;
+  }
+
+  .fee-nav-banner-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+    padding: 0.85rem 1rem !important;
+  }
+
+  .fee-nav-banner-card button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .fee-toolbar-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.6rem !important;
+    padding: 0.75rem !important;
+  }
+
+  .fee-search-input-wrapper {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .fee-select-filter {
+    width: 100% !important;
+  }
+
+  .fee-toolbar-container > div:last-child {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+  }
+
+  .fee-toolbar-container > div:last-child button {
+    flex: 1 1 calc(50% - 0.25rem) !important;
+    min-width: 130px !important;
+    justify-content: center !important;
+  }
+
+  .fee-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     6. USER MANAGEMENT
+     ------------------------------------------------------------------------ */
+  .user-mgmt-container {
+    padding: 0.75rem 0.6rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .user-mgmt-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .user-mgmt-actions {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .user-mgmt-actions button {
+    flex: 1 1 calc(50% - 0.25rem) !important;
+    justify-content: center !important;
+  }
+
+  .user-mgmt-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .user-search-wrapper {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .user-role-filter-select,
+  .user-status-filter-select {
+    width: 100% !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     7. NOTIFICATIONS (Management & Student)
+     ------------------------------------------------------------------------ */
+  .recipient-resolution-box {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .recipient-resolution-box .preview-btn {
+    width: 100% !important;
+    height: 38px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .recipient-type-pills {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+  }
+
+  .notif-kpi-grid,
+  .admin-notif-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  .admin-notif-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .admin-notif-header-actions {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .admin-notif-header-actions button {
+    flex: 1 1 100% !important;
+    justify-content: center !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     8. ROOM & BLOCK MANAGEMENT
+     ------------------------------------------------------------------------ */
+  .room-mgmt-page,
+  .block-mgmt-container {
+    padding: 0.75rem 0.6rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Subtabs Row: Smooth Touch Horizontal Scroll */
+  .allocation-subtabs-row {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  .allocation-subtabs-row::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .allocation-subtab-item {
+    flex-shrink: 0 !important;
+    padding: 0.45rem 0.85rem !important;
+    font-size: 0.825rem !important;
+  }
+
+  .room-allocation-top-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+    padding: 0.85rem 1rem !important;
+  }
+
+  .room-allocation-title-group {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.35rem !important;
+  }
+
+  .room-allocation-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .allocation-search-pill {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+
+  .btn-navy-action,
+  .btn-ghost-action {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .block-header-wrap {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .block-header-actions {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .block-header-actions button {
+    flex: 1 1 calc(50% - 0.25rem) !important;
+    justify-content: center !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     9. MESS MANAGEMENT
+     ------------------------------------------------------------------------ */
+  .mess-management-container {
+    padding: 0.75rem 0.6rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .mess-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .mess-header > div:last-child {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+
+  /* Mess Navigation Tabs Touch Scroll */
+  .mess-nav-tabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-bottom: 0.25rem !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+  }
+
+  .mess-nav-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .mess-nav-tab-btn {
+    flex-shrink: 0 !important;
+    padding: 0.6rem 0.9rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .mess-action-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 0.85rem 0.75rem !important;
+    gap: 0.75rem !important;
+  }
+
+  .mess-filter-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    gap: 0.65rem !important;
+  }
+
+  .mess-filter-group > div {
+    width: 100% !important;
+  }
+
+  .mess-filter-group > div > div {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Mess Stat Cards */
+  .mess-tab-panel div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+    padding: 0.75rem 0 !important;
+    gap: 0.75rem !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     10. STUDENT DASHBOARD
+     ------------------------------------------------------------------------ */
+  .dashboard-content-wrapper {
+    padding: 0.75rem 0.5rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .welcome-banner-card {
+    padding: 1rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .welcome-banner-main {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .welcome-profile-link {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .welcome-banner-meta {
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+  }
+
+  .summary-cards-grid {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    gap: 0.75rem !important;
+  }
+
+  .metric-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 1rem !important;
+  }
+
+  .metric-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+  }
+
+  .metric-header .status-pill,
+  .metric-header .metric-mini-badge {
+    position: static !important;
+    max-width: 100% !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Extra Compact Styles for 375px (iPhone SE)
+   -------------------------------------------------------------------------- */
+@media screen and (max-width: 480px) {
+  .header-page-title {
+    max-width: 140px !important;
+    font-size: 0.95rem !important;
+  }
+
+  .fee-kpi-grid,
+  .notif-kpi-grid,
+  .admin-notif-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .fee-header-actions button,
+  .fee-header-actions a,
+  .fee-toolbar-container > div:last-child button,
+  .user-mgmt-actions button,
+  .block-header-actions button {
+    flex: 1 1 100% !important;
+  }
+}

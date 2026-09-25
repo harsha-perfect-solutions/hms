@@ -17,11 +17,12 @@ export const VALID_LEAVE_TYPES = [
 
 export type LeaveType = (typeof VALID_LEAVE_TYPES)[number];
 
-function generateLeaveNumber(leaveType: string): string {
+function generateLeaveNumber(jntuNo: string, leaveType: string): string {
+  const cleanJntu = (jntuNo || 'STU').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
   const typeTag = leaveType.substring(0, 3).toUpperCase();
   const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `LEV-${dateStr}-${typeTag}-${randomSuffix}`;
+  return `LEV-${cleanJntu}-${dateStr}-${typeTag}-${randomSuffix}`;
 }
 
 /**
@@ -171,10 +172,22 @@ router.get('/leaves', authenticateStudent, async (req: AuthenticatedRequest, res
     // 2. Check for active suspension
     const activeSuspension = await getActiveSuspension(studentId);
 
-    // 3. Fetch all leave requests
+    // 3. Fetch all leave requests (with student identity)
     const leaves = await prisma.leaveRequest.findMany({
       where: { studentId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            jntuNo: true,
+            roomNumber: true,
+            blockName: true,
+            bedNumber: true,
+          },
+        },
+      },
     });
 
     // 4. Compute effective states & summary counts
@@ -330,6 +343,7 @@ router.get('/leaves/:id', authenticateStudent, async (req: AuthenticatedRequest,
             jntuNo: true,
             roomNumber: true,
             blockName: true,
+            bedNumber: true,
           },
         },
       },
@@ -495,8 +509,8 @@ router.post('/leaves', authenticateStudent, async (req: AuthenticatedRequest, re
       return;
     }
 
-    // 7. Generate Ticket Number & Save Leave
-    const requestNumber = generateLeaveNumber(leaveType);
+    // 7. Generate Ticket Number with student JNTU & Save Leave
+    const requestNumber = generateLeaveNumber(req.student.jntuNo, leaveType);
 
     const newLeave = await prisma.$transaction(async (tx) => {
       const created = await tx.leaveRequest.create({
@@ -510,6 +524,18 @@ router.post('/leaves', authenticateStudent, async (req: AuthenticatedRequest, re
           reason: reason.trim(),
           emergencyContact: emergencyContact?.trim() || null,
           status: 'PENDING', // Authoritatively set to PENDING
+        },
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              jntuNo: true,
+              roomNumber: true,
+              blockName: true,
+              bedNumber: true,
+            },
+          },
         },
       });
 

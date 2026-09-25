@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   Layers,
   Building,
-  Wrench,
   Receipt,
   UtensilsCrossed,
   History,
@@ -38,7 +37,6 @@ interface ManagementDashboardPageProps {
 const ADMIN_MODULES = [
   { id: 'blocks', title: 'Block Management', path: '/management/blocks', icon: Building },
   { id: 'rooms', title: 'Room Allocation', path: '/management/rooms', icon: BedDouble },
-  { id: 'maintenance', title: 'Maintenance', path: '/management/complaints', icon: Wrench },
   { id: 'outings', title: 'Outing Requests', path: '/management/outings', icon: Footprints },
   { id: 'mess', title: 'Mess Management', path: '/management/mess', icon: UtensilsCrossed },
   { id: 'leaves', title: 'Leaves & Suspension', path: '/management/leaves', icon: FileText },
@@ -264,19 +262,19 @@ export const ManagementDashboardPage: React.FC<ManagementDashboardPageProps> = (
           </div>
         </div>
 
-        {/* Card 3: Maintenance */}
-        <div className="admin-summary-card card-maintenance">
+        {/* Card 3: Leaves */}
+        <div className="admin-summary-card card-leaves">
           <div className="summary-card-header">
-            <span className="summary-card-title">Maintenance</span>
+            <span className="summary-card-title">Active Leaves</span>
             <div className="summary-card-icon-wrap icon-amber">
-              <Wrench size={18} />
+              <FileText size={18} />
             </div>
           </div>
           <div className="summary-card-value">
-            {requests.openComplaints}
+            {requests.activeLeaves ?? residents.onLeave ?? 0}
           </div>
-          <div className="summary-card-status status-warning">
-            PENDING REQUESTS
+          <div className="summary-card-status status-neutral">
+            {requests.pendingLeaves > 0 ? `${requests.pendingLeaves} AWAITING APPROVAL` : 'ALL LEAVES PROCESSED'}
           </div>
         </div>
 

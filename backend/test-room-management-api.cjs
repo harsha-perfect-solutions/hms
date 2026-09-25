@@ -86,8 +86,8 @@ async function runRoomManagementTests() {
   // Login as student
   let studentToken = '';
   const studentLoginRes = await postJson('/auth/login', {
-    jntuNo: '25331A05H7',
-    password: 'Password@123',
+    jntuNo: 'HMS0001',
+    password: 'Pass@HMS0001',
   });
   assert.strictEqual(studentLoginRes.status, 200);
   studentToken = studentLoginRes.data.token;
@@ -468,6 +468,29 @@ async function runRoomManagementTests() {
 
     assert(logs.length > 0, 'Must record ActivityLog entries for room actions');
     console.log(`[PASS] Verified ${logs.length} recent ROOM_MANAGEMENT ActivityLogs in PostgreSQL`);
+  });
+
+  // 21. Export entire hostel floor plan to Excel
+  await test('21. GET /api/management/rooms/export-excel exports valid multi-sheet Excel spreadsheet', async () => {
+    const XLSX = require('xlsx');
+    const res = await fetch(`${API_BASE}/management/rooms/export-excel`, {
+      headers: { Authorization: `Bearer ${wardenToken}` },
+    });
+    assert.strictEqual(res.status, 200);
+    assert(res.headers.get('content-type').includes('spreadsheetml.sheet'));
+    assert(res.headers.get('content-disposition').includes('hostel_entire_floor_plan_'));
+    const arrayBuffer = await res.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const wb = XLSX.read(buffer, { type: 'buffer' });
+    assert(wb.SheetNames.includes('Floor Plan Overview'), 'Must include Floor Plan Overview sheet');
+    assert(wb.SheetNames.includes('Student Allocations'), 'Must include Student Allocations sheet');
+    assert(wb.SheetNames.includes('First Floor'), 'Must include First Floor sheet');
+    assert(wb.SheetNames.includes('Second Floor'), 'Must include Second Floor sheet');
+    assert(wb.SheetNames.includes('Third Floor'), 'Must include Third Floor sheet');
+    const overviewData = XLSX.utils.sheet_to_json(wb.Sheets['Floor Plan Overview']);
+    assert(overviewData.length > 0, 'Floor Plan Overview must contain room rows');
+    const studentData = XLSX.utils.sheet_to_json(wb.Sheets['Student Allocations']);
+    assert(studentData.length > 0, 'Student Allocations must contain allocated student rows');
   });
 
   console.log('\n====================================================');

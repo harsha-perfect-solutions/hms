@@ -15,6 +15,9 @@ import {
   Eye,
   Trash2,
   Info,
+  User,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   apiService,
@@ -34,6 +37,13 @@ export const OutingRequestsPage: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<OutingRequestItem | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  const handleCopyToken = (token: string) => {
+    navigator.clipboard.writeText(token);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
 
   // Notification banners
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -83,26 +93,39 @@ export const OutingRequestsPage: React.FC = () => {
     }
   }, [outingDate, exitTime, returnTime]);
 
-  // Set default initial dates when opening modal (exit in 1 hour, return in 4 hours)
+  // Set default initial dates when opening modal (morning 8:00 AM to night 8:00 PM window)
   const handleOpenCreateModal = () => {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const exitHour = (now.getHours() + 1) % 24;
-    const returnHour = (now.getHours() + 4) % 24;
+    const currentHour = now.getHours();
 
-    const defaultExitTime = `${pad(exitHour)}:00`;
-    const defaultReturnTime = `${pad(returnHour)}:00`;
+    let defaultOutingDate = todayStr;
+    let defaultExitTime = '08:00';
+    const defaultReturnTime = '20:00';
+
+    // Outings are permitted between morning 8:00 AM (08:00) and night 8:00 PM (20:00)
+    if (currentHour >= 20) {
+      // Past 8:00 PM, default to tomorrow morning 8:00 AM to 8:00 PM
+      const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      defaultOutingDate = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
+      defaultExitTime = '08:00';
+    } else if (currentHour >= 8 && currentHour < 19) {
+      // During operating hours, default exit to next upcoming hour, returning by 8:00 PM
+      defaultExitTime = `${pad(currentHour + 1)}:00`;
+    } else {
+      defaultExitTime = '08:00';
+    }
 
     setPassType('LOCAL_OUTING');
     setDestination('');
     setPurpose('');
-    setOutingDate(todayStr);
+    setOutingDate(defaultOutingDate);
     setExitTime(defaultExitTime);
     setReturnTime(defaultReturnTime);
-    setOutDate(`${todayStr}T${defaultExitTime}`);
-    setReturnDate(`${todayStr}T${defaultReturnTime}`);
+    setOutDate(`${defaultOutingDate}T${defaultExitTime}`);
+    setReturnDate(`${defaultOutingDate}T${defaultReturnTime}`);
     setEmergencyContact('');
     setRemarks('');
     setFormError(null);
@@ -138,17 +161,37 @@ export const OutingRequestsPage: React.FC = () => {
       return;
     }
 
-    const exitTime = new Date(outDate).getTime();
-    const retTime = new Date(returnDate).getTime();
+    const exitTs = new Date(outDate).getTime();
+    const retTs = new Date(returnDate).getTime();
 
-    if (isNaN(exitTime) || isNaN(retTime)) {
+    if (isNaN(exitTs) || isNaN(retTs)) {
       setFormError('Please provide valid dates and times.');
       return;
     }
 
-    if (retTime <= exitTime) {
+    if (retTs <= exitTs) {
       setFormError('Expected return time must be strictly after the exit time.');
       return;
+    }
+
+    // Outing operating hours validation: morning 8:00 AM (08:00) to night 8:00 PM (20:00)
+    if (passType === 'LOCAL_OUTING') {
+      if (exitTime < '08:00') {
+        setFormError('Exit time cannot be earlier than 8:00 AM (morning 8 o\'clock).');
+        return;
+      }
+      if (exitTime > '20:00') {
+        setFormError('Exit time cannot be later than 8:00 PM (night 8 o\'clock).');
+        return;
+      }
+      if (returnTime > '20:00') {
+        setFormError('Expected return time cannot be later than 8:00 PM (night 8 o\'clock).');
+        return;
+      }
+      if (returnTime < '08:00') {
+        setFormError('Expected return time cannot be earlier than 8:00 AM (morning 8 o\'clock).');
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -455,6 +498,55 @@ export const OutingRequestsPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Outing Operating Hours Policy Notice */}
+      <section className="outing-policy-notice" style={{
+        marginBottom: '1.25rem',
+        padding: '0.85rem 1.25rem',
+        background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+        border: '1px solid #BAE6FD',
+        borderRadius: '0.75rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            backgroundColor: '#0284C7',
+            color: '#FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Clock size={20} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, color: '#0369A1', fontSize: '0.925rem' }}>
+              Hostel Outing Timings: Morning 8:00 AM to Night 8:00 PM
+            </div>
+            <div style={{ color: '#0C4A6E', fontSize: '0.8rem', marginTop: '2px' }}>
+              Outings are not limited to 3 hours — you may schedule any duration between morning 8 o'clock (08:00) and night 8 o'clock (20:00).
+            </div>
+          </div>
+        </div>
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          padding: '0.35rem 0.75rem',
+          borderRadius: '0.5rem',
+          fontSize: '0.775rem',
+          fontWeight: 700,
+          color: '#0284C7',
+          border: '1px solid #BAE6FD',
+        }}>
+          Gate Curfew: 8:00 PM Sharp
+        </div>
+      </section>
+
       {/* Active Pass Notice Banner */}
       {activePass && (
         <section className="active-outing-banner" aria-label="Active Outing Notice">
@@ -463,12 +555,41 @@ export const OutingRequestsPage: React.FC = () => {
               <ShieldCheck size={26} />
             </div>
             <div>
-              <div className="active-banner-tag">
-                {activePass.status === 'OUT' ? 'CURRENTLY OUT' : 'OUTING PASS APPROVED'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                <span className="active-banner-tag">
+                  {activePass.status === 'OUT' ? 'CURRENTLY OUT' : 'OUTING PASS APPROVED'}
+                </span>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                  color: '#FFFFFF',
+                  padding: '0.15rem 0.55rem',
+                  borderRadius: '6px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700
+                }}>
+                  <User size={13} />
+                  <span>{data?.student.name || activePass.student?.name}</span>
+                  <span style={{ fontFamily: 'monospace', color: '#BAE6FD' }}>
+                    ({data?.student.jntuNo || activePass.student?.jntuNo})
+                  </span>
+                </span>
+                <span style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#BAE6FD',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 600
+                }}>
+                  {data?.student.blockName || activePass.student?.blockName || 'Hostel'} · Room {data?.student.roomNumber || activePass.student?.roomNumber || '—'}
+                </span>
               </div>
               <h2 className="active-banner-title">{activePass.destination}</h2>
               <p className="active-banner-meta">
-                Ref: <span className="mono">{activePass.requestNumber || activePass.id}</span> ·{' '}
+                Pass Token: <strong className="mono" style={{ color: '#F0F9FF', letterSpacing: '0.5px' }}>{activePass.requestNumber || activePass.id}</strong> ·{' '}
                 Exit: {formatDateTime(activePass.outDate)} · Expected Return:{' '}
                 {formatDateTime(activePass.returnDate)}
               </p>
@@ -480,7 +601,7 @@ export const OutingRequestsPage: React.FC = () => {
             onClick={() => setSelectedRequest(activePass)}
           >
             <Eye size={16} />
-            <span>View Pass</span>
+            <span>View Digital Pass</span>
           </button>
         </section>
       )}
@@ -528,6 +649,40 @@ export const OutingRequestsPage: React.FC = () => {
                 </div>
 
                 <div className="outing-card-body">
+                  {/* Applicant Identity Badge */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.5rem',
+                    padding: '0.4rem 0.65rem',
+                    backgroundColor: '#F8FAFC',
+                    borderRadius: '8px',
+                    border: '1px solid #E2E8F0',
+                    marginBottom: '0.65rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                      <User size={14} style={{ color: '#0284C7', flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.student?.name || data?.student.name || 'Resident'}
+                      </span>
+                      <span style={{
+                        backgroundColor: '#E0F2FE',
+                        color: '#0369A1',
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '4px',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        fontFamily: 'monospace'
+                      }}>
+                        {item.student?.jntuNo || data?.student.jntuNo || 'ID'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, flexShrink: 0 }}>
+                      {item.student?.blockName || data?.student.blockName || 'Hostel'} · Rm {item.student?.roomNumber || data?.student.roomNumber || '—'}
+                    </span>
+                  </div>
+
                   <div className="outing-info-row">
                     <MapPin size={16} className="info-icon" />
                     <span className="outing-destination font-semibold">
@@ -661,25 +816,41 @@ export const OutingRequestsPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Pass Type */}
-                <div className="form-field-group">
-                  <label htmlFor="outing-pass-type" className="form-field-label">
-                    Pass Type <span className="required">*</span>
-                  </label>
-                  <select
-                    id="outing-pass-type"
-                    className="form-select"
-                    value={passType}
-                    onChange={(e) => setPassType(e.target.value as any)}
-                    required
-                  >
-                    <option value="LOCAL_OUTING">Local Outing (City/Shopping/Personal)</option>
-                    <option value="EMERGENCY">Emergency (Medical/Urgent)</option>
-                    <option value="NIGHT_OUT">Night Out (Approved Home/Guardian Stay)</option>
-                  </select>
+                {/* Row 1: Pass Type & Outing Date */}
+                <div className="form-grid-2col">
+                  <div className="form-field-group">
+                    <label htmlFor="outing-pass-type" className="form-field-label">
+                      Pass Type <span className="required">*</span>
+                    </label>
+                    <select
+                      id="outing-pass-type"
+                      className="form-select"
+                      value={passType}
+                      onChange={(e) => setPassType(e.target.value as any)}
+                      required
+                    >
+                      <option value="LOCAL_OUTING">Local Outing (City/Personal)</option>
+                      <option value="EMERGENCY">Emergency (Medical/Urgent)</option>
+                      <option value="NIGHT_OUT">Night Out (Guardian Stay)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-field-group">
+                    <label htmlFor="outing-date" className="form-field-label">
+                      Outing Date <span className="required">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="outing-date"
+                      className="form-input"
+                      value={outingDate}
+                      onChange={(e) => setOutingDate(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
 
-                {/* Destination */}
+                {/* Row 2: Destination */}
                 <div className="form-field-group">
                   <label htmlFor="outing-destination" className="form-field-label">
                     Destination <span className="required">*</span>
@@ -696,65 +867,102 @@ export const OutingRequestsPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Hourly Same-Day Pass Grid */}
-                <div className="form-field-group">
-                  <label htmlFor="outing-date" className="form-field-label">
-                    Outing Date <span className="required">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    id="outing-date"
-                    className="form-input"
-                    value={outingDate}
-                    onChange={(e) => setOutingDate(e.target.value)}
-                    required
-                  />
-                </div>
-
+                {/* Row 3: Exit Time & Expected Return Time */}
                 <div className="form-grid-2col">
                   <div className="form-field-group">
-                    <label htmlFor="outing-exit-time" className="form-field-label">
-                      Exit Time <span className="required">*</span>
-                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                      <label htmlFor="outing-exit-time" className="form-field-label" style={{ margin: 0 }}>
+                        Exit Time <span className="required">*</span>
+                      </label>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: '#2563EB',
+                        backgroundColor: '#EFF6FF',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid #DBEAFE',
+                      }}>
+                        From 08:00 AM
+                      </span>
+                    </div>
                     <input
                       type="time"
                       id="outing-exit-time"
                       className="form-input"
                       value={exitTime}
+                      min={passType === 'LOCAL_OUTING' ? '08:00' : undefined}
+                      max={passType === 'LOCAL_OUTING' ? '20:00' : undefined}
                       onChange={(e) => setExitTime(e.target.value)}
                       required
                     />
                   </div>
 
                   <div className="form-field-group">
-                    <label htmlFor="outing-return-time" className="form-field-label">
-                      Expected Return Time <span className="required">*</span>
-                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                      <label htmlFor="outing-return-time" className="form-field-label" style={{ margin: 0 }}>
+                        Expected Return <span className="required">*</span>
+                      </label>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: '#0284C7',
+                        backgroundColor: '#F0F9FF',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid #BAE6FD',
+                      }}>
+                        By 08:00 PM
+                      </span>
+                    </div>
                     <input
                       type="time"
                       id="outing-return-time"
                       className="form-input"
                       value={returnTime}
+                      min={passType === 'LOCAL_OUTING' ? '08:00' : undefined}
+                      max={passType === 'LOCAL_OUTING' ? '20:00' : undefined}
                       onChange={(e) => setReturnTime(e.target.value)}
                       required
                     />
                   </div>
                 </div>
 
-                {/* Duration Badge */}
-                {calculatedDurationHours > 0 && (
-                  <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-between text-indigo-900 text-sm">
-                    <span className="font-medium flex items-center gap-1.5">
-                      <Clock size={16} className="text-indigo-600" />
-                      Pass Duration:
-                    </span>
-                    <span className="font-semibold bg-indigo-200/60 px-2.5 py-0.5 rounded-full text-indigo-950">
-                      {calculatedDurationHours} {calculatedDurationHours === 1 ? 'Hour' : 'Hours'} (Same Day)
-                    </span>
+                {/* Unified Timing & Duration Summary Strip */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.5rem 0.85rem',
+                  backgroundColor: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.8rem',
+                  color: '#334155',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 500 }}>
+                    <Clock size={15} style={{ color: '#2563EB', flexShrink: 0 }} />
+                    <span>Operating Hours: <strong style={{ color: '#0F172A' }}>8:00 AM – 8:00 PM</strong></span>
                   </div>
-                )}
+                  {calculatedDurationHours > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Duration:</span>
+                      <span style={{
+                        backgroundColor: '#EFF6FF',
+                        color: '#1D4ED8',
+                        padding: '0.15rem 0.55rem',
+                        borderRadius: '9999px',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        border: '1px solid #BFDBFE',
+                      }}>
+                        {calculatedDurationHours} {calculatedDurationHours === 1 ? 'Hour' : 'Hours'}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-                {/* Purpose */}
+                {/* Row 4: Purpose */}
                 <div className="form-field-group">
                   <label htmlFor="outing-purpose" className="form-field-label">
                     Purpose / Reason <span className="required">*</span>
@@ -762,7 +970,7 @@ export const OutingRequestsPage: React.FC = () => {
                   <textarea
                     id="outing-purpose"
                     className="form-textarea"
-                    rows={3}
+                    rows={2}
                     placeholder="Provide a clear description of your outing (min 5 characters)..."
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
@@ -771,36 +979,37 @@ export const OutingRequestsPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Emergency Contact */}
-                <div className="form-field-group">
-                  <label htmlFor="outing-contact" className="form-field-label">
-                    Emergency Contact Number (Optional)
-                  </label>
-                  <input
-                    type="tel"
-                    id="outing-contact"
-                    className="form-input"
-                    placeholder="Parent / Guardian contact number"
-                    value={emergencyContact}
-                    onChange={(e) => setEmergencyContact(e.target.value)}
-                    maxLength={20}
-                  />
-                </div>
+                {/* Row 5: Emergency Contact & Remarks */}
+                <div className="form-grid-2col">
+                  <div className="form-field-group">
+                    <label htmlFor="outing-contact" className="form-field-label">
+                      Emergency Contact (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      id="outing-contact"
+                      className="form-input"
+                      placeholder="Parent / Guardian number"
+                      value={emergencyContact}
+                      onChange={(e) => setEmergencyContact(e.target.value)}
+                      maxLength={20}
+                    />
+                  </div>
 
-                {/* Remarks */}
-                <div className="form-field-group">
-                  <label htmlFor="outing-remarks" className="form-field-label">
-                    Additional Remarks (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    id="outing-remarks"
-                    className="form-input"
-                    placeholder="Any additional notes for hostel warden"
-                    value={remarks}
-                    onChange={(e) => setRemarks(e.target.value)}
-                    maxLength={200}
-                  />
+                  <div className="form-field-group">
+                    <label htmlFor="outing-remarks" className="form-field-label">
+                      Additional Remarks (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      id="outing-remarks"
+                      className="form-input"
+                      placeholder="Note for warden"
+                      value={remarks}
+                      onChange={(e) => setRemarks(e.target.value)}
+                      maxLength={200}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -867,6 +1076,99 @@ export const OutingRequestsPage: React.FC = () => {
             </div>
 
             <div className="details-body">
+              {/* Official Digital Gate Pass Badge */}
+              <div style={{
+                background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                color: '#FFFFFF',
+                borderRadius: '12px',
+                padding: '1.1rem 1.25rem',
+                marginBottom: '1.25rem',
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '0.65rem', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldCheck size={18} style={{ color: '#38BDF8' }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.08em', color: '#93C5FD', textTransform: 'uppercase' }}>
+                      Hostel Outing Authorization Pass
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '4px',
+                    backgroundColor: selectedRequest.status === 'APPROVED' || selectedRequest.status === 'OUT' ? '#10B981' : '#F59E0B',
+                    color: '#FFFFFF'
+                  }}>
+                    {selectedRequest.status}
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem' }}>
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Pass Holder / Who Applied
+                    </span>
+                    <span style={{ display: 'block', fontSize: '1rem', fontWeight: 800, color: '#F8FAFC', marginTop: '0.1rem' }}>
+                      {selectedRequest.student?.name || data?.student.name}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
+                      <span style={{
+                        backgroundColor: '#0284C7',
+                        color: '#FFFFFF',
+                        padding: '0.1rem 0.45rem',
+                        borderRadius: '4px',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        fontFamily: 'monospace'
+                      }}>
+                        {selectedRequest.student?.jntuNo || data?.student.jntuNo}
+                      </span>
+                      <span style={{ fontSize: '0.74rem', color: '#CBD5E1' }}>
+                        {selectedRequest.student?.blockName || data?.student.blockName || 'Hostel'} · Room {selectedRequest.student?.roomNumber || data?.student.roomNumber || '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Pass Token Number
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 800, fontFamily: 'monospace', color: '#38BDF8', letterSpacing: '0.5px' }}>
+                        {selectedRequest.requestNumber || selectedRequest.id}
+                      </span>
+                      {selectedRequest.requestNumber && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyToken(selectedRequest.requestNumber!)}
+                          title="Copy token to clipboard"
+                          style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            border: 'none',
+                            color: copiedToken === selectedRequest.requestNumber ? '#34D399' : '#94A3B8',
+                            borderRadius: '4px',
+                            padding: '0.2rem 0.4rem',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            fontSize: '0.68rem'
+                          }}
+                        >
+                          {copiedToken === selectedRequest.requestNumber ? <Check size={12} /> : <Copy size={12} />}
+                          <span>{copiedToken === selectedRequest.requestNumber ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      )}
+                    </div>
+                    <span style={{ display: 'block', fontSize: '0.72rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+                      Type: {getPassTypeLabel(selectedRequest.passType)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Status Header */}
               <div className="details-status-bar">
                 <div>

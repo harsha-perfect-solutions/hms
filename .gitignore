@@ -61,3 +61,6 @@ backend/import-*.cjs
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
 backend/prisma/sqlite-backup-data.json
+
+# Sensitive temporary credentials export (NEVER commit)
+docs/imported-student-login-credentials.csv

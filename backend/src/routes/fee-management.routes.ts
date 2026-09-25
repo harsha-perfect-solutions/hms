@@ -35,6 +35,7 @@ const FINANCIAL_ADMIN_ROLES = [
   'CHIEF_WARDEN_GIRLS',
   'OFFICE_STAFF',
   'FINANCE_OFFICER',
+  'COLLEGE_DIRECTOR',
 ];
 
 // =========================================================================

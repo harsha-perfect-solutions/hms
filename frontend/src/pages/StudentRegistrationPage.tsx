@@ -12,6 +12,7 @@ import {
   Send,
   Clock,
   Check,
+  Info,
 } from 'lucide-react';
 import { apiService, StudentRegistrationResponse } from '../services/api';
 import { APP_BRANDING } from '../config/branding';
@@ -141,6 +142,21 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
     return filteredBlocks.find((b: any) => b.name === preferredBlock || b.code === preferredBlock) || null;
   }, [filteredBlocks, preferredBlock]);
 
+  // Dynamically compute room types configured for the selected block
+  const availableRoomTypes = React.useMemo(() => {
+    if (selectedBlockData?.roomTypesSummary && Object.keys(selectedBlockData.roomTypesSummary).length > 0) {
+      return Object.keys(selectedBlockData.roomTypesSummary);
+    }
+    return ['2 Sharing Room', '3 Sharing Room', '4 Sharing Room', 'Single Room (1 Sharing)'];
+  }, [selectedBlockData]);
+
+  // Synchronize preferredRoomType when available room types change
+  useEffect(() => {
+    if (availableRoomTypes.length > 0 && !availableRoomTypes.includes(preferredRoomType)) {
+      setPreferredRoomType(availableRoomTypes[0]);
+    }
+  }, [availableRoomTypes, preferredRoomType]);
+
   const selectedRoomTypeAvailability = React.useMemo(() => {
     if (!selectedBlockData || !selectedBlockData.roomTypesSummary) return null;
     const summary = selectedBlockData.roomTypesSummary[preferredRoomType] ||
@@ -184,6 +200,17 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
 
     if (!dob.trim()) {
       stepErrors.dob = 'Date of Birth is required.';
+    } else {
+      const birthDate = new Date(dob);
+      const today = new Date();
+      if (isNaN(birthDate.getTime()) || birthDate >= today) {
+        stepErrors.dob = 'Date of Birth cannot be in the future.';
+      } else {
+        const age = today.getFullYear() - birthDate.getFullYear();
+        if (age < 14) {
+          stepErrors.dob = 'Applicant must be at least 14 years old.';
+        }
+      }
     }
 
     if (!gender.trim()) {
@@ -257,11 +284,14 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
       stepErrors.guardianRelation = 'Relationship is required.';
     }
 
+    const cleanStudentPhone = phone.trim().replace(/[-\s]/g, '');
     const cleanParentPhone = guardianPhone.trim().replace(/[-\s]/g, '');
     if (!cleanParentPhone) {
       stepErrors.guardianPhone = 'Parent Phone Number is required.';
     } else if (!/^\d{10}$/.test(cleanParentPhone)) {
       stepErrors.guardianPhone = 'Enter a valid 10-digit phone number.';
+    } else if (cleanStudentPhone && cleanParentPhone === cleanStudentPhone) {
+      stepErrors.guardianPhone = 'Parent phone number cannot be the student\'s own phone number.';
     }
 
     const cleanEmergency = emergencyContact.trim().replace(/[-\s]/g, '');
@@ -271,6 +301,8 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
       stepErrors.emergencyContact = 'Enter a valid 10-digit contact number.';
     } else if (cleanParentPhone && cleanEmergency === cleanParentPhone) {
       stepErrors.emergencyContact = 'Emergency contact number and parent phone number cannot be the same.';
+    } else if (cleanStudentPhone && cleanEmergency === cleanStudentPhone) {
+      stepErrors.emergencyContact = 'Emergency contact number cannot be the student\'s own phone number.';
     }
 
     if (!address.trim()) {
@@ -1336,9 +1368,9 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
                       onChange={(e) => setPreferredRoomType(e.target.value)}
                     >
                       <option value="" disabled>-- Select Room Type --</option>
-                      <option value="2 Sharing Room">2 Sharing Room</option>
-                      <option value="3 Sharing Room">3 Sharing Room</option>
-                      <option value="4 Sharing Room">4 Sharing Room</option>
+                      {availableRoomTypes.map((type) => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
                     </select>
 
                     {/* Live Availability Notice */}
@@ -1353,9 +1385,21 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.4rem',
-                          backgroundColor: selectedRoomTypeAvailability.isAvailable ? '#F0FDF4' : '#FFF1F2',
-                          border: selectedRoomTypeAvailability.isAvailable ? '1px solid #BBF7D0' : '1px solid #FECDD3',
-                          color: selectedRoomTypeAvailability.isAvailable ? '#15803D' : '#BE123C',
+                          backgroundColor: selectedRoomTypeAvailability.isAvailable
+                            ? '#F0FDF4'
+                            : selectedBlockData?.totalActiveRooms === 0
+                            ? '#EFF6FF'
+                            : '#FFFBEB',
+                          border: selectedRoomTypeAvailability.isAvailable
+                            ? '1px solid #BBF7D0'
+                            : selectedBlockData?.totalActiveRooms === 0
+                            ? '1px solid #BFDBFE'
+                            : '1px solid #FDE68A',
+                          color: selectedRoomTypeAvailability.isAvailable
+                            ? '#15803D'
+                            : selectedBlockData?.totalActiveRooms === 0
+                            ? '#1D4ED8'
+                            : '#B45309',
                         }}
                       >
                         {selectedRoomTypeAvailability.isAvailable ? (
@@ -1363,10 +1407,15 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
                             <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16A34A', flexShrink: 0 }} />
                             <span>Room Available ({selectedRoomTypeAvailability.availableCount} vacant room{selectedRoomTypeAvailability.availableCount > 1 ? 's' : ''} in {preferredBlock})</span>
                           </>
+                        ) : selectedBlockData?.totalActiveRooms === 0 ? (
+                          <>
+                            <Info size={15} style={{ flexShrink: 0 }} />
+                            <span>{preferredBlock} is newly added and undergoing floor setup. Your preferred room type will be registered for allocation.</span>
+                          </>
                         ) : (
                           <>
                             <AlertCircle size={15} style={{ flexShrink: 0 }} />
-                            <span>The selected room is not available. Please choose another room or room type.</span>
+                            <span>All {preferredRoomType} beds in {preferredBlock} are currently occupied. Your application will be placed on the waitlist for administration review.</span>
                           </>
                         )}
                       </div>

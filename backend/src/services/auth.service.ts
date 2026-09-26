@@ -309,7 +309,7 @@ export class AuthService {
       throw { status: 400, message: 'Full name is required.' };
     }
 
-    if (!cleanEmail || !cleanEmail.includes('@')) {
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       throw { status: 400, message: 'Valid email address is required.' };
     }
 
@@ -324,6 +324,20 @@ export class AuthService {
       throw {
         status: 400,
         message: 'Parent phone number and emergency contact number cannot be the same.',
+      };
+    }
+
+    if (cleanPhone && cleanGuardianPhone && cleanPhone === cleanGuardianPhone) {
+      throw {
+        status: 400,
+        message: 'Parent phone number cannot be the student\'s own mobile number.',
+      };
+    }
+
+    if (cleanPhone && cleanEmergencyContact && cleanPhone === cleanEmergencyContact) {
+      throw {
+        status: 400,
+        message: 'Emergency contact number cannot be the student\'s own mobile number.',
       };
     }
 

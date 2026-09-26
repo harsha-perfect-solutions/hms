@@ -317,6 +317,16 @@ export class AuthService {
       throw { status: 400, message: 'Please enter a valid 10-digit mobile phone number.' };
     }
 
+    const cleanGuardianPhone = guardianPhone ? guardianPhone.trim().replace(/[-\s]/g, '') : '';
+    const cleanEmergencyContact = emergencyContact ? emergencyContact.trim().replace(/[-\s]/g, '') : '';
+
+    if (cleanGuardianPhone && cleanEmergencyContact && cleanGuardianPhone === cleanEmergencyContact) {
+      throw {
+        status: 400,
+        message: 'Parent phone number and emergency contact number cannot be the same.',
+      };
+    }
+
     if (!password || typeof password !== 'string' || password.length < 6) {
       throw { status: 400, message: 'Password must be at least 6 characters long.' };
     }

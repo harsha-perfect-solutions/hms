@@ -269,6 +269,8 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
       stepErrors.emergencyContact = 'Emergency Contact Number is required.';
     } else if (!/^\d{10}$/.test(cleanEmergency)) {
       stepErrors.emergencyContact = 'Enter a valid 10-digit contact number.';
+    } else if (cleanParentPhone && cleanEmergency === cleanParentPhone) {
+      stepErrors.emergencyContact = 'Emergency contact number and parent phone number cannot be the same.';
     }
 
     if (!address.trim()) {
@@ -1138,8 +1140,22 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
                       style={getInputStyle('guardianPhone')}
                       value={guardianPhone}
                       onChange={(e) => {
-                        setGuardianPhone(e.target.value);
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setGuardianPhone(val);
                         clearFieldError('guardianPhone');
+                        if (errors.emergencyContact?.includes('same as parent')) {
+                          clearFieldError('emergencyContact');
+                        }
+                      }}
+                      onBlur={() => {
+                        const cleanP = guardianPhone.trim().replace(/[-\s]/g, '');
+                        const cleanE = emergencyContact.trim().replace(/[-\s]/g, '');
+                        if (cleanP && cleanE && cleanP === cleanE) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            emergencyContact: 'Emergency contact number and parent phone number cannot be the same.',
+                          }));
+                        }
                       }}
                       placeholder="10-digit primary phone"
                       maxLength={10}
@@ -1162,8 +1178,19 @@ export const StudentRegistrationPage: React.FC<StudentRegistrationPageProps> = (
                       style={getInputStyle('emergencyContact')}
                       value={emergencyContact}
                       onChange={(e) => {
-                        setEmergencyContact(e.target.value);
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setEmergencyContact(val);
                         clearFieldError('emergencyContact');
+                      }}
+                      onBlur={() => {
+                        const cleanP = guardianPhone.trim().replace(/[-\s]/g, '');
+                        const cleanE = emergencyContact.trim().replace(/[-\s]/g, '');
+                        if (cleanP && cleanE && cleanP === cleanE) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            emergencyContact: 'Emergency contact number and parent phone number cannot be the same.',
+                          }));
+                        }
                       }}
                       placeholder="10-digit emergency contact"
                       maxLength={10}

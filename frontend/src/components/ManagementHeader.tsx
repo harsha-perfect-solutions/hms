@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, LogOut, ChevronDown, RotateCw, Radio, Shield, Building2, Check, Gamepad2 } from 'lucide-react';
+import { Menu, LogOut, ChevronDown, RotateCw, Radio, Shield, Building2, Check } from 'lucide-react';
 import { ManagementUser, CollegeItem, managementApiService } from '../services/api';
 
 interface ManagementHeaderProps {
@@ -275,17 +275,6 @@ export const ManagementHeader: React.FC<ManagementHeaderProps> = ({
             <span className="sync-btn-label">Sync</span>
           </button>
         )}
-
-        {/* Break Room Tic-Tac-Toe */}
-        <a
-          href="/tic-tac-toe"
-          className="sync-btn desktop-header-control"
-          title="Play Tic-Tac-Toe Game"
-          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#4F46E5', background: '#EEF2FF', borderColor: '#C7D2FE' }}
-        >
-          <Gamepad2 size={16} />
-          <span className="sync-btn-label">Tic-Tac-Toe</span>
-        </a>
 
         {/* Management User Profile Menu */}
         <div className="profile-dropdown-wrapper" ref={profileMenuRef}>

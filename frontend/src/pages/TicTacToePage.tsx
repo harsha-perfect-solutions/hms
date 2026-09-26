@@ -10,13 +10,20 @@ import {
   ArrowLeft,
   Flame,
   Zap,
+  Undo2,
+  Keyboard,
 } from 'lucide-react';
 
-type Player = 'X' | 'O';
-type CellValue = Player | null;
-type BoardState = CellValue[];
-type GameMode = 'ai' | 'pvp';
-type Difficulty = 'easy' | 'medium' | 'hard';
+export type Player = 'X' | 'O';
+export type CellValue = Player | null;
+export type BoardState = CellValue[];
+export type GameMode = 'ai' | 'pvp';
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+interface HistoryStep {
+  board: BoardState;
+  turn: Player;
+}
 
 const WINNING_COMBOS = [
   [0, 1, 2], // Row 1
@@ -29,7 +36,7 @@ const WINNING_COMBOS = [
   [2, 4, 6], // Diag 2
 ];
 
-// Web Audio API Synthesizer for rich interactive game sounds without external audio assets
+// Web Audio API Synthesizer with zero external assets
 class SoundFX {
   private ctx: AudioContext | null = null;
   public enabled: boolean = true;
@@ -48,55 +55,61 @@ class SoundFX {
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const freq = player === 'X' ? 523.25 : 659.25; // C5 vs E5
-    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.12);
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const freq = player === 'X' ? 523.25 : 659.25; // C5 vs E5
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.12);
+    } catch {}
   }
 
   playWin() {
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;
-    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
-    notes.forEach((freq, idx) => {
-      if (!this.ctx) return;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      const startTime = this.ctx.currentTime + idx * 0.1;
-      osc.frequency.setValueAtTime(freq, startTime);
-      osc.type = 'triangle';
-      gain.gain.setValueAtTime(0.15, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(startTime);
-      osc.stop(startTime + 0.25);
-    });
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C E G C arpeggio
+      notes.forEach((freq, idx) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const startTime = this.ctx.currentTime + idx * 0.09;
+        osc.frequency.setValueAtTime(freq, startTime);
+        osc.type = 'triangle';
+        gain.gain.setValueAtTime(0.15, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.25);
+      });
+    } catch {}
   }
 
   playDraw() {
     if (!this.enabled) return;
     this.init();
     if (!this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(150, this.ctx.currentTime + 0.25);
-    osc.type = 'sawtooth';
-    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.25);
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.frequency.setValueAtTime(240, this.ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(160, this.ctx.currentTime + 0.25);
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.25);
+    } catch {}
   }
 }
 
@@ -113,16 +126,40 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
   // Settings
   const [gameMode, setGameMode] = useState<GameMode>('ai');
   const [difficulty, setDifficulty] = useState<Difficulty>('hard');
+  const [playerSide, setPlayerSide] = useState<Player>('X');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
-  // Stats
+  // Stats & Complete State History for Bug-Free Undo
   const [scores, setScores] = useState({ x: 0, o: 0, draws: 0, streak: 0 });
-  const [history, setHistory] = useState<BoardState[]>([]);
+  const [history, setHistory] = useState<HistoryStep[]>([]);
 
-  // Canvas ref for victory particle fireworks
+  // Synchronous State References (Guarantees zero stale closures & race conditions)
+  const boardRef = useRef<BoardState>(board);
+  boardRef.current = board;
+  const turnRef = useRef<Player>(turn);
+  turnRef.current = turn;
+  const winnerRef = useRef<Player | 'draw' | null>(winner);
+  winnerRef.current = winner;
+  const isAiThinkingRef = useRef<boolean>(isAiThinking);
+  isAiThinkingRef.current = isAiThinking;
+  const gameModeRef = useRef<GameMode>(gameMode);
+  gameModeRef.current = gameMode;
+  const playerSideRef = useRef<Player>(playerSide);
+  playerSideRef.current = playerSide;
+  const historyRef = useRef<HistoryStep[]>(history);
+  historyRef.current = history;
+
+  const aiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Check victory status
+  // Clear timers on unmount
+  useEffect(() => {
+    return () => {
+      if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+    };
+  }, []);
+
+  // Check victory condition
   const checkWinner = useCallback((currentBoard: BoardState): { winner: Player | 'draw' | null; line: number[] | null } => {
     for (const combo of WINNING_COMBOS) {
       const [a, b, c] = combo;
@@ -136,7 +173,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
     return { winner: null, line: null };
   }, []);
 
-  // Launch particle confetti
+  // Confetti fireworks on win
   const launchConfetti = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -156,13 +193,13 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
       alpha: number;
     }> = [];
 
-    const colors = ['#06B6D4', '#F43F5E', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
+    const colors = ['#06B6D4', '#F43F5E', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#38BDF8'];
     for (let i = 0; i < 90; i++) {
       particles.push({
         x: canvas.width / 2 + (Math.random() - 0.5) * 200,
         y: canvas.height / 2 + (Math.random() - 0.5) * 100,
-        vx: (Math.random() - 0.5) * 12,
-        vy: (Math.random() - 0.5) * 12 - 4,
+        vx: (Math.random() - 0.5) * 14,
+        vy: (Math.random() - 0.5) * 14 - 4,
         size: Math.random() * 7 + 4,
         color: colors[Math.floor(Math.random() * colors.length)],
         alpha: 1,
@@ -177,7 +214,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
       particles.forEach((p) => {
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.2; // gravity
+        p.vy += 0.25;
         p.alpha -= 0.015;
 
         if (p.alpha > 0) {
@@ -198,11 +235,11 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
     animate();
   }, []);
 
-  // Minimax algorithm for unbeatable AI
-  const minimax = useCallback((b: BoardState, depth: number, isMaximizing: boolean): { score: number; index?: number } => {
+  // Minimax algorithm without side effects
+  const minimax = useCallback((b: BoardState, depth: number, isMaximizing: boolean, aiMark: Player, humanMark: Player): { score: number; index?: number } => {
     const res = checkWinner(b);
-    if (res.winner === 'O') return { score: 10 - depth };
-    if (res.winner === 'X') return { score: depth - 10 };
+    if (res.winner === aiMark) return { score: 10 - depth };
+    if (res.winner === humanMark) return { score: depth - 10 };
     if (res.winner === 'draw') return { score: 0 };
 
     const availableIndices = b.map((val, idx) => (val === null ? idx : null)).filter((val): val is number => val !== null);
@@ -211,8 +248,8 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
       let maxScore = -Infinity;
       let bestMove = availableIndices[0];
       for (const idx of availableIndices) {
-        b[idx] = 'O';
-        const evaluation = minimax(b, depth + 1, false);
+        b[idx] = aiMark;
+        const evaluation = minimax(b, depth + 1, false, aiMark, humanMark);
         b[idx] = null;
         if (evaluation.score > maxScore) {
           maxScore = evaluation.score;
@@ -224,8 +261,8 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
       let minScore = Infinity;
       let bestMove = availableIndices[0];
       for (const idx of availableIndices) {
-        b[idx] = 'X';
-        const evaluation = minimax(b, depth + 1, true);
+        b[idx] = humanMark;
+        const evaluation = minimax(b, depth + 1, true, aiMark, humanMark);
         b[idx] = null;
         if (evaluation.score < minScore) {
           minScore = evaluation.score;
@@ -236,56 +273,150 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
     }
   }, [checkWinner]);
 
-  // AI Move calculation based on selected difficulty
-  const getAiMove = useCallback((currentBoard: BoardState): number => {
-    const available = currentBoard.map((val, idx) => (val === null ? idx : null)).filter((val): val is number => val !== null);
+  // AI Move calculation
+  const getAiMove = useCallback((currentBoard: BoardState, aiMark: Player, humanMark: Player): number => {
+    const boardCopy = [...currentBoard];
+    const available = boardCopy.map((val, idx) => (val === null ? idx : null)).filter((val): val is number => val !== null);
 
     if (available.length === 0) return -1;
 
-    // Easy: purely random
+    // Optimization: If board is completely empty, instant pick center or random corner
+    if (available.length === 9) {
+      const cornersAndCenter = [0, 2, 4, 6, 8];
+      return cornersAndCenter[Math.floor(Math.random() * cornersAndCenter.length)];
+    }
+
+    // Easy mode: pure random
     if (difficulty === 'easy') {
       return available[Math.floor(Math.random() * available.length)];
     }
 
-    // Medium: check if AI can win or block player, else random
+    // Medium mode: win or block, else smart heuristic
     if (difficulty === 'medium') {
       // 1. Can AI win immediately?
       for (const idx of available) {
-        currentBoard[idx] = 'O';
-        if (checkWinner(currentBoard).winner === 'O') {
-          currentBoard[idx] = null;
+        boardCopy[idx] = aiMark;
+        if (checkWinner(boardCopy).winner === aiMark) {
+          boardCopy[idx] = null;
           return idx;
         }
-        currentBoard[idx] = null;
+        boardCopy[idx] = null;
       }
-      // 2. Can player win immediately? Block them!
+      // 2. Can human win immediately? Block!
       for (const idx of available) {
-        currentBoard[idx] = 'X';
-        if (checkWinner(currentBoard).winner === 'X') {
-          currentBoard[idx] = null;
+        boardCopy[idx] = humanMark;
+        if (checkWinner(boardCopy).winner === humanMark) {
+          boardCopy[idx] = null;
           return idx;
         }
-        currentBoard[idx] = null;
+        boardCopy[idx] = null;
       }
-      // 3. Otherwise 50% random or take center
-      if (currentBoard[4] === null && Math.random() > 0.4) return 4;
+      // 3. Prefer center
+      if (boardCopy[4] === null && Math.random() > 0.3) return 4;
       return available[Math.floor(Math.random() * available.length)];
     }
 
-    // Hard: Minimax (Mathematically flawless)
-    const { index } = minimax(currentBoard, 0, true);
-    return index ?? available[0];
+    // Hard (Unbeatable) mode: Minimax
+    const { index } = minimax(boardCopy, 0, true, aiMark, humanMark);
+    return index !== undefined ? index : available[0];
   }, [difficulty, checkWinner, minimax]);
 
-  // Handle cell click by human player
-  const handleCellClick = (index: number) => {
-    if (board[index] !== null || winner !== null || isAiThinking) return;
+  // Trigger AI turn with snapshot history
+  const triggerAiTurn = useCallback((_boardAfterPlayer: BoardState, currentTurn: Player) => {
+    const humanMark = playerSideRef.current;
+    const aiMark: Player = humanMark === 'X' ? 'O' : 'X';
 
-    sounds.playMove(turn);
-    const newBoard = [...board];
-    newBoard[index] = turn;
+    if (currentTurn !== aiMark) return;
+
+    setIsAiThinking(true);
+    if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current);
+
+    aiTimeoutRef.current = setTimeout(() => {
+      const currentLiveBoard = boardRef.current;
+      // Safety check: ensure board hasn't been reset while waiting
+      if (winnerRef.current !== null) {
+        setIsAiThinking(false);
+        return;
+      }
+
+      const aiIndex = getAiMove(currentLiveBoard, aiMark, humanMark);
+      if (aiIndex !== -1 && currentLiveBoard[aiIndex] === null) {
+        // Record state before AI move into history
+        setHistory((prev) => [...prev, { board: [...currentLiveBoard], turn: aiMark }]);
+
+        sounds.playMove(aiMark);
+        const nextBoard = [...currentLiveBoard];
+        nextBoard[aiIndex] = aiMark;
+        setBoard(nextBoard);
+
+        const aiResult = checkWinner(nextBoard);
+        if (aiResult.winner) {
+          setWinner(aiResult.winner);
+          setWinningLine(aiResult.line);
+          if (aiResult.winner === 'draw') {
+            sounds.playDraw();
+            setScores((prev) => ({ ...prev, draws: prev.draws + 1, streak: 0 }));
+          } else {
+            sounds.playWin();
+            setScores((prev) => ({
+              ...prev,
+              x: aiResult.winner === 'X' ? prev.x + 1 : prev.x,
+              o: aiResult.winner === 'O' ? prev.o + 1 : prev.o,
+              streak: aiResult.winner === humanMark ? prev.streak + 1 : 0,
+            }));
+          }
+        } else {
+          setTurn(humanMark);
+        }
+      }
+      setIsAiThinking(false);
+      aiTimeoutRef.current = null;
+    }, 280);
+  }, [getAiMove, checkWinner]);
+
+  // Reset current round
+  const handleResetRound = useCallback((preferredSide?: Player, preferredMode?: GameMode) => {
+    if (aiTimeoutRef.current) {
+      clearTimeout(aiTimeoutRef.current);
+      aiTimeoutRef.current = null;
+    }
+    const emptyBoard: BoardState = Array(9).fill(null);
+    setBoard(emptyBoard);
+    setTurn('X');
+    setWinner(null);
+    setWinningLine(null);
+    setIsAiThinking(false);
+    setHistory([]);
+
+    const activeSide = preferredSide || playerSideRef.current;
+    const activeMode = preferredMode || gameModeRef.current;
+
+    // If user is playing as 'O' vs AI, AI takes the opening 'X' move
+    if (activeMode === 'ai' && activeSide === 'O') {
+      triggerAiTurn(emptyBoard, 'X');
+    }
+  }, [triggerAiTurn]);
+
+  // Handle cell click
+  const handleCellClick = useCallback((index: number) => {
+    const currentB = boardRef.current;
+    const currentTurn = turnRef.current;
+    const activeWinner = winnerRef.current;
+    const thinking = isAiThinkingRef.current;
+    const mode = gameModeRef.current;
+    const side = playerSideRef.current;
+
+    // Strict validation
+    if (currentB[index] !== null || activeWinner !== null || thinking) return;
+    if (mode === 'ai' && currentTurn !== side) return;
+
+    // Record state before human move into history
+    setHistory((prev) => [...prev, { board: [...currentB], turn: currentTurn }]);
+
+    sounds.playMove(currentTurn);
+    const newBoard = [...currentB];
+    newBoard[index] = currentTurn;
     setBoard(newBoard);
-    setHistory((prev) => [...prev, board]);
 
     const result = checkWinner(newBoard);
     if (result.winner) {
@@ -301,81 +432,119 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           ...prev,
           x: result.winner === 'X' ? prev.x + 1 : prev.x,
           o: result.winner === 'O' ? prev.o + 1 : prev.o,
-          streak: result.winner === 'X' ? prev.streak + 1 : 0,
+          streak: result.winner === side ? prev.streak + 1 : 0,
         }));
       }
       return;
     }
 
-    // Switch turns
-    const nextPlayer: Player = turn === 'X' ? 'O' : 'X';
+    const nextPlayer: Player = currentTurn === 'X' ? 'O' : 'X';
     setTurn(nextPlayer);
 
-    // If gameMode is AI, trigger AI response
-    if (gameMode === 'ai' && nextPlayer === 'O') {
-      setIsAiThinking(true);
-      setTimeout(() => {
-        const aiIndex = getAiMove(newBoard);
-        if (aiIndex !== -1) {
-          sounds.playMove('O');
-          newBoard[aiIndex] = 'O';
-          setBoard([...newBoard]);
-          const aiResult = checkWinner(newBoard);
-          if (aiResult.winner) {
-            setWinner(aiResult.winner);
-            setWinningLine(aiResult.line);
-            if (aiResult.winner === 'draw') {
-              sounds.playDraw();
-              setScores((prev) => ({ ...prev, draws: prev.draws + 1, streak: 0 }));
-            } else {
-              sounds.playWin();
-              setScores((prev) => ({ ...prev, o: prev.o + 1, streak: 0 }));
-            }
-          } else {
-            setTurn('X');
-          }
-        }
-        setIsAiThinking(false);
-      }, 350);
+    if (mode === 'ai') {
+      triggerAiTurn(newBoard, nextPlayer);
     }
-  };
+  }, [checkWinner, launchConfetti, triggerAiTurn]);
 
-  // Keyboard navigation (Keys 1-9)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const key = parseInt(e.key, 10);
-      if (key >= 1 && key <= 9) {
-        handleCellClick(key - 1);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  });
+  // Undo move properly for both PvP and AI modes
+  const handleUndo = useCallback(() => {
+    const currentHistory = historyRef.current;
+    if (currentHistory.length === 0 || isAiThinkingRef.current) return;
 
-  // Reset current round
-  const handleResetRound = () => {
-    setBoard(Array(9).fill(null));
-    setTurn('X');
+    if (aiTimeoutRef.current) {
+      clearTimeout(aiTimeoutRef.current);
+      aiTimeoutRef.current = null;
+      setIsAiThinking(false);
+    }
+
+    const mode = gameModeRef.current;
+    const side = playerSideRef.current;
+
+    if (mode === 'ai') {
+      // In AI mode:
+      // If AI has already played after human's move (history has 2+ steps), rollback 2 steps
+      // If human just moved and won (history has 1 step or AI hadn't moved), rollback 1 step
+      const stepsToRevert = currentHistory.length >= 2 ? 2 : 1;
+      const targetStep = currentHistory[currentHistory.length - stepsToRevert];
+
+      setBoard(targetStep.board);
+      setTurn(side);
+      setHistory((prev) => prev.slice(0, prev.length - stepsToRevert));
+    } else {
+      // In PvP mode: rollback 1 step
+      const targetStep = currentHistory[currentHistory.length - 1];
+      setBoard(targetStep.board);
+      setTurn(targetStep.turn);
+      setHistory((prev) => prev.slice(0, -1));
+    }
+
     setWinner(null);
     setWinningLine(null);
-    setIsAiThinking(false);
-    setHistory([]);
-  };
+  }, []);
 
-  // Reset entire match and scoreboard
+  // Keyboard navigation & Shortcuts (Keys 1-9, Numpad, R=Reset, U=Undo, M=Mute)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept typing if user is in an input or textarea
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      // Reset shortcut
+      if (e.key === 'r' || e.key === 'R') {
+        handleResetRound();
+        return;
+      }
+
+      // Undo shortcut (U or Ctrl+Z)
+      if (e.key === 'u' || e.key === 'U' || (e.ctrlKey && (e.key === 'z' || e.key === 'Z'))) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      // Mute shortcut
+      if (e.key === 'm' || e.key === 'M') {
+        setSoundEnabled((prev) => {
+          sounds.enabled = !prev;
+          return !prev;
+        });
+        return;
+      }
+
+      // Standard top row 1-9 (1=top-left, 9=bottom-right)
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= 9) {
+        handleCellClick(num - 1);
+        return;
+      }
+
+      // Numpad support
+      const numpadMap: Record<string, number> = {
+        Numpad7: 0,
+        Numpad8: 1,
+        Numpad9: 2,
+        Numpad4: 3,
+        Numpad5: 4,
+        Numpad6: 5,
+        Numpad1: 6,
+        Numpad2: 7,
+        Numpad3: 8,
+      };
+      if (numpadMap[e.code] !== undefined) {
+        handleCellClick(numpadMap[e.code]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleCellClick, handleResetRound, handleUndo]);
+
+  // Reset entire match score counters
   const handleResetScores = () => {
     handleResetRound();
     setScores({ x: 0, o: 0, draws: 0, streak: 0 });
   };
 
-  // Undo move
-  const handleUndo = () => {
-    if (history.length === 0 || winner !== null || isAiThinking) return;
-    const previousBoard = history[history.length - 1];
-    setBoard(previousBoard);
-    setHistory((prev) => prev.slice(0, -1));
-    setTurn('X');
-  };
+  const isHumanTurn = gameMode === 'pvp' || turn === playerSide;
 
   return (
     <div
@@ -392,7 +561,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
         overflowX: 'hidden',
       }}
     >
-      {/* Background ambient decorative glow */}
+      {/* Background ambient lighting */}
       <div
         style={{
           position: 'absolute',
@@ -401,7 +570,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           transform: 'translateX(-50%)',
           width: '600px',
           height: '600px',
-          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -420,7 +589,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
         }}
       />
 
-      {/* Navigation and sound control bar */}
+      {/* Navigation bar */}
       <div
         style={{
           width: '100%',
@@ -428,12 +597,12 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '1.5rem',
+          marginBottom: '1.25rem',
         }}
       >
         <button
           type="button"
-          onClick={() => (onNavigate ? onNavigate('/management/dashboard') : window.history.back())}
+          onClick={() => (onNavigate ? onNavigate('/management/blocks') : window.history.back())}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -451,7 +620,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           }}
         >
           <ArrowLeft size={16} />
-          <span>Dashboard</span>
+          <span>Back to HMS</span>
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -462,7 +631,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
               setSoundEnabled(next);
               sounds.enabled = next;
             }}
-            title={soundEnabled ? 'Mute Sounds' : 'Unmute Sounds'}
+            title={soundEnabled ? 'Mute Sounds (Press M)' : 'Unmute Sounds (Press M)'}
             style={{
               background: 'rgba(255, 255, 255, 0.08)',
               border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -473,6 +642,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'all 0.2s',
             }}
           >
             {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
@@ -482,7 +652,21 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
 
       {/* Title */}
       <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '0.3rem 0.85rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 700, color: '#A5B4FC', marginBottom: '0.5rem' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'rgba(99, 102, 241, 0.15)',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            padding: '0.3rem 0.85rem',
+            borderRadius: '9999px',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            color: '#A5B4FC',
+            marginBottom: '0.5rem',
+          }}
+        >
           <Zap size={14} color="#818CF8" />
           <span>CAMPUSLY BREAK ROOM • TIC-TAC-TOE</span>
         </div>
@@ -500,11 +684,11 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           Tic-Tac-Toe
         </h1>
         <p style={{ margin: 0, fontSize: '0.9rem', color: '#94A3B8' }}>
-          Challenge the unbeatable Minimax AI or play with a friend.
+          Test your skills against unbeatable Minimax AI or challenge a roommate in 2P mode.
         </p>
       </div>
 
-      {/* Mode & Difficulty Selector Card */}
+      {/* Mode & Side Selector Card */}
       <div
         style={{
           width: '100%',
@@ -527,7 +711,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
             type="button"
             onClick={() => {
               setGameMode('ai');
-              handleResetRound();
+              handleResetRound(playerSide, 'ai');
             }}
             style={{
               flex: 1,
@@ -554,7 +738,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
             type="button"
             onClick={() => {
               setGameMode('pvp');
-              handleResetRound();
+              handleResetRound(playerSide, 'pvp');
             }}
             style={{
               flex: 1,
@@ -578,38 +762,92 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           </button>
         </div>
 
-        {/* AI Difficulty Pills (only visible in AI mode) */}
+        {/* AI Options: Side Selection & Difficulty */}
         {gameMode === 'ai' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(15, 23, 42, 0.6)', padding: '0.4rem', borderRadius: '10px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginLeft: '0.5rem' }}>AI Level:</span>
-            {(['easy', 'medium', 'hard'] as Difficulty[]).map((lvl) => {
-              const active = difficulty === lvl;
-              return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', width: '70px' }}>Your Side:</span>
+              <div style={{ display: 'flex', gap: '0.4rem', flex: 1 }}>
                 <button
-                  key={lvl}
                   type="button"
                   onClick={() => {
-                    setDifficulty(lvl);
-                    handleResetRound();
+                    setPlayerSide('X');
+                    handleResetRound('X', 'ai');
                   }}
                   style={{
                     flex: 1,
                     padding: '0.35rem 0.6rem',
-                    borderRadius: '7px',
+                    borderRadius: '8px',
                     border: 'none',
-                    background: active ? '#6366F1' : 'transparent',
-                    color: active ? '#FFFFFF' : '#94A3B8',
-                    fontSize: '0.775rem',
-                    fontWeight: active ? 800 : 600,
-                    textTransform: 'capitalize',
+                    background: playerSide === 'X' ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    color: playerSide === 'X' ? '#38BDF8' : '#94A3B8',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: playerSide === 'X' ? '#06B6D4' : 'transparent',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
                     cursor: 'pointer',
-                    transition: 'all 0.15s',
                   }}
                 >
-                  {lvl === 'hard' ? 'Unbeatable' : lvl}
+                  Play as X (First)
                 </button>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPlayerSide('O');
+                    handleResetRound('O', 'ai');
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '0.35rem 0.6rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: playerSide === 'O' ? 'rgba(244, 63, 94, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                    color: playerSide === 'O' ? '#FB7185' : '#94A3B8',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: playerSide === 'O' ? '#F43F5E' : 'transparent',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Play as O (AI First)
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(15, 23, 42, 0.6)', padding: '0.4rem', borderRadius: '10px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8', marginLeft: '0.5rem', width: '60px' }}>AI Level:</span>
+              {(['easy', 'medium', 'hard'] as Difficulty[]).map((lvl) => {
+                const active = difficulty === lvl;
+                return (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => {
+                      setDifficulty(lvl);
+                      handleResetRound();
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '0.35rem 0.6rem',
+                      borderRadius: '7px',
+                      border: 'none',
+                      background: active ? '#6366F1' : 'transparent',
+                      color: active ? '#FFFFFF' : '#94A3B8',
+                      fontSize: '0.775rem',
+                      fontWeight: active ? 800 : 600,
+                      textTransform: 'capitalize',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {lvl === 'hard' ? 'Unbeatable' : lvl}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -622,11 +860,13 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '0.75rem',
-          marginBottom: '1.5rem',
+          marginBottom: '1.25rem',
         }}
       >
         <div style={{ background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '12px', padding: '0.75rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.05em' }}>PLAYER X</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38BDF8', letterSpacing: '0.05em' }}>
+            {gameMode === 'ai' ? (playerSide === 'X' ? 'YOU (X)' : 'BOT (X)') : 'PLAYER X'}
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#FFFFFF', marginTop: '0.15rem' }}>{scores.x}</div>
         </div>
 
@@ -636,7 +876,9 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
         </div>
 
         <div style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '12px', padding: '0.75rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#FB7185', letterSpacing: '0.05em' }}>{gameMode === 'ai' ? 'BOT O' : 'PLAYER O'}</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#FB7185', letterSpacing: '0.05em' }}>
+            {gameMode === 'ai' ? (playerSide === 'O' ? 'YOU (O)' : 'BOT (O)') : 'PLAYER O'}
+          </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#FFFFFF', marginTop: '0.15rem' }}>{scores.o}</div>
         </div>
 
@@ -673,7 +915,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           alignItems: 'center',
           justifyContent: 'center',
           gap: '0.5rem',
-          marginBottom: '1.5rem',
+          marginBottom: '1.25rem',
           fontSize: '1rem',
           fontWeight: 800,
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
@@ -686,22 +928,29 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           ) : (
             <span style={{ color: winner === 'X' ? '#38BDF8' : '#FB7185', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Trophy size={18} />
-              {gameMode === 'ai' && winner === 'O' ? '🤖 Bot Won the Round!' : `🎉 Player ${winner} Wins!`}
+              {gameMode === 'ai'
+                ? winner === playerSide
+                  ? '🎉 You Won! Amazing Strategy!'
+                  : '🤖 AI Bot Won! Try another match!'
+                : `🎉 Player ${winner} Wins!`}
             </span>
           )
         ) : isAiThinking ? (
           <span style={{ color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Sparkles size={16} />
-            AI Bot is thinking...
+            AI Bot is calculating move...
           </span>
         ) : (
           <span>
-            Current Turn: <strong style={{ color: turn === 'X' ? '#38BDF8' : '#FB7185' }}>{turn}</strong>
+            Current Turn:{' '}
+            <strong style={{ color: turn === 'X' ? '#38BDF8' : '#FB7185' }}>
+              {turn} {gameMode === 'ai' ? (turn === playerSide ? '(Your Turn)' : '(AI Turn)') : ''}
+            </strong>
           </span>
         )}
       </div>
 
-      {/* 3x3 Tic Tac Toe Grid Board */}
+      {/* 3x3 Grid Board */}
       <div
         style={{
           width: '100%',
@@ -721,7 +970,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
       >
         {board.map((cell, idx) => {
           const isWinningCell = winningLine?.includes(idx);
-          const isHovered = hoverIndex === idx && cell === null && !winner && !isAiThinking;
+          const isHovered = hoverIndex === idx && cell === null && !winner && !isAiThinking && isHumanTurn;
 
           return (
             <button
@@ -730,15 +979,15 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
               onClick={() => handleCellClick(idx)}
               onMouseEnter={() => setHoverIndex(idx)}
               onMouseLeave={() => setHoverIndex(null)}
-              disabled={cell !== null || winner !== null || isAiThinking}
+              disabled={cell !== null || winner !== null || isAiThinking || !isHumanTurn}
               aria-label={`Cell ${idx + 1}, currently ${cell || 'empty'}`}
               style={{
                 background: isWinningCell
                   ? winner === 'X'
-                    ? 'rgba(6, 182, 212, 0.25)'
-                    : 'rgba(244, 63, 94, 0.25)'
+                    ? 'rgba(6, 182, 212, 0.3)'
+                    : 'rgba(244, 63, 94, 0.3)'
                   : isHovered
-                  ? 'rgba(255, 255, 255, 0.06)'
+                  ? 'rgba(255, 255, 255, 0.07)'
                   : 'rgba(30, 41, 59, 0.65)',
                 border: isWinningCell
                   ? winner === 'X'
@@ -749,10 +998,11 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: cell === null && !winner && !isAiThinking ? 'pointer' : 'default',
+                cursor: cell === null && !winner && !isAiThinking && isHumanTurn ? 'pointer' : 'default',
                 transition: 'all 0.15s ease',
                 position: 'relative',
-                boxShadow: isWinningCell ? '0 0 20px rgba(6, 182, 212, 0.4)' : 'none',
+                boxShadow: isWinningCell ? '0 0 22px rgba(6, 182, 212, 0.5)' : 'none',
+                transform: isWinningCell ? 'scale(1.02)' : 'none',
               }}
             >
               {cell === 'X' && (
@@ -788,21 +1038,21 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
         })}
       </div>
 
-      {/* Control Buttons (New Round, Reset Match) */}
+      {/* Control Buttons (New Round, Undo, Reset Match) */}
       <div
         style={{
           width: '100%',
           maxWidth: '380px',
           display: 'flex',
-          gap: '0.75rem',
-          marginTop: '1.5rem',
+          gap: '0.65rem',
+          marginTop: '1.25rem',
         }}
       >
         <button
           type="button"
-          onClick={handleResetRound}
+          onClick={() => handleResetRound()}
           style={{
-            flex: 1,
+            flex: 1.2,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -818,6 +1068,7 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
             boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)',
             transition: 'all 0.2s',
           }}
+          title="Start fresh round (Key: R)"
         >
           <RotateCcw size={16} />
           <span>New Round</span>
@@ -826,28 +1077,32 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
         <button
           type="button"
           onClick={handleUndo}
-          disabled={history.length === 0 || winner !== null || isAiThinking}
+          disabled={history.length === 0 || isAiThinking}
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
             padding: '0.75rem 0.9rem',
             borderRadius: '12px',
             border: '1px solid rgba(255, 255, 255, 0.15)',
-            background: history.length === 0 || winner !== null ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.08)',
-            color: history.length === 0 || winner !== null ? '#475569' : '#CBD5E1',
+            background: history.length === 0 || isAiThinking ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.08)',
+            color: history.length === 0 || isAiThinking ? '#475569' : '#CBD5E1',
             fontWeight: 700,
             fontSize: '0.85rem',
-            cursor: history.length === 0 || winner !== null ? 'not-allowed' : 'pointer',
+            cursor: history.length === 0 || isAiThinking ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s',
           }}
-          title="Undo last move"
+          title="Undo last move (Key: U)"
         >
-          Undo
+          <Undo2 size={15} />
+          <span>Undo</span>
         </button>
 
         <button
           type="button"
           onClick={handleResetScores}
           style={{
-            padding: '0.75rem 1rem',
+            padding: '0.75rem 0.9rem',
             borderRadius: '12px',
             border: '1px solid rgba(255, 255, 255, 0.15)',
             background: 'rgba(255, 255, 255, 0.06)',
@@ -859,13 +1114,29 @@ export const TicTacToePage: React.FC<{ onNavigate?: (path: string) => void }> = 
           }}
           title="Reset score counters"
         >
-          Reset Scores
+          Reset
         </button>
       </div>
 
-      {/* Helper footer */}
-      <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#64748B' }}>
-        Tip: You can use your keyboard numpad or numbers 1-9 to place moves quickly.
+      {/* Keyboard Shortcuts Hint */}
+      <div
+        style={{
+          marginTop: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          fontSize: '0.75rem',
+          color: '#64748B',
+          background: 'rgba(15, 23, 42, 0.5)',
+          padding: '0.4rem 0.8rem',
+          borderRadius: '8px',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+        }}
+      >
+        <Keyboard size={14} color="#818CF8" />
+        <span>
+          Shortcuts: <strong>1-9</strong> or <strong>Numpad</strong> to place moves • <strong>R</strong> New Round • <strong>U</strong> Undo • <strong>M</strong> Mute
+        </span>
       </div>
     </div>
   );

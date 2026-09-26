@@ -9,6 +9,7 @@ import {
   LogOut,
   X,
   Building2,
+  Gamepad2,
 } from 'lucide-react';
 import { APP_BRANDING } from '../config/branding';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'outings', label: 'Outing Requests', path: '/outing-requests', icon: Footprints },
   { id: 'leaves', label: 'Leaves & Suspension', path: '/leaves', icon: FileText },
   { id: 'notifications', label: 'Notifications', path: '/notifications', icon: Bell },
+  { id: 'tic-tac-toe', label: 'Break Room (Game)', path: '/tic-tac-toe', icon: Gamepad2 },
 ];
 
 interface SidebarProps {

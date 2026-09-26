@@ -17,6 +17,7 @@ import {
   X,
   ShieldCheck,
   Lock,
+  Gamepad2,
 } from 'lucide-react';
 import { useManagementAuth } from '../context/ManagementAuthContext';
 import { APP_BRANDING } from '../config/branding';
@@ -44,6 +45,7 @@ export const MANAGEMENT_NAV_ITEMS: ManagementNavItem[] = [
   { id: 'fee-management', label: 'Fee Management', path: '/management/fee-management', icon: CreditCard, isAvailable: true },
   { id: 'fee-collection', label: 'Fee Collection', path: '/management/fee-collection', icon: Landmark, isAvailable: true },
   { id: 'notifications', label: 'Notifications', path: '/management/notifications', icon: Bell, isAvailable: true },
+  { id: 'tic-tac-toe', label: 'Break Room (Game)', path: '/management/tic-tac-toe', icon: Gamepad2, isAvailable: true },
 ];
 
 interface ManagementSidebarProps {

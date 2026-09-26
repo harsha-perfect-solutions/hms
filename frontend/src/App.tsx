@@ -144,6 +144,10 @@ const AuthenticatedApp: React.FC<{
             <HostelApplicationPage />
           )}
 
+          {(currentPath === '/tic-tac-toe' || currentPath === '/tictactoe') && (
+            <TicTacToePage onNavigate={onNavigate} />
+          )}
+
           {isKnownPlaceholderRoute && (
             <PlaceholderModule
               moduleName={ROUTE_MODULE_NAMES[currentPath]}
@@ -159,7 +163,9 @@ const AuthenticatedApp: React.FC<{
             currentPath !== '/complaints' &&
             currentPath !== '/leaves' &&
             currentPath !== '/notifications' &&
-            currentPath !== '/hostel-application' && (
+            currentPath !== '/hostel-application' &&
+            currentPath !== '/tic-tac-toe' &&
+            currentPath !== '/tictactoe' && (
               <DashboardPage onNavigate={onNavigate} />
             )}
         </main>
